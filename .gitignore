@@ -49,3 +49,30 @@ qtcreator-*
 
 # Catkin custom files
 CATKIN_IGNORE
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Docker local override (optional)
+docker-compose.override.yml
+compose.override.yml
+
+# ROS bag / recordings (store filer)
+*.bag
+*.db3
+*.mcap
+
+# ROS 2 / colcon
+install/
+log/
+
+# Python venv
+.venv/
+venv/
+
+# OS / editor noise
+.DS_Store
+.vscode/
+.idea/

@@ -9,12 +9,22 @@ services:
     ipc: host
     tty: true
     stdin_open: true
+    devices:
+      - /dev/video0:/dev/video0
+      - /dev/video1:/dev/video1
+      - /dev/media0:/dev/media0
+      - /dev/media1:/dev/media1
+      - /dev/media2:/dev/media2
+      - /dev/media3:/dev/media3
+    group_add:
+      - "${VIDEO_GID:-44}"
 
     # Kjør som samme UID/GID som host for å unngå root-eide build-filer i workspace
     user: "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
 
     environment:
-      ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-0}"
+      - YOLO_CONFIG_DIR=${YOLO_CONFIG_DIR:-/ws/.ultralytics}
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
 
     volumes:
       - ./:/ws:rw

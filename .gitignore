@@ -76,3 +76,17 @@ venv/
 .DS_Store
 .vscode/
 .idea/
+
+# Core dumps / crashes
+core
+core.*
+*.core
+
+# Local runtime / caches
+.ultralytics/
+runs/
+__pycache__/
+*.pyc
+
+# Local models (ikke commit store binfiler)
+models/

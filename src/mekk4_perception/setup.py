@@ -24,6 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'teddy_detector = mekk4_perception.teddy_detector:main',
         ],
     },
 )

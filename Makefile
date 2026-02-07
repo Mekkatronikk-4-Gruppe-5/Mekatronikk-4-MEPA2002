@@ -13,3 +13,7 @@ up:
 
 down:
 	docker compose down
+# Build ROS workspace + fix console_script shebang to venv python (PEP668-safe)
+ws:
+	docker compose run --rm ros bash -lc '/ws/scripts/ws_build.sh'
+

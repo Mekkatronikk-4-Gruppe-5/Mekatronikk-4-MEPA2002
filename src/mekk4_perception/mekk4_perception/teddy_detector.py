@@ -29,6 +29,7 @@ class TeddyDetector(Node):
         self.last = None
         self.proc = None
         self.frame_bytes = self.width * self.height * 3
+        self._buf = bytearray()
         self._last_warn = 0.0
         self._stop = False
 
@@ -62,8 +63,10 @@ class TeddyDetector(Node):
                     time.sleep(1.0)
                     continue
 
-            data = self.proc.stdout.read(self.frame_bytes) if self.proc.stdout else b""
-            if len(data) != self.frame_bytes:
+                self._buf.clear()
+
+            chunk = self.proc.stdout.read(4096) if self.proc.stdout else b""
+            if not chunk:
                 self._warn_throttled("failed to read frame")
                 if self.proc is not None:
                     self.proc.terminate()
@@ -71,8 +74,12 @@ class TeddyDetector(Node):
                 time.sleep(0.1)
                 continue
 
-            frame = np.frombuffer(data, dtype=np.uint8).reshape((self.height, self.width, 3))
-            self._infer_frame(frame)
+            self._buf.extend(chunk)
+            while len(self._buf) >= self.frame_bytes:
+                data = bytes(self._buf[: self.frame_bytes])
+                del self._buf[: self.frame_bytes]
+                frame = np.frombuffer(data, dtype=np.uint8).reshape((self.height, self.width, 3))
+                self._infer_frame(frame)
 
     def _infer_frame(self, frame):
         results = self.model.predict(

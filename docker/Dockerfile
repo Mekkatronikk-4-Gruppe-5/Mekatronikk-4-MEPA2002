@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     git \
     nano \
+    sudo \
     v4l-utils \
     python3-opencv \
     python3-pip \
@@ -16,6 +17,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-vcstool \
     ros-dev-tools \
   && rm -rf /var/lib/apt/lists/*
+
+# Set a persistent password for the default ubuntu user (override via build arg)
+ARG UBUNTU_PASSWORD=qwerty
+RUN echo "ubuntu:${UBUNTU_PASSWORD}" | chpasswd
 
 # rosdep (idempotent)
 RUN rosdep init || true && rosdep update

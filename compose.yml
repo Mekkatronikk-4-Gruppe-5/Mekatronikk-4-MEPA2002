@@ -5,6 +5,7 @@ services:
       dockerfile: docker/Dockerfile
     image: mekk4/ros2-jazzy-dev:local
     container_name: mekk4_ros
+    privileged: true
     network_mode: host
     ipc: host
     tty: true

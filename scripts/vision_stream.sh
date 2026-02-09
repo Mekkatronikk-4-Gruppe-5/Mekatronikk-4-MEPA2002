@@ -39,7 +39,7 @@ gst-launch-1.0 -q filesrc location="${FIFO}" \
 GST_PID=$!
 
 rpicam-vid -t 0 --width "${WIDTH}" --height "${HEIGHT}" --framerate "${FPS}" \
-  --codec h264 --inline -o "${FIFO}" &
+  --codec h264 --inline --libav-format h264 -o "${FIFO}" &
 CAM_PID=$!
 
 PIPELINE="udpsrc port=${PORT} caps=application/x-rtp, media=video, encoding-name=H264, payload=96 ! rtph264depay ! h264parse ! avdec_h264 ! videoconvert ! appsink"

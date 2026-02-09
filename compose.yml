@@ -19,8 +19,10 @@ services:
       - /dev/v4l-subdev0:/dev/v4l-subdev0
       - /dev/v4l-subdev1:/dev/v4l-subdev1
       - /dev/v4l-subdev2:/dev/v4l-subdev2
+      - /dev/dri:/dev/dri
     group_add:
       - "${VIDEO_GID:-44}"
+      - "${RENDER_GID:-992}"
 
     # Kjør som samme UID/GID som host for å unngå root-eide build-filer i workspace
     user: "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"

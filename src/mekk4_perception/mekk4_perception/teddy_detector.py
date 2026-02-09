@@ -32,7 +32,7 @@ class TeddyDetector(Node):
             return
 
         self.get_logger().info(f"GStreamer source: {self.gst_source}")
-        self.cap = cv2.VideoCapture(self.gst_source, cv2.CAP_GSTREAMER)
+        self.cap = None
         self._start_timer()
 
         self.get_logger().info(
@@ -55,8 +55,10 @@ class TeddyDetector(Node):
 
     def on_timer(self):
         if self.cap is None or not self.cap.isOpened():
-            self._warn_throttled("gstreamer source not available")
-            return
+            self.cap = cv2.VideoCapture(self.gst_source, cv2.CAP_GSTREAMER)
+            if not self.cap.isOpened():
+                self._warn_throttled("gstreamer source not available")
+                return
 
         ok, frame = self.cap.read()
         if not ok:

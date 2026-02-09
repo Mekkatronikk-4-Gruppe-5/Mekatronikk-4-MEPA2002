@@ -20,14 +20,5 @@ setup(
     maintainer_email='ubuntu@todo.todo',
     description='TODO: Package description',
     license='TODO: License declaration',
-    extras_require={
-        'test': [
-            'pytest',
-        ],
-    },
-    entry_points={
-        'console_scripts': [
-            'talker = mekk4_bringup.talker:main',
-        ],
-    },
+    entry_points={},
 )

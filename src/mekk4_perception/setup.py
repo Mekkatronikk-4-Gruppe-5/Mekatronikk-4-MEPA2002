@@ -17,11 +17,6 @@ setup(
     maintainer_email='gruppe5pi5@users.noreply.github.com',
     description='TODO: Package description',
     license='TODO: License declaration',
-    extras_require={
-        'test': [
-            'pytest',
-        ],
-    },
     entry_points={
         'console_scripts': [
             'teddy_detector = mekk4_perception.teddy_detector:main',

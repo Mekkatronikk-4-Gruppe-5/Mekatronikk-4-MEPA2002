@@ -12,6 +12,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gstreamer1.0-plugins-ugly \
     gstreamer1.0-tools \
     nano \
+    libgl1 \
+    libx11-6 \
+    libxext6 \
+    libxrender1 \
+    libsm6 \
+    libxfixes3 \
+    libxcb1 \
+    libxkbcommon-x11-0 \
     ros-jazzy-cv-bridge \
     ros-dev-tools \
     v4l-utils \

@@ -41,4 +41,4 @@ RUN python3 -m venv /opt/venv
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir ultralytics==8.4.12 ncnn==1.0.20260114
+  pip install --no-cache-dir catkin_pkg==1.0.0 ultralytics==8.4.12 ncnn==1.0.20260114

@@ -8,7 +8,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     git \
     libcamera-dev \
-    libcamera-apps \
     libcamera-ipa \
     libcamera0.2 \
     nano \

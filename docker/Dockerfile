@@ -22,6 +22,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ARG UBUNTU_PASSWORD=qwerty
 RUN echo "ubuntu:${UBUNTU_PASSWORD}" | chpasswd
 
+# Ensure ubuntu can use sudo
+RUN usermod -aG sudo ubuntu \
+  && echo "ubuntu ALL=(ALL) ALL" >/etc/sudoers.d/ubuntu \
+  && chmod 0440 /etc/sudoers.d/ubuntu
+
 # rosdep (idempotent)
 RUN rosdep init || true && rosdep update
 

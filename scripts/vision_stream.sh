@@ -34,7 +34,13 @@ CAM_PID=$!
 
 PIPELINE="udpsrc port=${PORT} caps=application/x-rtp,media=video,encoding-name=H264,payload=96,clock-rate=90000 ! rtph264depay ! h264parse ! avdec_h264 ! videoconvert ! appsink drop=true max-buffers=1 sync=false"
 
+X11_ARGS=()
+if [[ -n "${DISPLAY:-}" && -d /tmp/.X11-unix ]]; then
+  X11_ARGS+=("-e" "DISPLAY=${DISPLAY}" "-v" "/tmp/.X11-unix:/tmp/.X11-unix:rw")
+fi
+
 docker compose run --rm \
+  "${X11_ARGS[@]}" \
   -e MEKK4_CAM_WIDTH="${WIDTH}" \
   -e MEKK4_CAM_HEIGHT="${HEIGHT}" \
   -e MEKK4_CAM_SOURCE_GST="${PIPELINE}" \

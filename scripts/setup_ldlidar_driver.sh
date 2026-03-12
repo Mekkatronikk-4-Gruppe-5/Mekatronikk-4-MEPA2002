@@ -17,9 +17,10 @@ elif [[ -d "${PKG_DIR}" ]]; then
   if [[ -f "${PKG_DIR}/package.xml" ]]; then
     echo "[lidar-setup] ${PKG_DIR} already exists (non-git). Using existing folder."
   else
-    echo "[lidar-setup] ERROR: ${PKG_DIR} exists but does not look like ldlidar_stl_ros2 package."
-    echo "[lidar-setup] Remove/rename that folder and run make lidar-setup again."
-    exit 1
+    echo "[lidar-setup] Warning: ${PKG_DIR} exists but is invalid. Recreating folder."
+    rm -rf "${PKG_DIR}"
+    echo "[lidar-setup] Cloning ldlidar_stl_ros2 (${REPO_TAG})..."
+    git clone --depth 1 --branch "${REPO_TAG}" "${REPO_URL}" "${PKG_DIR}"
   fi
 else
   echo "[lidar-setup] Cloning ldlidar_stl_ros2 (${REPO_TAG})..."

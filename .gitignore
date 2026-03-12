@@ -92,5 +92,8 @@ __pycache__/
 # Local models (ikke commit store binfiler)
 models/
 
+# External ROS dependency fetched by setup script
+src/ldlidar_stl_ros2/
+
 # Local runtime output
 picam2_test.jpg

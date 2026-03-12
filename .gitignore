@@ -58,6 +58,7 @@ CATKIN_IGNORE
 # Docker local override (optional)
 docker-compose.override.yml
 compose.override.yml
+docker/ultra/
 
 # ROS bag / recordings (store filer)
 *.bag

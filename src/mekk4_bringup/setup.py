@@ -17,8 +17,8 @@ setup(
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='ubuntu',
-    maintainer_email='ubuntu@todo.todo',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    maintainer_email='gruppe5pi5@users.noreply.github.com',
+    description='Bringup and launch tooling for the MEKK4 robot.',
+    license='MIT',
     entry_points={},
 )

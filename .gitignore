@@ -91,13 +91,5 @@ __pycache__/
 # Local models (ikke commit store binfiler)
 models/
 
-# Local runtime / cache / outputs
-.ultralytics/
-runs/
-models/
+# Local runtime output
 picam2_test.jpg
-
-# Crash dumps
-core
-core.*
-*.core

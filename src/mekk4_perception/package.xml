@@ -3,9 +3,9 @@
 <package format="3">
   <name>mekk4_perception</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Perception nodes for teddy detection using YOLO/NCNN.</description>
   <maintainer email="gruppe5pi5@users.noreply.github.com">ubuntu</maintainer>
-  <license>TODO: License declaration</license>
+  <license>MIT</license>
 
   <depend>rclpy</depend>
   <depend>std_msgs</depend>

@@ -15,8 +15,8 @@ setup(
     zip_safe=True,
     maintainer='ubuntu',
     maintainer_email='gruppe5pi5@users.noreply.github.com',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    description='Perception nodes for teddy detection using YOLO/NCNN.',
+    license='MIT',
     entry_points={
         'console_scripts': [
             'teddy_detector = mekk4_perception.teddy_detector:main',

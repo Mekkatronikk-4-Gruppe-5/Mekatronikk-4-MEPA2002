@@ -15,8 +15,8 @@ setup(
     zip_safe=True,
     maintainer='ubuntu',
     maintainer_email='gruppe5pi5@users.noreply.github.com',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    description='Control nodes and interfaces for the MEKK4 robot.',
+    license='MIT',
     entry_points={
         'console_scripts': [
         ],

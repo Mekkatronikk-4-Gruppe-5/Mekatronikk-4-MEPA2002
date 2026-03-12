@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: build shell up down vision
+.PHONY: build shell up down ws vision lidar-setup lidar-test
 
 build:
 	docker compose build
@@ -19,4 +19,10 @@ ws:
 
 vision:
 	./scripts/vision_stream.sh
+
+lidar-setup:
+	docker compose run --rm ros bash -lc '/ws/scripts/setup_ldlidar_driver.sh'
+
+lidar-test:
+	docker compose run --rm ros bash -lc '/ws/scripts/lidar_smoketest.sh'
 

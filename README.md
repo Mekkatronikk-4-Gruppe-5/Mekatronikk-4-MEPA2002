@@ -52,6 +52,78 @@ Startes fra host (krever `rpicam-apps` og `gstreamer1.0-tools` på Pi-en):
 make vision
 ```
 
+## Lidar (OKDO LiDAR HAT / LDLiDAR)
+
+For this repository, we use `ldlidar_stl_ros2`:
+
+```bash
+https://github.com/ldrobotSensorTeam/ldlidar_stl_ros2
+```
+
+### 1. Ensure the serial device is available on Pi
+
+On the Pi host:
+
+```bash
+ls -l /dev/ttyAMA0 /dev/serial0
+```
+
+If `ttyAMA0` exists, that is the default this project uses.
+
+### 2. Clone driver and build workspace
+
+```bash
+make lidar-setup
+```
+
+This will:
+1. Clone/update `src/ldlidar_stl_ros2`.
+2. Build the workspace (`colcon`).
+
+### 3. Quick smoke test (headless)
+
+```bash
+make lidar-test
+```
+
+The smoke test launches `robot_bringup/lidar_nav2_compat.launch.py`, waits a few seconds,
+and checks if one `sensor_msgs/LaserScan` arrives on `/lidar`.
+
+Defaults in smoke test:
+1. `PRODUCT_NAME=LDLiDAR_STL27L`
+2. `PORT_NAME=/dev/ttyAMA0`
+
+Override as needed (for example LD19 on serial0):
+
+```bash
+docker compose run --rm ros bash -lc \
+	'PRODUCT_NAME=LDLiDAR_LD19 PORT_NAME=/dev/serial0 /ws/scripts/lidar_smoketest.sh'
+```
+
+If your LiDAR is mounted on another serial device, run manually:
+
+```bash
+docker compose run --rm ros bash -lc \
+	'PORT_NAME=/dev/serial0 /ws/scripts/lidar_smoketest.sh'
+```
+
+### 4. Manual run (continuous)
+
+```bash
+docker compose run --rm ros bash -lc \
+	'source /opt/ros/jazzy/setup.bash && \
+	 source /ws/install/setup.bash && \
+	 ros2 launch robot_bringup lidar_nav2_compat.launch.py'
+```
+
+Useful checks in another shell:
+
+```bash
+docker compose run --rm ros bash -lc \
+	'source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && \
+	 ros2 topic hz /lidar'
+```
+
 Dette starter kameraet og launcher `teddy_detector`-noden inni containeren.
 
 ## Når må jeg kjøre `docker compose build`?

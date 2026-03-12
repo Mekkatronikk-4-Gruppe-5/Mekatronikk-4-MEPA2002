@@ -2,7 +2,8 @@ FROM ros:jazzy-ros-base
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Basic dev tooling for ROS 2 workspaces
+# Basic dev tooling for ROS 2 workspaces.
+# This image is intended for headless SSH use on the Pi, so no GUI tools are included.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     gstreamer1.0-libav \
@@ -13,24 +14,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gstreamer1.0-tools \
     nano \
     libgl1 \
-    libx11-6 \
-    libx11-xcb1 \
-    libxext6 \
-    libxrender1 \
-    libsm6 \
-    libxfixes3 \
-    libxcb1 \
-    libxcb-icccm4 \
-    libxcb-image0 \
-    libxcb-keysyms1 \
-    libxcb-randr0 \
-    libxcb-render-util0 \
-    libxcb-shape0 \
-    libxcb-sync1 \
-    libxcb-xfixes0 \
-    libxcb-xinerama0 \
-    libxcb-xkb1 \
-    libxkbcommon-x11-0 \
     ros-jazzy-cv-bridge \
     ros-dev-tools \
     v4l-utils \

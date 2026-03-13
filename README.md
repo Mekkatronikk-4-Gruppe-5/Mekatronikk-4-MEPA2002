@@ -73,6 +73,8 @@ Kjør Nav2 inne i container-shell:
 | `make lidar-setup` | Henter/bygger LiDAR-driver i workspace. |
 | `make lidar-test` | Kjører enkel LiDAR-smoketest. |
 
+Guide for LiDAR i RViz: [docs/lidar_rviz.md](/home/emiliam/Mekatronikk-4-MEPA2002/docs/lidar_rviz.md)
+
 ## Pi ytelse (host, ikke Docker)
 
 | Kommando | Hva den gjør |

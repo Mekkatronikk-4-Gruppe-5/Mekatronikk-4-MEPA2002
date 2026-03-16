@@ -31,6 +31,15 @@ def pick(env_name, default):
     return default
 
 
+def normalize_choice(value, *, false_value=None, true_value=None):
+    if isinstance(value, bool):
+        if value and true_value is not None:
+            return true_value
+        if not value and false_value is not None:
+            return false_value
+    return value
+
+
 def main():
     config_path = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("CAMERA_CONFIG_FILE", DEFAULT_CONFIG)
     if not os.path.exists(config_path):
@@ -43,6 +52,8 @@ def main():
 
     stream = data.get("camera_stream", {})
     detector = data.get("teddy_detector", {})
+
+    denoise = normalize_choice(stream.get("denoise", "auto"), false_value="off", true_value="auto")
 
     values = {
         "CAMERA_CONFIG_FILE": config_path,
@@ -59,7 +70,7 @@ def main():
         "SATURATION": pick("SATURATION", stream.get("saturation", 1.0)),
         "SHARPNESS": pick("SHARPNESS", stream.get("sharpness", 1.0)),
         "EV": pick("EV", stream.get("ev", 0.0)),
-        "DENOISE": pick("DENOISE", stream.get("denoise", "auto")),
+        "DENOISE": pick("DENOISE", denoise),
         "METERING": pick("METERING", stream.get("metering", "centre")),
         "TUNING_FILE": pick("TUNING_FILE", stream.get("tuning_file", "")),
         "MEKK4_CAM_WIDTH": pick("MEKK4_CAM_WIDTH", stream.get("width", 1296)),

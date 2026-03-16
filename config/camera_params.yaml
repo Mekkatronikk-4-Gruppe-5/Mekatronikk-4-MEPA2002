@@ -13,7 +13,7 @@ camera_stream:
   saturation: 1.0
   sharpness: 0.8
   ev: 0.0
-  denoise: off
+  denoise: "off"
   metering: centre
   tuning_file: ""
 

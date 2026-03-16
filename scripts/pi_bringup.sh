@@ -19,10 +19,27 @@ WIDTH="${WIDTH:-1296}"
 HEIGHT="${HEIGHT:-972}"
 FPS="${FPS:-15}"
 CAM_PORT="${CAM_PORT:-5600}"
+SOURCE_LAUNCH="${REPO_ROOT}/src/robot_bringup/launch/pi_robot.launch.py"
+INSTALLED_LAUNCH="${REPO_ROOT}/install/robot_bringup/share/robot_bringup/launch/pi_robot.launch.py"
+SOURCE_PKG_XML="${REPO_ROOT}/src/robot_bringup/package.xml"
+SOURCE_CMAKE="${REPO_ROOT}/src/robot_bringup/CMakeLists.txt"
 
+needs_ws_build=0
 if [[ ! -f "${REPO_ROOT}/install/setup.bash" ]]; then
-  echo "[pi-bringup] Missing install/setup.bash. Run 'make ws' on the Pi first." >&2
-  exit 1
+  needs_ws_build=1
+elif [[ ! -f "${INSTALLED_LAUNCH}" ]]; then
+  needs_ws_build=1
+elif [[ "${SOURCE_LAUNCH}" -nt "${INSTALLED_LAUNCH}" ]]; then
+  needs_ws_build=1
+elif [[ "${SOURCE_PKG_XML}" -nt "${INSTALLED_LAUNCH}" ]]; then
+  needs_ws_build=1
+elif [[ "${SOURCE_CMAKE}" -nt "${INSTALLED_LAUNCH}" ]]; then
+  needs_ws_build=1
+fi
+
+if [[ "${needs_ws_build}" == "1" ]]; then
+  echo "[pi-bringup] Workspace install is missing or stale. Building with make ws..." >&2
+  docker compose run --rm ros bash -lc '/ws/scripts/ws_build.sh'
 fi
 
 eval "$(bash "${SCRIPT_DIR}/ros_discovery_env.sh" pi "${PC_HOST}")"

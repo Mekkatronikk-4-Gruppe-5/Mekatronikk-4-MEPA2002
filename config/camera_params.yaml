@@ -16,7 +16,7 @@ camera_stream:
   # Optional H.264 bitrate in bits/sec.
   # Leave empty to use the rpicam default.
   # Lower bitrate reduces bandwidth, but can increase compression artifacts.
-  bitrate_bps: 4000000
+  bitrate_bps: ""
 
   # Optional I-frame interval in frames.
   # Lower values recover faster from UDP packet loss, but use more bitrate.
@@ -25,7 +25,7 @@ camera_stream:
 
   # Try to reduce encoder delay on newer Pi camera stacks.
   # If your rpicam build is too old, the script will ignore this and warn once.
-  low_latency: false
+  low_latency: true
 
   # Local UDP port used by teddy_detector on the Pi.
   local_udp_port: 5600

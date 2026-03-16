@@ -27,6 +27,7 @@ class TeddyDetector(Node):
         self.gst_source = os.environ.get("MEKK4_CAM_SOURCE_GST", "").strip()
         self.width = int(os.environ.get("MEKK4_CAM_WIDTH", "1296"))
         self.height = int(os.environ.get("MEKK4_CAM_HEIGHT", "972"))
+        self.camera_fps = self._parse_positive_float(os.environ.get("MEKK4_CAM_FPS", "15"), default=15.0)
         self.conf = float(os.environ.get("MEKK4_CONF", "0.25"))
         self.imgsz = int(os.environ.get("MEKK4_IMGSZ", "640"))
         self.show_gui = os.environ.get("MEKK4_SHOW", "0").strip() == "1"
@@ -39,7 +40,7 @@ class TeddyDetector(Node):
         self.debug_stream_host = os.environ.get("MEKK4_DEBUG_STREAM_HOST", "").strip()
         self.debug_stream_port = int(os.environ.get("MEKK4_DEBUG_STREAM_PORT", "5602"))
         self.debug_stream_scale = float(os.environ.get("MEKK4_DEBUG_STREAM_SCALE", "1.0"))
-        self.debug_stream_fps = float(os.environ.get("MEKK4_DEBUG_STREAM_FPS", "10.0"))
+        self.debug_stream_fps = self._parse_stream_fps(os.environ.get("MEKK4_DEBUG_STREAM_FPS", "10.0"))
         self.debug_stream_bitrate_bps = int(os.environ.get("MEKK4_DEBUG_STREAM_BITRATE", "800000"))
 
         self.model = YOLO(self.model_path, task="detect")
@@ -55,6 +56,8 @@ class TeddyDetector(Node):
         self._last_debug_image = 0.0
         self._last_debug_stream = 0.0
         self._last_debug_stream_warn = 0.0
+        self._last_infer_end = None
+        self._infer_fps = 0.0
         self._debug_stream_stderr_lines = deque(maxlen=20)
         self._stop = False
 
@@ -81,12 +84,17 @@ class TeddyDetector(Node):
                 )
             )
         if self.stream_debug_video and self.debug_stream_host:
+            fps_label = (
+                "auto(detector-limited)"
+                if self.debug_stream_fps is None
+                else f"{self.debug_stream_fps}"
+            )
             self.get_logger().info(
                 "debug stream -> udp://{host}:{port} scale={scale} fps={fps} bitrate={bitrate}".format(
                     host=self.debug_stream_host,
                     port=self.debug_stream_port,
                     scale=self.debug_stream_scale,
-                    fps=self.debug_stream_fps,
+                    fps=fps_label,
                     bitrate=self.debug_stream_bitrate_bps,
                 )
             )
@@ -100,6 +108,25 @@ class TeddyDetector(Node):
         if now - self._last_warn >= interval_sec:
             self.get_logger().warning(message)
             self._last_warn = now
+
+    @staticmethod
+    def _parse_positive_float(value, *, default):
+        try:
+            parsed = float(str(value).strip())
+        except Exception:
+            return default
+        return parsed if parsed > 0.0 else default
+
+    @staticmethod
+    def _parse_stream_fps(value):
+        text = str(value).strip().lower()
+        if text in {"", "0", "auto", "detector", "yolo", "none", "off"}:
+            return None
+        try:
+            parsed = float(text)
+        except Exception:
+            return 10.0
+        return parsed if parsed > 0.0 else None
 
     def _gst_loop(self):
         while not self._stop:
@@ -173,23 +200,29 @@ class TeddyDetector(Node):
                     centered = abs(dx) <= self.center_tol and abs(dy) <= self.center_tol
                     best_box = (int(x1), int(y1), int(x2), int(y2))
 
+        infer_end = time.monotonic()
+        fps_text = self._update_inference_fps(infer_end)
+
         msg = String()
         if dx is None or dy is None:
-            msg.data = f"teddy_count={count} centered=false"
+            msg.data = f"teddy_count={count} centered=false fps={fps_text}"
+            log_data = f"teddy_count={count} centered=false"
         else:
-            msg.data = f"teddy_count={count} dx={dx:.3f} dy={dy:.3f} centered={str(centered).lower()}"
+            state = str(centered).lower()
+            msg.data = f"teddy_count={count} dx={dx:.3f} dy={dy:.3f} centered={state} fps={fps_text}"
+            log_data = f"teddy_count={count} dx={dx:.3f} dy={dy:.3f} centered={state}"
         try:
             self.pub.publish(msg)
         except _rclpy.RCLError:
             return
-        if msg.data != self.last:
+        if log_data != self.last:
             if not self._stop and rclpy.ok():
-                self.get_logger().info(msg.data)
-            self.last = msg.data
+                self.get_logger().info(f"{log_data} fps={fps_text}")
+            self.last = log_data
 
         annotated = None
         if self.publish_debug_image or self.show_gui or self.stream_debug_video:
-            annotated = self._render_debug_view(frame, debug_boxes, best_box, centered)
+            annotated = self._render_debug_view(frame, debug_boxes, best_box, centered, fps_text)
 
         if self.publish_debug_image and annotated is not None:
             self._publish_debug_image(annotated)
@@ -200,7 +233,7 @@ class TeddyDetector(Node):
             cv2.imshow("teddy_detector", annotated)
             cv2.waitKey(1)
 
-    def _render_debug_view(self, frame, debug_boxes, best_box, centered):
+    def _render_debug_view(self, frame, debug_boxes, best_box, centered, fps_text):
         view = frame.copy()
         for x1, y1, x2, y2, conf in debug_boxes:
             color = (255, 200, 0)
@@ -220,7 +253,50 @@ class TeddyDetector(Node):
                 cv2.LINE_AA,
             )
         cv2.circle(view, (self.width // 2, self.height // 2), 4, (0, 0, 255), -1)
+        self._draw_overlay_label(view, f"YOLO {fps_text} FPS", (12, 28))
         return view
+
+    def _update_inference_fps(self, infer_end):
+        if self._last_infer_end is None:
+            self._last_infer_end = infer_end
+            self._infer_fps = 0.0
+            return "--"
+
+        dt = infer_end - self._last_infer_end
+        self._last_infer_end = infer_end
+        if dt <= 0.0:
+            return "--" if self._infer_fps <= 0.0 else f"{self._infer_fps:.1f}"
+
+        inst_fps = 1.0 / dt
+        if self._infer_fps <= 0.0:
+            self._infer_fps = inst_fps
+        else:
+            self._infer_fps = (0.8 * self._infer_fps) + (0.2 * inst_fps)
+        return f"{self._infer_fps:.1f}"
+
+    @staticmethod
+    def _draw_overlay_label(image, text, origin):
+        x, y = origin
+        cv2.putText(
+            image,
+            text,
+            (x, y),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (0, 0, 0),
+            4,
+            cv2.LINE_AA,
+        )
+        cv2.putText(
+            image,
+            text,
+            (x, y),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
 
     def _publish_debug_image(self, annotated):
         if self.debug_pub is None or self.bridge is None:
@@ -249,7 +325,7 @@ class TeddyDetector(Node):
     def _stream_debug_video(self, annotated):
         if not self.debug_stream_host:
             return
-        if self.debug_stream_fps > 0.0:
+        if self.debug_stream_fps is not None:
             min_period = 1.0 / self.debug_stream_fps
             now = time.monotonic()
             if now - self._last_debug_stream < min_period:
@@ -285,7 +361,8 @@ class TeddyDetector(Node):
             self._log_debug_stream_failure()
 
         self._stop_debug_stream()
-        fps = max(1, int(round(self.debug_stream_fps))) if self.debug_stream_fps > 0 else 1
+        fps_hint = self.debug_stream_fps if self.debug_stream_fps is not None else self.camera_fps
+        fps = max(1, int(round(fps_hint)))
         bitrate_kbps = max(100, int(round(self.debug_stream_bitrate_bps / 1000.0)))
         key_int = max(1, fps)
         pipeline = (

@@ -124,7 +124,9 @@ teddy_detector:
   debug_stream_scale: 1.0
 
   # Output FPS for the annotated YOLO stream.
-  # Set this close to the detector's actual Hz; higher just duplicates work.
+  # This is a max rate, not a guaranteed rate.
+  # Set it close to the detector's actual Hz, or use "auto" to let the
+  # stream follow the actual YOLO/inference rate without extra throttling.
   debug_stream_fps: 10.0
 
   # H264 bitrate for the annotated YOLO stream.

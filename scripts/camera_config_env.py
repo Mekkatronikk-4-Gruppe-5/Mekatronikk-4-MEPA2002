@@ -91,6 +91,7 @@ def main():
         "TUNING_FILE": pick("TUNING_FILE", stream.get("tuning_file", "")),
         "MEKK4_CAM_WIDTH": pick("MEKK4_CAM_WIDTH", stream.get("width", 1296)),
         "MEKK4_CAM_HEIGHT": pick("MEKK4_CAM_HEIGHT", stream.get("height", 972)),
+        "MEKK4_CAM_FPS": pick("MEKK4_CAM_FPS", stream.get("fps", 15)),
         "MEKK4_NCNN_MODEL": pick("MEKK4_NCNN_MODEL", detector.get("model_path", "/ws/models/yolo26n_ncnn_model")),
         "MEKK4_CONF": pick("MEKK4_CONF", detector.get("conf", 0.25)),
         "MEKK4_IMGSZ": pick("MEKK4_IMGSZ", detector.get("imgsz", 640)),

@@ -20,6 +20,7 @@ setup(
     entry_points={
         'console_scripts': [
             'teddy_detector = mekk4_perception.teddy_detector:main',
+            'udp_camera_bridge = mekk4_perception.udp_camera_bridge:main',
         ],
     },
 )

@@ -19,6 +19,9 @@ WIDTH="${WIDTH:-1296}"
 HEIGHT="${HEIGHT:-972}"
 FPS="${FPS:-15}"
 CAM_PORT="${CAM_PORT:-5600}"
+WITH_CAMERA_RVIZ="${WITH_CAMERA_RVIZ:-0}"
+CAMERA_REMOTE_HOST="${CAMERA_REMOTE_HOST:-}"
+CAMERA_REMOTE_PORT="${CAMERA_REMOTE_PORT:-5601}"
 SOURCE_LAUNCH="${REPO_ROOT}/src/robot_bringup/launch/pi_robot.launch.py"
 INSTALLED_LAUNCH="${REPO_ROOT}/install/robot_bringup/share/robot_bringup/launch/pi_robot.launch.py"
 SOURCE_PKG_XML="${REPO_ROOT}/src/robot_bringup/package.xml"
@@ -48,23 +51,29 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if [[ "${WITH_TEDDY}" == "1" ]]; then
+if [[ "${WITH_CAMERA_RVIZ}" == "1" && -z "${CAMERA_REMOTE_HOST}" ]]; then
+  CAMERA_REMOTE_HOST="${ROS_STATIC_PEERS}"
+fi
+
+if [[ "${WITH_TEDDY}" == "1" || -n "${CAMERA_REMOTE_HOST}" ]]; then
   if ! command -v rpicam-vid >/dev/null 2>&1; then
-    echo "[pi-bringup] WITH_TEDDY=1 requires rpicam-vid on the Pi host." >&2
+    echo "[pi-bringup] Camera streaming requires rpicam-vid on the Pi host." >&2
     exit 1
   fi
   if ! command -v gst-launch-1.0 >/dev/null 2>&1; then
-    echo "[pi-bringup] WITH_TEDDY=1 requires gst-launch-1.0 on the Pi host." >&2
+    echo "[pi-bringup] Camera streaming requires gst-launch-1.0 on the Pi host." >&2
     exit 1
   fi
 
-  echo "[pi-bringup] Starting local camera UDP stream for teddy_detector on port ${CAM_PORT}..." >&2
-  rpicam-vid -t 0 --width "${WIDTH}" --height "${HEIGHT}" --framerate "${FPS}" \
-    --codec h264 --inline --libav-format h264 -n -o - \
-    | gst-launch-1.0 -q fdsrc \
-      ! h264parse \
-      ! rtph264pay pt=96 config-interval=1 \
-      ! udpsink host=127.0.0.1 port="${CAM_PORT}" &
+  echo "[pi-bringup] Starting camera UDP stream..." >&2
+  ENABLE_LOCAL=0
+  if [[ "${WITH_TEDDY}" == "1" ]]; then
+    ENABLE_LOCAL=1
+  fi
+  WIDTH="${WIDTH}" HEIGHT="${HEIGHT}" FPS="${FPS}" \
+    LOCAL_PORT="${CAM_PORT}" ENABLE_LOCAL="${ENABLE_LOCAL}" \
+    REMOTE_HOST="${CAMERA_REMOTE_HOST}" REMOTE_PORT="${CAMERA_REMOTE_PORT}" \
+    bash "${SCRIPT_DIR}/camera_udp_stream.sh" &
   camera_pid=$!
 fi
 

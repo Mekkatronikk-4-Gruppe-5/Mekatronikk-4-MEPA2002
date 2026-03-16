@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: build shell up down ws vision lidar-setup lidar-test sim-build sim sim-headless sim-topics sim-nav2 pi-bringup
+.PHONY: build shell up down ws vision lidar-setup lidar-test sim-build sim sim-headless sim-topics sim-nav2 pi-bringup pc-camera-rviz
 
 build:
 	docker compose build
@@ -44,3 +44,6 @@ sim-nav2:
 
 pi-bringup:
 	bash ./scripts/pi_bringup.sh
+
+pc-camera-rviz:
+	bash ./scripts/pc_camera_rviz.sh "${PI_HOST:-gruppe5pi5}"

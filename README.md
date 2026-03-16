@@ -105,6 +105,8 @@ eval "$(bash scripts/ros_discovery_env.sh pc 192.168.10.55)"
 | Kommando | Hva den gjør |
 |---|---|
 | `make vision` | Starter vision-stream/oppsett. |
+| `WITH_TEDDY=1 WITH_CAMERA_RVIZ=1 make pi-bringup` | Starter teddy på Pi og sender kamera over UDP til PC-IP-en fra SSH-sesjonen. |
+| `make pc-camera-rviz PI_HOST=gruppe5pi5` | Starter lokal UDP->ROS camera-bridge på PC og åpner RViz med `/camera` og `/lidar`. |
 | `make lidar-setup` | Henter/bygger LiDAR-driver i workspace. |
 | `make lidar-test` | Kjører enkel LiDAR-smoketest. |
 

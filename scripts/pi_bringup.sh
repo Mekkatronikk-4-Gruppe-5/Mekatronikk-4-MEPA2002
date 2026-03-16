@@ -100,4 +100,8 @@ docker compose run --rm \
   -e MEKK4_IMGSZ="${MEKK4_IMGSZ}" \
   -e MEKK4_CENTER_TOL="${MEKK4_CENTER_TOL}" \
   -e MEKK4_SHOW="${MEKK4_SHOW}" \
+  -e MEKK4_DEBUG_IMAGE="${MEKK4_DEBUG_IMAGE}" \
+  -e MEKK4_DEBUG_IMAGE_TOPIC="${MEKK4_DEBUG_IMAGE_TOPIC}" \
+  -e MEKK4_DEBUG_IMAGE_SCALE="${MEKK4_DEBUG_IMAGE_SCALE}" \
+  -e MEKK4_DEBUG_IMAGE_FPS="${MEKK4_DEBUG_IMAGE_FPS}" \
   ros bash -lc "source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && ros2 launch robot_bringup pi_robot.launch.py use_nav2:=${WITH_NAV2} use_teddy:=${WITH_TEDDY} product_name:=${PRODUCT_NAME} port_name:=${PORT_NAME} port_baudrate:=${PORT_BAUDRATE} frame_id:=${LIDAR_FRAME} base_frame:=${BASE_FRAME} map:=${MAP_FILE} params_file:=${PARAMS_FILE}"

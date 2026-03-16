@@ -48,14 +48,14 @@ Visualization Manager:
       Max Value: 1
       Median window: 5
       Min Value: 0
-      Name: Image
+      Name: YOLO Image
       Normalize Range: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /camera
+        Value: /teddy_detector/debug_image
       Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true

@@ -86,5 +86,9 @@ docker compose run --rm \
   -e MEKK4_IMGSZ="${MEKK4_IMGSZ}" \
   -e MEKK4_CENTER_TOL="${MEKK4_CENTER_TOL}" \
   -e MEKK4_SHOW="${MEKK4_SHOW}" \
+  -e MEKK4_DEBUG_IMAGE="${MEKK4_DEBUG_IMAGE}" \
+  -e MEKK4_DEBUG_IMAGE_TOPIC="${MEKK4_DEBUG_IMAGE_TOPIC}" \
+  -e MEKK4_DEBUG_IMAGE_SCALE="${MEKK4_DEBUG_IMAGE_SCALE}" \
+  -e MEKK4_DEBUG_IMAGE_FPS="${MEKK4_DEBUG_IMAGE_FPS}" \
   -e MEKK4_CAM_SOURCE_GST="${PIPELINE}" \
   ros bash -lc "source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && ros2 launch mekk4_bringup vision_stream.launch.py"

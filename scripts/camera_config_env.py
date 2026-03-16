@@ -85,6 +85,10 @@ def main():
         "MEKK4_IMGSZ": pick("MEKK4_IMGSZ", detector.get("imgsz", 640)),
         "MEKK4_CENTER_TOL": pick("MEKK4_CENTER_TOL", detector.get("center_tol", 0.10)),
         "MEKK4_SHOW": pick("MEKK4_SHOW", to_shell(detector.get("show_gui", False))),
+        "MEKK4_DEBUG_IMAGE": pick("MEKK4_DEBUG_IMAGE", to_shell(detector.get("publish_debug_image", True))),
+        "MEKK4_DEBUG_IMAGE_TOPIC": pick("MEKK4_DEBUG_IMAGE_TOPIC", detector.get("debug_image_topic", "/teddy_detector/debug_image")),
+        "MEKK4_DEBUG_IMAGE_SCALE": pick("MEKK4_DEBUG_IMAGE_SCALE", detector.get("debug_image_scale", 0.5)),
+        "MEKK4_DEBUG_IMAGE_FPS": pick("MEKK4_DEBUG_IMAGE_FPS", detector.get("debug_image_fps", 5.0)),
     }
 
     for key, value in values.items():

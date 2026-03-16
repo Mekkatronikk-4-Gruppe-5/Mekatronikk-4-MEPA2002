@@ -7,9 +7,11 @@ import time
 import cv2
 import numpy as np
 import rclpy
+from cv_bridge import CvBridge
 from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
+from sensor_msgs.msg import Image
 from std_msgs.msg import String
 from ultralytics import YOLO
 
@@ -28,14 +30,21 @@ class TeddyDetector(Node):
         self.imgsz = int(os.environ.get("MEKK4_IMGSZ", "640"))
         self.show_gui = os.environ.get("MEKK4_SHOW", "0").strip() == "1"
         self.center_tol = float(os.environ.get("MEKK4_CENTER_TOL", "0.1"))
+        self.publish_debug_image = os.environ.get("MEKK4_DEBUG_IMAGE", "0").strip() == "1"
+        self.debug_image_topic = os.environ.get("MEKK4_DEBUG_IMAGE_TOPIC", "/teddy_detector/debug_image").strip()
+        self.debug_image_scale = float(os.environ.get("MEKK4_DEBUG_IMAGE_SCALE", "0.5"))
+        self.debug_image_fps = float(os.environ.get("MEKK4_DEBUG_IMAGE_FPS", "5.0"))
 
         self.model = YOLO(self.model_path, task="detect")
         self.pub = self.create_publisher(String, "/teddy_detector/status", 10)
+        self.bridge = CvBridge() if self.publish_debug_image else None
+        self.debug_pub = self.create_publisher(Image, self.debug_image_topic, 5) if self.publish_debug_image else None
         self.last = None
         self.proc = None
         self.frame_bytes = self.width * self.height * 3
         self._buf = bytearray()
         self._last_warn = 0.0
+        self._last_debug_image = 0.0
         self._stop = False
 
         if not self.gst_source:
@@ -52,6 +61,14 @@ class TeddyDetector(Node):
                 imgsz=self.imgsz,
             )
         )
+        if self.publish_debug_image:
+            self.get_logger().info(
+                "debug image -> {topic} scale={scale} fps={fps}".format(
+                    topic=self.debug_image_topic,
+                    scale=self.debug_image_scale,
+                    fps=self.debug_image_fps,
+                )
+            )
         if self.show_gui:
             self.get_logger().info("GUI enabled (MEKK4_SHOW=1)")
 
@@ -106,6 +123,7 @@ class TeddyDetector(Node):
         dy = None
         centered = False
         best_box = None
+        debug_boxes = []
 
         if results:
             r = results[0]
@@ -117,6 +135,8 @@ class TeddyDetector(Node):
                 best_area = -1.0
                 for b in boxes:
                     x1, y1, x2, y2 = b.xyxy[0].tolist()
+                    conf = float(b.conf[0]) if b.conf is not None else 0.0
+                    debug_boxes.append((int(x1), int(y1), int(x2), int(y2), conf))
                     area = (x2 - x1) * (y2 - y1)
                     if area > best_area:
                         best_area = area
@@ -144,14 +164,62 @@ class TeddyDetector(Node):
                 self.get_logger().info(msg.data)
             self.last = msg.data
 
+        annotated = None
+        if self.publish_debug_image or self.show_gui:
+            annotated = self._render_debug_view(frame, debug_boxes, best_box, centered)
+
+        if self.publish_debug_image and annotated is not None:
+            self._publish_debug_image(annotated)
+
         if self.show_gui:
-            view = frame.copy()
-            if best_box is not None:
-                x1, y1, x2, y2 = best_box
-                cv2.rectangle(view, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.circle(view, (self.width // 2, self.height // 2), 4, (0, 0, 255), -1)
-            cv2.imshow("teddy_detector", view)
+            cv2.imshow("teddy_detector", annotated)
             cv2.waitKey(1)
+
+    def _render_debug_view(self, frame, debug_boxes, best_box, centered):
+        view = frame.copy()
+        for x1, y1, x2, y2, conf in debug_boxes:
+            color = (255, 200, 0)
+            thickness = 2
+            if best_box == (x1, y1, x2, y2):
+                color = (0, 255, 0) if centered else (0, 200, 255)
+                thickness = 3
+            cv2.rectangle(view, (x1, y1), (x2, y2), color, thickness)
+            cv2.putText(
+                view,
+                f"teddy {conf:.2f}",
+                (x1, max(18, y1 - 8)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                color,
+                1,
+                cv2.LINE_AA,
+            )
+        cv2.circle(view, (self.width // 2, self.height // 2), 4, (0, 0, 255), -1)
+        return view
+
+    def _publish_debug_image(self, annotated):
+        if self.debug_pub is None or self.bridge is None:
+            return
+        if self.debug_image_fps > 0.0:
+            min_period = 1.0 / self.debug_image_fps
+            now = time.monotonic()
+            if now - self._last_debug_image < min_period:
+                return
+            self._last_debug_image = now
+
+        image = annotated
+        if self.debug_image_scale > 0.0 and self.debug_image_scale != 1.0:
+            new_width = max(1, int(round(self.width * self.debug_image_scale)))
+            new_height = max(1, int(round(self.height * self.debug_image_scale)))
+            image = cv2.resize(annotated, (new_width, new_height), interpolation=cv2.INTER_AREA)
+
+        msg = self.bridge.cv2_to_imgmsg(image, encoding="bgr8")
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = "camera_link"
+        try:
+            self.debug_pub.publish(msg)
+        except _rclpy.RCLError:
+            return
 
     def destroy_node(self):
         self._stop = True

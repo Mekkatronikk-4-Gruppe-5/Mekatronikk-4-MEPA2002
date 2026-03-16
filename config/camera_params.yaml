@@ -22,7 +22,7 @@ camera_stream:
   # Lower values recover faster from UDP packet loss, but use more bitrate.
   # A good starting point is around the same as FPS, e.g. 10 at 10 FPS.
   # Leave empty for the encoder default if the stream becomes choppy.
-  intra: ""
+  intra: 10
 
   # Try to reduce encoder delay on newer Pi camera stacks.
   # If your rpicam build is too old, the script will ignore this and warn once.

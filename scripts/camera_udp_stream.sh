@@ -88,7 +88,6 @@ RPICAM_ARGS=(
   --ev "${EV}"
   --denoise "${DENOISE}"
   --metering "${METERING}"
-  -o -
 )
 
 if [[ -n "${AWB_GAINS}" ]]; then

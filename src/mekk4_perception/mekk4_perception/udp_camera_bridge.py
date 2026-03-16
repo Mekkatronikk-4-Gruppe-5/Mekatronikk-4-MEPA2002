@@ -9,6 +9,7 @@ import numpy as np
 import rclpy
 from cv_bridge import CvBridge
 from rclpy.executors import ExternalShutdownException
+from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 
@@ -88,10 +89,15 @@ class UdpCameraBridge(Node):
                 self._publish_frame(frame)
 
     def _publish_frame(self, frame):
+        if self._stop or not rclpy.ok():
+            return
         msg = self.bridge.cv2_to_imgmsg(frame, encoding="bgr8")
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.header.frame_id = self.frame_id
-        self.publisher.publish(msg)
+        try:
+            self.publisher.publish(msg)
+        except _rclpy.RCLError:
+            return
 
     def _drain_stderr(self):
         if self.proc is None or self.proc.stderr is None:

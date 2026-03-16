@@ -7,6 +7,7 @@ import time
 import cv2
 import numpy as np
 import rclpy
+from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from std_msgs.msg import String
@@ -90,6 +91,9 @@ class TeddyDetector(Node):
                 self._infer_frame(frame)
 
     def _infer_frame(self, frame):
+        if self._stop or not rclpy.ok():
+            return
+
         results = self.model.predict(
             source=frame,
             imgsz=self.imgsz,
@@ -131,9 +135,13 @@ class TeddyDetector(Node):
             msg.data = f"teddy_count={count} centered=false"
         else:
             msg.data = f"teddy_count={count} dx={dx:.3f} dy={dy:.3f} centered={str(centered).lower()}"
-        self.pub.publish(msg)
+        try:
+            self.pub.publish(msg)
+        except _rclpy.RCLError:
+            return
         if msg.data != self.last:
-            self.get_logger().info(msg.data)
+            if not self._stop and rclpy.ok():
+                self.get_logger().info(msg.data)
             self.last = msg.data
 
         if self.show_gui:

@@ -105,7 +105,7 @@ teddy_detector:
 
   # Scale factor before publishing the debug image.
   # Lower values reduce ROS bandwidth a lot. 0.5 means half-size in each dimension.
-  debug_image_scale: 0.5
+  debug_image_scale: 1.0
 
   # Max publish rate for the debug image topic.
   # Keep this low so the debug overlay does not flood the network.

@@ -3,7 +3,7 @@
 camera_stream:
   width: 1280
   height: 720
-  fps: 10
+  fps: 15
   local_udp_port: 5600
   remote_udp_port: 5601
   awb: indoor

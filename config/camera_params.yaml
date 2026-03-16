@@ -25,7 +25,7 @@ camera_stream:
 
   # Try to reduce encoder delay on newer Pi camera stacks.
   # If your rpicam build is too old, the script will ignore this and warn once.
-  low_latency: true
+  low_latency: false
 
   # Local UDP port used by teddy_detector on the Pi.
   local_udp_port: 5600

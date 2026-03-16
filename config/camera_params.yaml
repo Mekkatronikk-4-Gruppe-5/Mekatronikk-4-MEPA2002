@@ -1,0 +1,22 @@
+# Camera capture settings on the Pi host.
+# These affect the encoded stream that is sent to both teddy_detector and RViz.
+camera_stream:
+  width: 1296
+  height: 972
+  fps: 15
+  local_udp_port: 5600
+  remote_udp_port: 5601
+  awb: auto
+  brightness: 0.0
+  contrast: 1.0
+  saturation: 1.0
+  sharpness: 1.0
+  ev: 0.0
+
+# YOLO / teddy detector tuning on the Pi.
+teddy_detector:
+  model_path: /ws/models/yolo26n_ncnn_model
+  conf: 0.25
+  imgsz: 640
+  center_tol: 0.10
+  show_gui: false

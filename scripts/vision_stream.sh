@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+eval "$(python3 "${SCRIPT_DIR}/camera_config_env.py")"
+
 WIDTH=${WIDTH:-1296}
 HEIGHT=${HEIGHT:-972}
 FPS=${FPS:-15}
@@ -25,7 +28,14 @@ cleanup() {
 trap cleanup EXIT
 
 rpicam-vid -t 0 --width "${WIDTH}" --height "${HEIGHT}" --framerate "${FPS}" \
-  --codec h264 --inline --libav-format h264 -n -o - \
+  --codec h264 --inline --libav-format h264 -n \
+  --awb "${AWB}" \
+  --brightness "${BRIGHTNESS}" \
+  --contrast "${CONTRAST}" \
+  --saturation "${SATURATION}" \
+  --sharpness "${SHARPNESS}" \
+  --ev "${EV}" \
+  -o - \
   | gst-launch-1.0 -q fdsrc \
     ! h264parse \
     ! rtph264pay pt=96 config-interval=1 \
@@ -51,5 +61,10 @@ docker compose run --rm \
   "${X11_ARGS[@]}" \
   -e MEKK4_CAM_WIDTH="${WIDTH}" \
   -e MEKK4_CAM_HEIGHT="${HEIGHT}" \
+  -e MEKK4_NCNN_MODEL="${MEKK4_NCNN_MODEL}" \
+  -e MEKK4_CONF="${MEKK4_CONF}" \
+  -e MEKK4_IMGSZ="${MEKK4_IMGSZ}" \
+  -e MEKK4_CENTER_TOL="${MEKK4_CENTER_TOL}" \
+  -e MEKK4_SHOW="${MEKK4_SHOW}" \
   -e MEKK4_CAM_SOURCE_GST="${PIPELINE}" \
   ros bash -lc "source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && ros2 launch mekk4_bringup vision_stream.launch.py"

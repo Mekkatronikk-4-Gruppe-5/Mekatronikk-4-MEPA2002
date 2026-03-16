@@ -112,6 +112,15 @@ eval "$(bash scripts/ros_discovery_env.sh pc 192.168.10.55)"
 
 Guide for LiDAR i RViz: [docs/lidar_rviz.md](/home/emiliam/Mekatronikk-4-MEPA2002/docs/lidar_rviz.md)
 
+Kamera- og YOLO-parametre styres fra [config/camera_params.yaml](/home/emiliam/Mekatronikk-4-MEPA2002/config/camera_params.yaml).
+
+Merk:
+
+1. `camera_stream.width/height/fps` gjelder samme stream som brukes baade til teddy-detektor og RViz.
+2. `camera_stream.awb/brightness/contrast/saturation/sharpness/ev` brukes direkte av `rpicam-vid` paa Pi og er stedet aa tune farger/bilde.
+3. `teddy_detector.conf/imgsz/center_tol` paavirker bare YOLO-delen paa Pi.
+4. Du kan fortsatt overstyre midlertidig med env vars, for eksempel `WIDTH=640 FPS=10 SATURATION=1.2 make pi-bringup`.
+
 ## Pi ytelse (host, ikke Docker)
 
 | Kommando | Hva den gjør |

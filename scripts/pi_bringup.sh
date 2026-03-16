@@ -5,6 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${REPO_ROOT}"
 
+eval "$(python3 "${SCRIPT_DIR}/camera_config_env.py")"
+
 WITH_NAV2="${WITH_NAV2:-1}"
 WITH_TEDDY="${WITH_TEDDY:-0}"
 PC_HOST="${PC_HOST:-}"
@@ -85,4 +87,9 @@ docker compose run --rm \
   -e MEKK4_CAM_SOURCE_GST="udpsrc port=${CAM_PORT} caps=application/x-rtp,media=video,encoding-name=H264,payload=96,clock-rate=90000 ! rtph264depay ! h264parse ! avdec_h264 ! videoconvert ! appsink drop=true max-buffers=1 sync=false" \
   -e MEKK4_CAM_WIDTH="${WIDTH}" \
   -e MEKK4_CAM_HEIGHT="${HEIGHT}" \
+  -e MEKK4_NCNN_MODEL="${MEKK4_NCNN_MODEL}" \
+  -e MEKK4_CONF="${MEKK4_CONF}" \
+  -e MEKK4_IMGSZ="${MEKK4_IMGSZ}" \
+  -e MEKK4_CENTER_TOL="${MEKK4_CENTER_TOL}" \
+  -e MEKK4_SHOW="${MEKK4_SHOW}" \
   ros bash -lc "source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && ros2 launch robot_bringup pi_robot.launch.py use_nav2:=${WITH_NAV2} use_teddy:=${WITH_TEDDY} product_name:=${PRODUCT_NAME} port_name:=${PORT_NAME} port_baudrate:=${PORT_BAUDRATE} frame_id:=${LIDAR_FRAME} base_frame:=${BASE_FRAME} map:=${MAP_FILE} params_file:=${PARAMS_FILE}"

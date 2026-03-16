@@ -2,6 +2,10 @@
 
 Kort oppskrift for å se LiDAR live i RViz.
 
+Kamera- og YOLO-innstillinger ligger i [config/camera_params.yaml](/home/emiliam/Mekatronikk-4-MEPA2002/config/camera_params.yaml).
+`camera_stream` gjelder felles stream til baade teddy-detektor og RViz, mens `teddy_detector` bare gjelder YOLO-parametre.
+Hvis fargene ser feil ut, er `camera_stream.awb`, `brightness`, `contrast`, `saturation`, `sharpness` og `ev` de foerste feltene aa justere.
+
 ## 1) Start robotstack på Pi
 
 ```bash

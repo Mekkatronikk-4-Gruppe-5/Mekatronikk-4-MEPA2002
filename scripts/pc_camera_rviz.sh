@@ -5,6 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${REPO_ROOT}"
 
+eval "$(python3 "${SCRIPT_DIR}/camera_config_env.py")"
+
 PI_HOST="${1:-${PI_HOST:-gruppe5pi5}}"
 PORT="${PORT:-5601}"
 WIDTH="${WIDTH:-1296}"

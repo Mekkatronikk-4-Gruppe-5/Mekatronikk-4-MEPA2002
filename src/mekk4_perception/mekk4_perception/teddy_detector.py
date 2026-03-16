@@ -188,7 +188,7 @@ class TeddyDetector(Node):
             self.last = msg.data
 
         annotated = None
-        if self.publish_debug_image or self.show_gui:
+        if self.publish_debug_image or self.show_gui or self.stream_debug_video:
             annotated = self._render_debug_view(frame, debug_boxes, best_box, centered)
 
         if self.publish_debug_image and annotated is not None:

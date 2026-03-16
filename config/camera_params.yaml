@@ -16,7 +16,7 @@ camera_stream:
   # Optional H.264 bitrate in bits/sec.
   # Leave empty to use the rpicam default.
   # Lower bitrate reduces bandwidth, but can increase compression artifacts.
-  bitrate_bps: 3100000
+  bitrate_bps: 2000000
 
   # Optional I-frame interval in frames.
   # Lower values recover faster from UDP packet loss, but use more bitrate.
@@ -121,7 +121,7 @@ teddy_detector:
 
   # Scale factor before H264 encoding the annotated stream.
   # 1.0 keeps full input size, 0.5 halves width and height.
-  debug_stream_scale: 0.5
+  debug_stream_scale: 1.0
 
   # Output FPS for the annotated YOLO stream.
   # This is a max rate, not a guaranteed rate.
@@ -130,4 +130,4 @@ teddy_detector:
   debug_stream_fps: auto
 
   # H264 bitrate for the annotated YOLO stream.
-  debug_stream_bitrate_bps: 800000
+  debug_stream_bitrate_bps: 600000

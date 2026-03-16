@@ -2,6 +2,11 @@
 set -euo pipefail
 
 cd /ws
+
+# Clear stale setuptools metadata from previous builds. This avoids cases where
+# deleted launch/data files still linger in old SOURCES.txt manifests.
+find /ws/build -type d -name '*.egg-info' -prune -exec rm -rf {} +
+
 colcon build --symlink-install
 
 python3 - <<'PY'

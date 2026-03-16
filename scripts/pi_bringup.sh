@@ -103,6 +103,7 @@ docker compose run --rm \
   -e MEKK4_CAM_SOURCE_GST="udpsrc port=${CAM_PORT} caps=application/x-rtp,media=video,encoding-name=H264,payload=96,clock-rate=90000 ! rtph264depay ! h264parse ! avdec_h264 ! videoconvert ! appsink drop=true max-buffers=1 sync=false" \
   -e MEKK4_CAM_WIDTH="${WIDTH}" \
   -e MEKK4_CAM_HEIGHT="${HEIGHT}" \
+  -e MEKK4_CAM_FPS="${FPS}" \
   -e MEKK4_NCNN_MODEL="${MEKK4_NCNN_MODEL}" \
   -e MEKK4_CONF="${MEKK4_CONF}" \
   -e MEKK4_IMGSZ="${MEKK4_IMGSZ}" \

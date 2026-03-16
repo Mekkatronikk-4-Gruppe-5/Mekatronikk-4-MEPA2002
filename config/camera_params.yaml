@@ -27,7 +27,7 @@ camera_stream:
   # Try to reduce encoder delay on newer Pi camera stacks.
   # If your rpicam build is too old, the script will ignore this and warn once.
   # This can make the stream less stable on marginal Wi-Fi links, so default is false.
-  low_latency: false
+  low_latency: True
 
   # Small RTP jitter buffer on the PC side, in milliseconds.
   # Higher smooths Wi-Fi jitter and reduces artifacts, but adds delay.
@@ -42,7 +42,7 @@ camera_stream:
 
   # Auto white balance mode.
   # Common values: auto, indoor, daylight, cloudy.
-  awb: daylight
+  awb: auto
 
   # Fixed white-balance gains as "red_gain,blue_gain".
   # Leave empty to keep automatic AWB behaviour.

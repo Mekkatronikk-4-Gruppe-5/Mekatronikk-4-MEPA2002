@@ -3,6 +3,7 @@ import shlex
 import subprocess
 import threading
 import time
+from collections import deque
 
 import cv2
 import numpy as np
@@ -54,6 +55,7 @@ class TeddyDetector(Node):
         self._last_debug_image = 0.0
         self._last_debug_stream = 0.0
         self._last_debug_stream_warn = 0.0
+        self._debug_stream_stderr_lines = deque(maxlen=20)
         self._stop = False
 
         if not self.gst_source:
@@ -280,9 +282,7 @@ class TeddyDetector(Node):
             return self.debug_stream_proc
 
         if self.debug_stream_proc is not None and self.debug_stream_proc.poll() is not None:
-            self.get_logger().warning(
-                f"debug stream pipeline exited with code {self.debug_stream_proc.poll()}, restarting"
-            )
+            self._log_debug_stream_failure()
 
         self._stop_debug_stream()
         fps = max(1, int(round(self.debug_stream_fps))) if self.debug_stream_fps > 0 else 1
@@ -299,6 +299,7 @@ class TeddyDetector(Node):
             f"udpsink host={self.debug_stream_host} port={self.debug_stream_port} sync=false async=false"
         )
         cmd = ["gst-launch-1.0", "-q"] + shlex.split(pipeline)
+        self.get_logger().info(f"debug stream pipeline: {' '.join(cmd)}")
         try:
             self.debug_stream_proc = subprocess.Popen(
                 cmd,
@@ -307,10 +308,34 @@ class TeddyDetector(Node):
                 stderr=subprocess.PIPE,
                 bufsize=0,
             )
+            if self.debug_stream_proc.stderr is not None:
+                self._debug_stream_stderr_lines.clear()
+                threading.Thread(target=self._drain_debug_stream_stderr, daemon=True).start()
         except Exception:
             self.debug_stream_proc = None
             return None
         return self.debug_stream_proc
+
+    def _drain_debug_stream_stderr(self):
+        if self.debug_stream_proc is None or self.debug_stream_proc.stderr is None:
+            return
+
+        while not self._stop:
+            line = self.debug_stream_proc.stderr.readline()
+            if not line:
+                return
+            self._debug_stream_stderr_lines.append(line.decode(errors="replace").rstrip())
+
+    def _log_debug_stream_failure(self):
+        if self.debug_stream_proc is None:
+            return
+        code = self.debug_stream_proc.poll()
+        if self._debug_stream_stderr_lines:
+            self.get_logger().warning(
+                f"debug stream pipeline exited with code {code}: {'; '.join(self._debug_stream_stderr_lines)}"
+            )
+        else:
+            self.get_logger().warning(f"debug stream pipeline exited with code {code}")
 
     def _stop_debug_stream(self):
         if self.debug_stream_proc is None:
@@ -325,6 +350,7 @@ class TeddyDetector(Node):
             self.debug_stream_proc.wait(timeout=1.0)
         except Exception:
             pass
+        self._debug_stream_stderr_lines.clear()
         self.debug_stream_proc = None
 
     def destroy_node(self):

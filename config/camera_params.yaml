@@ -42,7 +42,7 @@ camera_stream:
 
   # Auto white balance mode.
   # Common values: auto, indoor, daylight, cloudy.
-  awb: indoor
+  awb: daylight
 
   # Fixed white-balance gains as "red_gain,blue_gain".
   # Leave empty to keep automatic AWB behaviour.

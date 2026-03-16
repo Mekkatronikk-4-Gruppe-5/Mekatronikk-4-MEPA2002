@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: build shell up down ws lidar-setup lidar-test sim-build sim sim-headless sim-topics sim-nav2 pi-bringup pc-camera-rviz pc-teddy-rviz camera-stop camera-reload
+.PHONY: build shell up down ws lidar-setup lidar-test mega-test sim-build sim sim-headless sim-topics sim-nav2 pi-bringup pc-camera-rviz pc-teddy-rviz camera-stop camera-reload
 
 build:
 	docker compose build
@@ -22,6 +22,9 @@ lidar-setup:
 
 lidar-test:
 	docker compose run --rm ros bash -lc '/ws/scripts/lidar_smoketest.sh'
+
+mega-test:
+	bash ./scripts/mega_test.sh
 
 # Native (non-Docker) simulation helpers for developer machines
 sim-build:

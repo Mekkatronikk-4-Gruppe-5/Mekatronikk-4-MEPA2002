@@ -165,6 +165,36 @@ Kort oppdeling:
 | `make camera-reload` | Restarter bare kamerastreamen med nye `camera_stream.*`-verdier fra [config/camera_params.yaml](/home/emiliam/Mekatronikk-4-MEPA2002/config/camera_params.yaml). Bruk denne etter tuning av farger, bitrate, intra, denoise osv. |
 | `make camera-stop` | Stopper kamerastream/supervisor hvis noe henger igjen. Dette er en recovery-knapp, ikke vanlig workflow. |
 
+### Arduino Mega smoke test
+
+Hvis du vil verifisere at Pi-en faktisk kan snakke med en Arduino Mega over USB, finnes det nå en enkel smoke test.
+
+1. Last opp [mega_smoketest.ino](/home/emiliam/Mekatronikk-4-MEPA2002/arduino/mega_smoketest/mega_smoketest.ino) til Mega.
+2. Rebuild Docker-imaget én gang, siden testen bruker `pyserial` i containeren:
+
+```bash
+make build
+```
+
+3. Kjør testen på Pi:
+
+```bash
+make mega-test
+```
+
+Dette gjør:
+
+1. finner `Mega`-porten automatisk (`/dev/serial/by-id`, `/dev/ttyACM*` eller `/dev/ttyUSB*`)
+2. åpner USB-serial til Mega i containeren
+3. sender `ID`, `PING`, `LED ON`, `LED OFF`
+4. forventer svar tilbake fra Mega og bekrefter at link fungerer
+
+Hvis auto-detection bommer:
+
+```bash
+MEGA_PORT=/dev/ttyACM0 make mega-test
+```
+
 Praktisk:
 
 1. Etter endring av farger, eksponering, bitrate, intra eller denoise i `camera_stream.*`, prøv `make camera-reload` på Pi.

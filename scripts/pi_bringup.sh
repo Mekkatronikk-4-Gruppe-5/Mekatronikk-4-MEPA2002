@@ -51,7 +51,7 @@ cleanup() {
     wait "${camera_pid}" 2>/dev/null || true
   fi
 }
-trap cleanup EXIT
+trap cleanup EXIT INT TERM
 
 if [[ "${WITH_CAMERA_RVIZ}" == "1" && -z "${CAMERA_REMOTE_HOST}" ]]; then
   CAMERA_REMOTE_HOST="${ROS_STATIC_PEERS}"

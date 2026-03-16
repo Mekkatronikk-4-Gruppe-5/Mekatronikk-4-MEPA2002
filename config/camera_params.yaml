@@ -1,8 +1,8 @@
 # Camera capture settings on the Pi host.
 # These affect the encoded stream that is sent to both teddy_detector and RViz.
 camera_stream:
-  width: 1280
-  height: 720
+  width: 640
+  height: 480
   fps: 10
   local_udp_port: 5600
   remote_udp_port: 5601

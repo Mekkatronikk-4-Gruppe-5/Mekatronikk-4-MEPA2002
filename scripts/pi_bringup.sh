@@ -29,12 +29,6 @@ if [[ ! -f "${REPO_ROOT}/install/setup.bash" ]]; then
   needs_ws_build=1
 elif [[ ! -f "${INSTALLED_LAUNCH}" ]]; then
   needs_ws_build=1
-elif [[ "${SOURCE_LAUNCH}" -nt "${INSTALLED_LAUNCH}" ]]; then
-  needs_ws_build=1
-elif [[ "${SOURCE_PKG_XML}" -nt "${INSTALLED_LAUNCH}" ]]; then
-  needs_ws_build=1
-elif [[ "${SOURCE_CMAKE}" -nt "${INSTALLED_LAUNCH}" ]]; then
-  needs_ws_build=1
 fi
 
 if [[ "${needs_ws_build}" == "1" ]]; then

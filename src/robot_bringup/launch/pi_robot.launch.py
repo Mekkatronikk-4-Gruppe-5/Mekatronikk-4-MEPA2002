@@ -44,13 +44,6 @@ def generate_launch_description():
         parameters=[{'use_sim_time': False}, {'robot_description': robot_description_content}],
     )
 
-    joint_state_publisher = Node(
-        package='joint_state_publisher',
-        executable='joint_state_publisher',
-        output='screen',
-        parameters=[{'use_sim_time': False}],
-    )
-
     lidar_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(robot_bringup_share, 'launch', 'lidar_nav2_compat.launch.py')
@@ -114,7 +107,6 @@ def generate_launch_description():
         SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
         SetParameter('use_sim_time', False),
         robot_state_publisher,
-        joint_state_publisher,
         lidar_launch,
         nav2_launch,
         teddy_detector,

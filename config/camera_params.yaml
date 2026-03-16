@@ -6,8 +6,8 @@
 camera_stream:
   # Output resolution from the Pi camera.
   # Higher values improve detail, but increase CPU load, bandwidth, and delay.
-  width: 1440
-  height: 720
+  width: 1280
+  height: 960
 
   # Capture framerate.
   # Lower FPS usually reduces delay and makes the stream easier to keep stable.
@@ -16,7 +16,7 @@ camera_stream:
   # Optional H.264 bitrate in bits/sec.
   # Leave empty to use the rpicam default.
   # Lower bitrate reduces bandwidth, but can increase compression artifacts.
-  bitrate_bps: 3000000
+  bitrate_bps: 3100000
 
   # Optional I-frame interval in frames.
   # Lower values recover faster from UDP packet loss, but use more bitrate.
@@ -130,4 +130,4 @@ teddy_detector:
   debug_stream_fps: auto
 
   # H264 bitrate for the annotated YOLO stream.
-  debug_stream_bitrate_bps: 600000
+  debug_stream_bitrate_bps: 800000

@@ -65,6 +65,41 @@ Kjør Nav2 inne i container-shell:
 
 `make down` stopper container.
 
+## Enkel Pi <-> PC ROS-bruk
+
+Maalet her er at Pi-en er autonom, mens PC-en bare kobler seg paa for RViz og debugging.
+
+Pi-side, via SSH:
+
+| Kommando | Hva den gjør |
+|---|---|
+| `ssh gruppe5@gruppe5pi5` | Logger inn på Pi. |
+| `cd ~/Mekatronikk-4-MEPA2002` | Går til repoet på Pi. |
+| `make pi-bringup` | Finner PC-IP fra SSH-sesjonen, setter ROS discovery, og starter samlet robot-bringup i Docker. |
+
+Nyttige valg paa Pi:
+
+| Kommando | Hva den gjør |
+|---|---|
+| `WITH_NAV2=0 make pi-bringup` | Starter bare robotmodell + LiDAR (uten Nav2). |
+| `WITH_TEDDY=1 make pi-bringup` | Starter også teddy-detektor på Pi. |
+| `PC_HOST=192.168.10.42 make pi-bringup` | Overstyr automatisk valgt PC-IP. |
+
+PC-side:
+
+```bash
+cd ~/Mekatronikk-4-MEPA2002
+source /opt/ros/jazzy/setup.bash
+eval "$(bash scripts/ros_discovery_env.sh pc gruppe5pi5)"
+rviz2
+```
+
+Hvis Pi-hostnavnet ikke løses fra PC-en, bruk IP i stedet:
+
+```bash
+eval "$(bash scripts/ros_discovery_env.sh pc 192.168.10.55)"
+```
+
 ## Vision og LiDAR
 
 | Kommando | Hva den gjør |

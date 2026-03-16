@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: build shell up down ws vision lidar-setup lidar-test sim-build sim sim-headless sim-topics sim-nav2
+.PHONY: build shell up down ws vision lidar-setup lidar-test sim-build sim sim-headless sim-topics sim-nav2 pi-bringup
 
 build:
 	docker compose build
@@ -41,3 +41,6 @@ sim-topics:
 
 sim-nav2:
 	bash -lc 'source /opt/ros/jazzy/setup.bash && source install/setup.bash && mkdir -p /tmp/roslogs && ROS_LOG_DIR=/tmp/roslogs ros2 launch robot_bringup nav2_stack.launch.py use_sim_time:=true map:=$(CURDIR)/maps/my_map.yaml params_file:=$(CURDIR)/config/nav2_params.yaml'
+
+pi-bringup:
+	bash ./scripts/pi_bringup.sh

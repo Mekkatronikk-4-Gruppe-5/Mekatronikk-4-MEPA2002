@@ -11,7 +11,7 @@ MEGA_BAUDRATE="${MEGA_BAUDRATE:-115200}"
 DRIVE_SPEED="${DRIVE_SPEED:-90}"
 TURN_SPEED="${TURN_SPEED:-55}"
 REMOTE_REPO="${REMOTE_REPO:-\$HOME/Mekatronikk-4-MEPA2002}"
-PI_PASSWORD="${PI_PASSWORD:-qwerty}"
+PI_PASSWORD="${PI_PASSWORD:-}"
 
 if ! python3 -c 'import tkinter' >/dev/null 2>&1; then
   echo "[pc-mega-keyboard] Missing tkinter on this machine." >&2
@@ -25,11 +25,17 @@ if ! command -v sshpass >/dev/null 2>&1; then
   exit 1
 fi
 
+if [[ -z "${PI_PASSWORD}" ]]; then
+  read -rsp "[pc-mega-keyboard] Pi password: " PI_PASSWORD
+  echo >&2
+fi
+
+export MEGA_PI_PASSWORD="${PI_PASSWORD}"
+
 python3 "${SCRIPT_DIR}/mega_keyboard_gui.py" \
   --host "${PI_HOST}" \
   --port "${MEGA_PORT}" \
   --baudrate "${MEGA_BAUDRATE}" \
   --speed "${DRIVE_SPEED}" \
   --turn-speed "${TURN_SPEED}" \
-  --remote-repo "${REMOTE_REPO}" \
-  --password "${PI_PASSWORD}"
+  --remote-repo "${REMOTE_REPO}"

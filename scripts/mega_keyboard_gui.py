@@ -151,10 +151,10 @@ class MegaKeyboardGui:
         env = os.environ.copy()
 
         if self.args.password:
+            env["SSHPASS"] = self.args.password
             ssh_cmd = [
                 "sshpass",
-                "-p",
-                self.args.password,
+                "-e",
                 "ssh",
                 "-o",
                 "PreferredAuthentications=password",
@@ -333,8 +333,8 @@ def main() -> int:
     )
     parser.add_argument(
         "--password",
-        default="",
-        help="SSH password for the Pi. Prefer SSH keys when possible.",
+        default=os.environ.get("MEGA_PI_PASSWORD", ""),
+        help="SSH password for the Pi. If omitted, reads MEGA_PI_PASSWORD from the environment.",
     )
     args = parser.parse_args()
 

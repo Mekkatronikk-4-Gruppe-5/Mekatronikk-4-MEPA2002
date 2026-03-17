@@ -11,10 +11,17 @@ MEGA_BAUDRATE="${MEGA_BAUDRATE:-115200}"
 DRIVE_SPEED="${DRIVE_SPEED:-90}"
 TURN_SPEED="${TURN_SPEED:-55}"
 REMOTE_REPO="${REMOTE_REPO:-\$HOME/Mekatronikk-4-MEPA2002}"
+PI_PASSWORD="${PI_PASSWORD:-qwerty}"
 
 if ! python3 -c 'import tkinter' >/dev/null 2>&1; then
   echo "[pc-mega-keyboard] Missing tkinter on this machine." >&2
   echo "[pc-mega-keyboard] Install it with: sudo apt install python3-tk" >&2
+  exit 1
+fi
+
+if ! command -v sshpass >/dev/null 2>&1; then
+  echo "[pc-mega-keyboard] Missing sshpass on this machine." >&2
+  echo "[pc-mega-keyboard] Install it with: sudo apt install sshpass" >&2
   exit 1
 fi
 
@@ -24,4 +31,5 @@ python3 "${SCRIPT_DIR}/mega_keyboard_gui.py" \
   --baudrate "${MEGA_BAUDRATE}" \
   --speed "${DRIVE_SPEED}" \
   --turn-speed "${TURN_SPEED}" \
-  --remote-repo "${REMOTE_REPO}"
+  --remote-repo "${REMOTE_REPO}" \
+  --password "${PI_PASSWORD}"

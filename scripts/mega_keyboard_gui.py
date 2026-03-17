@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import os
 import queue
 import shlex
 import subprocess
@@ -145,13 +146,34 @@ class MegaKeyboardGui:
             f"--port {shlex.quote(self.args.port)} "
             f"--baudrate {int(self.args.baudrate)}"
         )
+
+        ssh_cmd = ["ssh", self.args.host, "bash", "-lc", remote_cmd]
+        env = os.environ.copy()
+
+        if self.args.password:
+            ssh_cmd = [
+                "sshpass",
+                "-p",
+                self.args.password,
+                "ssh",
+                "-o",
+                "PreferredAuthentications=password",
+                "-o",
+                "PubkeyAuthentication=no",
+                self.args.host,
+                "bash",
+                "-lc",
+                remote_cmd,
+            ]
+
         proc = subprocess.Popen(
-            ["ssh", self.args.host, "bash", "-lc", remote_cmd],
+            ssh_cmd,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
             bufsize=1,
+            env=env,
         )
 
         threading.Thread(target=self._read_stream, args=(proc.stdout, "stdout"), daemon=True).start()
@@ -308,6 +330,11 @@ def main() -> int:
         "--remote-repo",
         default="~/Mekatronikk-4-MEPA2002",
         help="Repo path on the Pi where the helper script exists",
+    )
+    parser.add_argument(
+        "--password",
+        default="",
+        help="SSH password for the Pi. Prefer SSH keys when possible.",
     )
     args = parser.parse_args()
 

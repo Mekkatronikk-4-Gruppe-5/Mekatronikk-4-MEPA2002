@@ -5,7 +5,7 @@ namespace {
 
 constexpr long kBaudrate = 115200;
 constexpr size_t kMaxCommandLength = 63;
-constexpr unsigned long kDriveTimeoutMs = 350;
+constexpr unsigned long kDriveTimeoutMs = 700;
 
 constexpr int kIna1Pin = 22;
 constexpr int kInb1Pin = 23;

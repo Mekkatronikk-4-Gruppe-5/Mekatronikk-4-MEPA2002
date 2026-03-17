@@ -18,12 +18,6 @@ def clamp_pwm(value: int) -> int:
     return max(-255, min(255, value))
 
 
-def wheel_command(drive_state: int, turn_state: int, speed: int, turn_speed: int) -> tuple[int, int]:
-    left = clamp_pwm(drive_state * speed - turn_state * turn_speed)
-    right = clamp_pwm(drive_state * speed + turn_state * turn_speed)
-    return left, right
-
-
 def drain_serial(ser: serial.Serial) -> str:
     latest = ""
     while ser.in_waiting > 0:
@@ -36,32 +30,70 @@ def drain_serial(ser: serial.Serial) -> str:
     return latest
 
 
+def is_active(last_seen: float, now: float, timeout: float) -> bool:
+    return last_seen > 0.0 and (now - last_seen) <= timeout
+
+
+def tank_mix(drive: int, steer: int, speed: int, turn_speed: int) -> tuple[int, int]:
+    if drive == 0:
+        if steer > 0:
+            return -turn_speed, turn_speed
+        if steer < 0:
+            return turn_speed, -turn_speed
+        return 0, 0
+
+    left = drive * speed
+    right = drive * speed
+
+    turn_delta = min(speed, turn_speed)
+    if steer > 0:
+        left = drive * (speed - turn_delta)
+        right = drive * speed
+    elif steer < 0:
+        left = drive * speed
+        right = drive * (speed - turn_delta)
+
+    return clamp_pwm(left), clamp_pwm(right)
+
+
 def print_status(
-    drive_state: int,
-    turn_state: int,
+    forward: bool,
+    reverse: bool,
+    left_turn: bool,
+    right_turn: bool,
     speed: int,
     turn_speed: int,
-    left: int,
-    right: int,
+    left_cmd: int,
+    right_cmd: int,
     latest_message: str,
 ) -> None:
-    drive_label = {1: "forward", 0: "idle", -1: "reverse"}[drive_state]
-    turn_label = {1: "left", 0: "straight", -1: "right"}[turn_state]
+    drive_label = "idle"
+    if forward and not reverse:
+        drive_label = "forward"
+    elif reverse and not forward:
+        drive_label = "reverse"
+
+    steer_label = "straight"
+    if left_turn and not right_turn:
+        steer_label = "left"
+    elif right_turn and not left_turn:
+        steer_label = "right"
+
     message = f" msg={latest_message}" if latest_message else ""
     sys.stdout.write(
         "\r"
-        f"[mega-keyboard] drive={drive_label} steer={turn_label} "
-        f"speed={speed} turn_speed={turn_speed} cmd=({left}, {right}){message}   "
+        f"[mega-keyboard] drive={drive_label} steer={steer_label} "
+        f"speed={speed} turn_speed={turn_speed} cmd=({left_cmd}, {right_cmd}){message}   "
     )
     sys.stdout.flush()
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Keyboard teleop for Arduino Mega motor test firmware.")
+    parser = argparse.ArgumentParser(description="Hold-to-drive keyboard teleop for Arduino Mega motor firmware.")
     parser.add_argument("--port", required=True, help="Serial device path, for example /dev/ttyACM0")
     parser.add_argument("--baudrate", type=int, default=115200, help="Serial baudrate")
     parser.add_argument("--speed", type=int, default=90, help="Forward/reverse PWM magnitude (0-255)")
-    parser.add_argument("--turn-speed", type=int, default=75, help="Turn PWM magnitude (0-255)")
+    parser.add_argument("--turn-speed", type=int, default=55, help="Steering PWM magnitude (0-255)")
     parser.add_argument(
         "--post-open-wait",
         type=float,
@@ -71,8 +103,14 @@ def main() -> int:
     parser.add_argument(
         "--send-period",
         type=float,
-        default=0.05,
-        help="Seconds between keepalive commands",
+        default=0.03,
+        help="Seconds between repeated drive commands",
+    )
+    parser.add_argument(
+        "--hold-timeout",
+        type=float,
+        default=0.45,
+        help="How long a repeated key is treated as held in the SSH terminal",
     )
     args = parser.parse_args()
 
@@ -82,8 +120,10 @@ def main() -> int:
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
 
-    drive_state = 0
-    turn_state = 0
+    last_forward_at = -1.0
+    last_reverse_at = -1.0
+    last_left_at = -1.0
+    last_right_at = -1.0
     latest_message = ""
     last_sent_at = 0.0
     last_sent_command = ""
@@ -97,10 +137,11 @@ def main() -> int:
 
             tty.setcbreak(fd)
             print(
-                "[mega-keyboard] Keys: W forward, S reverse, X drive stop, "
-                "A left, D right, C straighten, E/Q speed up/down, "
-                "P/O turn speed up/down, SPACE full stop, - quit"
+                "[mega-keyboard] Hold W/S/A/D. "
+                "E/Q speed up/down. P/O turn speed up/down. "
+                "SPACE stop. - quit."
             )
+
             try:
                 while True:
                     now = time.monotonic()
@@ -108,26 +149,29 @@ def main() -> int:
                     if message:
                         latest_message = message
 
-                    ready, _, _ = select.select([sys.stdin], [], [], 0.02)
-                    if ready:
-                        key = sys.stdin.read(1)
-                        if key == "-":
+                    while True:
+                        ready, _, _ = select.select([sys.stdin], [], [], 0.0)
+                        if not ready:
                             break
+
+                        key = sys.stdin.read(1)
+                        key_now = time.monotonic()
+
+                        if key == "-":
+                            raise KeyboardInterrupt
                         if key in ("w", "W"):
-                            drive_state = 1
+                            last_forward_at = key_now
                         elif key in ("s", "S"):
-                            drive_state = -1
-                        elif key in ("x", "X"):
-                            drive_state = 0
+                            last_reverse_at = key_now
                         elif key in ("a", "A"):
-                            turn_state = 1
+                            last_left_at = key_now
                         elif key in ("d", "D"):
-                            turn_state = -1
-                        elif key in ("c", "C"):
-                            turn_state = 0
+                            last_right_at = key_now
                         elif key == " ":
-                            drive_state = 0
-                            turn_state = 0
+                            last_forward_at = -1.0
+                            last_reverse_at = -1.0
+                            last_left_at = -1.0
+                            last_right_at = -1.0
                         elif key in ("e", "E"):
                             speed = min(255, speed + 5)
                         elif key in ("q", "Q"):
@@ -137,15 +181,47 @@ def main() -> int:
                         elif key in ("o", "O"):
                             turn_speed = max(0, turn_speed - 5)
 
-                    left, right = wheel_command(drive_state, turn_state, speed, turn_speed)
-                    command = "STOP" if left == 0 and right == 0 else f"BOTH {left} {right}"
+                    now = time.monotonic()
+                    forward = is_active(last_forward_at, now, args.hold_timeout)
+                    reverse = is_active(last_reverse_at, now, args.hold_timeout)
+                    left_turn = is_active(last_left_at, now, args.hold_timeout)
+                    right_turn = is_active(last_right_at, now, args.hold_timeout)
+
+                    drive = 0
+                    if forward and not reverse:
+                        drive = 1
+                    elif reverse and not forward:
+                        drive = -1
+
+                    steer = 0
+                    if left_turn and not right_turn:
+                        steer = 1
+                    elif right_turn and not left_turn:
+                        steer = -1
+
+                    left_cmd, right_cmd = tank_mix(drive, steer, speed, turn_speed)
+                    command = "STOP" if left_cmd == 0 and right_cmd == 0 else f"BOTH {left_cmd} {right_cmd}"
 
                     if command != last_sent_command or now - last_sent_at >= args.send_period:
                         send_command(ser, command)
                         last_sent_command = command
                         last_sent_at = now
 
-                    print_status(drive_state, turn_state, speed, turn_speed, left, right, latest_message)
+                    print_status(
+                        forward,
+                        reverse,
+                        left_turn,
+                        right_turn,
+                        speed,
+                        turn_speed,
+                        left_cmd,
+                        right_cmd,
+                        latest_message,
+                    )
+
+                    time.sleep(0.01)
+            except KeyboardInterrupt:
+                pass
             finally:
                 try:
                     send_command(ser, "STOP")

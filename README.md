@@ -196,6 +196,53 @@ Hvis auto-detection bommer:
 MEGA_PORT=/dev/ttyACM0 make mega-test
 ```
 
+### Arduino Mega keyboard drive
+
+Hvis du vil kjøre roboten manuelt med tastatur, bruk keyboard-firmwaren på Mega og start teleop fra Ubuntu-maskinen din, ikke fra SSH-terminalen på Pi.
+
+1. Last opp [mega_keyboard_drive.ino](/home/emiliam/Mekatronikk-4-MEPA2002/arduino/mega_keyboard_drive/mega_keyboard_drive.ino) til Mega.
+2. Sørg for at Pi-host har `python3-serial`.
+3. Sørg for at Ubuntu-PC-en har `python3-tk` og `sshpass`.
+4. Start kjøring fra Ubuntu-PC:
+
+```bash
+make pc-mega-keyboard
+```
+
+Dette gjør:
+
+1. åpner et lite GUI-vindu på Ubuntu-PC-en
+2. kobler til Pi over SSH
+3. starter en liten serial-bro på Pi som snakker med Mega over USB
+4. sender tastaturkommandoer videre til Mega i sanntid
+
+Taster i GUI-vinduet:
+
+1. hold `W` for fremover
+2. hold `S` for bakover
+3. hold `A` og `D` for sving
+4. `E` / `Q` øker og senker kjørehastighet
+5. `P` / `O` øker og senker svinghastighet
+6. `SPACE` stopper
+7. `-` avslutter
+
+Hvis du trenger å overstyre SSH-host eller Mega-port:
+
+```bash
+PI_HOST=gruppe5@gruppe5pi5 MEGA_PORT=/dev/ttyACM0 make pc-mega-keyboard
+```
+
+Hvis repoet ligger et annet sted på Pi:
+
+```bash
+REMOTE_REPO=~/Mekatronikk-4-MEPA2002 make pc-mega-keyboard
+```
+
+Merk:
+
+1. `make mega-keyboard` finnes fortsatt som terminal-variant, men anbefales ikke over SSH siden vanlige terminaler ikke håndterer samtidige hold av flere taster like robust som GUI-varianten.
+2. Hvis GUI-broen faller ut, prøver den å koble opp SSH på nytt automatisk.
+
 ### Arduino Mega + DFR0601 motor test
 
 Det finnes også en enkel motor-test for en Arduino Mega koblet til DFR0601 med denne pin-mappingen:
@@ -206,10 +253,12 @@ Det finnes også en enkel motor-test for en Arduino Mega koblet til DFR0601 med 
 4. `INB2 = 25`
 5. `PWM1 = 5`
 6. `PWM2 = 4`
-7. `Hall sensor A = 3`
-8. `Hall sensor B = 2`
+7. `Encoder 1 A = 3`
+8. `Encoder 1 B = 2`
+9. `Encoder 2 A = 18`
+10. `Encoder 2 B = 19`
 
-Hall-sensoren er foreløpig koblet inn som encoder på motor 1 i test-firmwaren.
+Test-firmwaren støtter begge encoderne, men [mega_motor_test.py](/home/emiliam/Mekatronikk-4-MEPA2002/scripts/mega_motor_test.py) validerer foreløpig `ENC1` eksplisitt i den automatiske sekvensen.
 
 Last opp [mega_dfr0601_test.ino](/home/emiliam/Mekatronikk-4-MEPA2002/arduino/mega_dfr0601_test/mega_dfr0601_test.ino) til Mega, løft roboten opp fra gulvet, og kjør:
 

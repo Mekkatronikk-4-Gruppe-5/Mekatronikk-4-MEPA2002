@@ -17,9 +17,9 @@ def clamp_pwm(value: int) -> int:
 def tank_mix(drive: int, steer: int, speed: int, turn_speed: int) -> tuple[int, int]:
     if drive == 0:
         if steer > 0:
-            return turn_speed, -turn_speed
-        if steer < 0:
             return -turn_speed, turn_speed
+        if steer < 0:
+            return turn_speed, -turn_speed
         return 0, 0
 
     left = drive * speed
@@ -72,6 +72,28 @@ class MegaKeyboardGui:
 
         self.root.after(50, self._pump_status_queue)
         self.root.after(20, self._tick)
+
+    def _stop_remote_bridge(self) -> None:
+        if self.proc.stdin is not None:
+            try:
+                self.proc.stdin.close()
+            except OSError:
+                pass
+
+        if self.proc.poll() is not None:
+            return
+
+        try:
+            self.proc.terminate()
+            self.proc.wait(timeout=0.8)
+        except subprocess.TimeoutExpired:
+            try:
+                self.proc.kill()
+                self.proc.wait(timeout=0.2)
+            except (subprocess.TimeoutExpired, OSError):
+                pass
+        except OSError:
+            pass
 
     def _build_ui(self) -> None:
         title = tk.Label(
@@ -206,20 +228,17 @@ class MegaKeyboardGui:
         self.next_reconnect_at = time.monotonic() + self.reconnect_delay_s
 
     def _restart_remote_bridge_if_needed(self) -> None:
-        if self.closed or self.proc.poll() is None:
+        if self.closed or self.next_reconnect_at == 0.0:
             return
         if time.monotonic() < self.next_reconnect_at:
             return
 
-        try:
-            if self.proc.stdin is not None:
-                self.proc.stdin.close()
-        except OSError:
-            pass
-
+        self._stop_remote_bridge()
         self.remote_ready.clear()
         self.remote_failed.clear()
         self.remote_error = ""
+        self.last_command = ""
+        self.last_sent_at = 0.0
         self.next_reconnect_at = 0.0
         self.status_var.set(f"Reconnecting to {self.args.host} ...")
         self.proc = self._start_remote_bridge()
@@ -241,12 +260,15 @@ class MegaKeyboardGui:
 
             if stream_name == "stdout" and text == "READY":
                 self.remote_ready.set()
+                self.remote_failed.clear()
+                self.remote_error = ""
                 self.next_reconnect_at = 0.0
                 self.status_var.set(f"Connected to {self.args.host}")
+            elif stream_name == "stderr" and text.startswith("SERIAL_ERROR "):
+                self.status_var.set(text)
+                self._schedule_reconnect(text)
             elif stream_name == "stderr":
-                self.remote_failed.set()
-                self.remote_error = text
-                self.status_var.set(f"Remote error: {text}")
+                self.status_var.set(text)
             elif text:
                 self.status_var.set(text)
 
@@ -308,7 +330,8 @@ class MegaKeyboardGui:
         if self.proc.poll() is not None:
             exit_reason = self.remote_error or f"ssh exited with code {self.proc.returncode}"
             self._schedule_reconnect(exit_reason)
-            self._restart_remote_bridge_if_needed()
+
+        self._restart_remote_bridge_if_needed()
 
         drive = 0
         if "w" in self.pressed_keys and "s" not in self.pressed_keys:
@@ -346,16 +369,7 @@ class MegaKeyboardGui:
         except Exception:
             pass
 
-        if self.proc.stdin is not None:
-            try:
-                self.proc.stdin.close()
-            except OSError:
-                pass
-
-        try:
-            self.proc.terminate()
-        except OSError:
-            pass
+        self._stop_remote_bridge()
 
         self.root.after(20, self.root.destroy)
 

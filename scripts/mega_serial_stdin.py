@@ -11,8 +11,9 @@ def serial_reader(ser: serial.Serial, stop_event: threading.Event) -> None:
     while not stop_event.is_set():
         try:
             raw = ser.readline()
-        except serial.SerialException as exc:
+        except (serial.SerialException, OSError) as exc:
             print(f"SERIAL_ERROR {exc}", file=sys.stderr, flush=True)
+            stop_event.set()
             return
 
         if not raw:
@@ -21,7 +22,7 @@ def serial_reader(ser: serial.Serial, stop_event: threading.Event) -> None:
         text = raw.decode("utf-8", errors="replace").strip()
         if not text or text.startswith("OK "):
             continue
-        print(text, file=sys.stderr, flush=True)
+        print(text, flush=True)
 
 
 def main() -> int:
@@ -53,16 +54,18 @@ def main() -> int:
                         continue
                     ser.write((command + "\n").encode("utf-8"))
                     ser.flush()
+            except (serial.SerialException, OSError) as exc:
+                print(f"SERIAL_ERROR {exc}", file=sys.stderr, flush=True)
             finally:
                 stop_event.set()
                 try:
                     ser.write(b"STOP\n")
                     ser.flush()
-                except serial.SerialException:
+                except (serial.SerialException, OSError):
                     pass
                 reader_thread.join(timeout=0.2)
         return 0
-    except serial.SerialException as exc:
+    except (serial.SerialException, OSError) as exc:
         print(f"SERIAL_ERROR {exc}", file=sys.stderr, flush=True)
         return 1
 

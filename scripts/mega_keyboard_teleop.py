@@ -202,7 +202,10 @@ def main() -> int:
                     left_cmd, right_cmd = tank_mix(drive, steer, speed, turn_speed)
                     command = "STOP" if left_cmd == 0 and right_cmd == 0 else f"BOTH {left_cmd} {right_cmd}"
 
-                    if command != last_sent_command or now - last_sent_at >= args.send_period:
+                    should_repeat = command != "STOP"
+                    should_send = command != last_sent_command or (should_repeat and now - last_sent_at >= args.send_period)
+
+                    if should_send:
                         send_command(ser, command)
                         last_sent_command = command
                         last_sent_at = now

@@ -267,6 +267,8 @@ class MegaKeyboardGui:
             elif stream_name == "stderr" and text.startswith("SERIAL_ERROR "):
                 self.remote_ready.clear()
                 self.remote_error = text
+                self.last_command = ""
+                self.last_sent_at = 0.0
                 self.status_var.set(text)
             elif stream_name == "stderr":
                 self.status_var.set(text)
@@ -353,7 +355,10 @@ class MegaKeyboardGui:
         self.speed_var.set(self._speed_text())
 
         now = time.monotonic()
-        if self.remote_ready.is_set() and (command != self.last_command or now - self.last_sent_at >= self.args.send_period):
+        should_repeat = command != "STOP"
+        should_send = command != self.last_command or (should_repeat and now - self.last_sent_at >= self.args.send_period)
+
+        if self.remote_ready.is_set() and should_send:
             self._send_command(command)
             self.last_command = command
             self.last_sent_at = now

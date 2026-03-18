@@ -56,7 +56,7 @@ Pi:
 |---|---|
 | `ssh gruppe5@gruppe5pi5` | Logger inn på Pi. |
 | `cd ~/Mekatronikk-4-MEPA2002` | Går til repoet på Pi. |
-| `make build` | Bygger Docker-image (kun ved første gang eller etter Docker-endringer). |
+| `make build` | kun ved første gang eller etter Docker-endringer. Bygger Docker-image. |
 | `make ws` | Bygger ROS-workspace i container. Kjør igjen hvis ROS-kode er endret. |
 
 PC:
@@ -68,7 +68,7 @@ PC:
 | `colcon build --symlink-install` | Bygger PC-workspace. Kjør igjen hvis lokal ROS-kode er endret. |
 | `source install/setup.bash` | Laster de bygde pakkene i shellen. |
 
-### Standard workflow nå
+### Standard workflow
 
 Dette er den anbefalte oppskriften før dere har odometri og aktiv Nav2-bruk.
 
@@ -121,61 +121,21 @@ PC:
 | `make pc-camera-rviz` | Valgfritt: viser rå `/camera` i RViz via lokal UDP->ROS bridge på PC. |
 | `make pc-teddy-rviz PI_HOST=192.168.10.55` | Bruk Pi-IP direkte hvis `gruppe5pi5` ikke løses på PC. |
 
-### ROS discovery og IP
-
-I normal bruk trenger du ikke å kjøre `scripts/ros_discovery_env.sh` manuelt.
-
-Det er bare nyttig hvis du vil feilsøke:
-
-```bash
-bash scripts/ros_discovery_env.sh pi
-bash scripts/ros_discovery_env.sh pc gruppe5pi5
-```
-
-Automatikken fungerer best når:
-
-1. du SSH-er inn på Pi fra samme PC som skal bruke RViz
-2. Pi og PC faktisk når hverandre på samme nett
-3. PC kan løse `gruppe5pi5`, eller du overstyrer med IP
 
 ### Fast SSH-navn for hele gruppa
 
-Repoet setter ikke opp SSH-navnet selv. Alle scripts antar bare at Pi allerede kan naaes som `gruppe5pi5`.
+Alle scripts antar at Pi kan nås som `gruppe5pi5`.
 
-Det er to ulike ting som skjer:
-
-1. `ssh gruppe5@gruppe5pi5` krever at PC-en kan resolve `gruppe5pi5` til riktig adresse.
-2. `make pi-bringup` bruker den aktive SSH-sesjonen til aa lese klient-IP fra `SSH_CONNECTION` eller `SSH_CLIENT`, slik at ROS discovery og UDP-streamen peker tilbake til riktig PC.
-
-Hvis samme kommando bare virker paa noen maskiner, er det normalt et navneoppslag-problem, ikke et ROS-problem.
-
-Anbefalt permanent oppsett:
-
-1. installer Tailscale paa Pi og alle PC-er
-2. gi Pi et stabilt navn, for eksempel `gruppe5pi5`
-3. bruk MagicDNS eller Tailscale sitt fulle vertsnavn som faktisk resolver i tailnettet
-4. legg samme alias i `~/.ssh/config` paa alle klient-PC-er
-
-Eksempel paa klient-PC:
-
-```sshconfig
-Host gruppe5pi5
-  HostName gruppe5pi5.<tailnet-navn>.ts.net
-  User gruppe5
-```
-
-Da kan alle bruke samme kommando:
+logg inn pi med ssh med:
 
 ```bash
 ssh gruppe5@gruppe5pi5
 ```
+passordet er 
 
-Alternativer:
-
-1. `gruppe5pi5.local` via mDNS/Avahi kan fungere paa et vanlig lokalt nett, men er ofte upaalitelig paa Eduroam fordi multicast og klient-til-klient-trafikk kan vaere begrenset.
-2. `/etc/hosts` paa hver PC fungerer, men maa oppdateres manuelt hvis adressen endrer seg.
-
-Kort sagt: hvis dere vil slippe aa finne IP hver gang og vaere uavhengige av hvordan Eduroam oppfoerer seg, er Tailscale + felles `~/.ssh/config` den mest robuste loesningen.
+```bash
+qwerty
+```
 
 ## Vision og LiDAR
 
@@ -206,35 +166,16 @@ Kort oppdeling:
 
 ### Arduino Mega upload fra Pi
 
-Arduino-sketchene i repoet kan lastes opp direkte fra Pi-host. Dette bør kjøre paa hosten, ikke i Docker, siden dagens container bare mapper inn LiDAR-porten og ikke Mega over USB.
+Arduino-sketchene i repoet kan lastes opp direkte fra Pi-host. Dette bør kjøre på hosten, ikke i Docker, siden dagens container bare mapper inn LiDAR-porten og ikke Mega over USB.
 
-Første gang paa Pi-host:
-
-```bash
-sudo apt update
-sudo apt install curl
-mkdir -p ~/bin
-curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | BINDIR=~/bin sh
-echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-arduino-cli version
-arduino-cli core update-index
-arduino-cli core install arduino:avr
-```
-
-Hvis USB-porten senere gir `Permission denied`, legg brukeren i `dialout`:
-
-```bash
-sudo usermod -aG dialout $USER
-newgrp dialout
-```
-
-Vanlig upload:
+hvis du skal oppdatere filen på megaen etter git pull bruk:
 
 ```bash
 make mega-upload
+```
+hvis du skal endre filen som skal lastes opp. se eksempel:
+```bash
 MEGA_SKETCH=mega_keyboard_drive make mega-upload
-MEGA_SKETCH=mega_dfr0601_test make mega-upload
 ```
 
 Dette gjør:
@@ -251,45 +192,9 @@ MEGA_PORT=/dev/ttyACM0 make mega-upload
 MEGA_FQBN=arduino:avr:mega make mega-upload
 ```
 
-### Arduino Mega smoke test
-
-Hvis du vil verifisere at Pi-en faktisk kan snakke med en Arduino Mega over USB, finnes det nå en enkel smoke test.
-
-1. Last opp [mega_smoketest.ino](/home/emiliam/Mekatronikk-4-MEPA2002/arduino/mega_smoketest/mega_smoketest.ino) til Mega, for eksempel med `make mega-upload`.
-2. Sørg for at Pi-host har `python3-serial` tilgjengelig.
-3. Kjør testen på Pi:
-
-```bash
-make mega-test
-```
-
-Dette gjør:
-
-1. finner `Mega`-porten automatisk (`/dev/serial/by-id`, `/dev/ttyACM*` eller `/dev/ttyUSB*`)
-2. åpner USB-serial direkte på Pi-host
-3. sender `ID`, `PING`, `LED ON`, `LED OFF`
-4. forventer svar tilbake fra Mega og bekrefter at link fungerer
-
-Hvis `python3-serial` mangler på Pi-host:
-
-```bash
-sudo apt install python3-serial
-```
-
-Hvis auto-detection bommer:
-
-```bash
-MEGA_PORT=/dev/ttyACM0 make mega-test
-```
-
 ### Arduino Mega keyboard drive
 
 Hvis du vil kjøre roboten manuelt med tastatur, bruk keyboard-firmwaren på Mega og start teleop fra Ubuntu-maskinen din, ikke fra SSH-terminalen på Pi.
-
-1. Last opp [mega_keyboard_drive.ino](/home/emiliam/Mekatronikk-4-MEPA2002/arduino/mega_keyboard_drive/mega_keyboard_drive.ino) til Mega, for eksempel med `MEGA_SKETCH=mega_keyboard_drive make mega-upload`.
-2. Sørg for at Pi-host har `python3-serial`.
-3. Sørg for at Ubuntu-PC-en har `python3-tk` og `sshpass`.
-4. Start kjøring fra Ubuntu-PC:
 
 ```bash
 make pc-mega-keyboard
@@ -312,80 +217,11 @@ Taster i GUI-vinduet:
 6. `SPACE` stopper
 7. `-` avslutter
 
-Hvis du trenger å overstyre SSH-host eller Mega-port:
-
-```bash
-PI_HOST=gruppe5@gruppe5pi5 MEGA_PORT=/dev/ttyACM0 make pc-mega-keyboard
-```
-
-Hvis repoet ligger et annet sted på Pi:
-
-```bash
-REMOTE_REPO=~/Mekatronikk-4-MEPA2002 make pc-mega-keyboard
-```
-
 Merk:
 
 1. `make mega-keyboard` finnes fortsatt som terminal-variant, men anbefales ikke over SSH siden vanlige terminaler ikke håndterer samtidige hold av flere taster like robust som GUI-varianten.
 2. Hvis GUI-broen faller ut, prøver den å koble opp SSH på nytt automatisk.
 
-### Arduino Mega + DFR0601 motor test
-
-Det finnes også en enkel motor-test for en Arduino Mega koblet til DFR0601 med denne pin-mappingen:
-
-1. `INA1 = 22`
-2. `INB1 = 23`
-3. `INA2 = 24`
-4. `INB2 = 25`
-5. `PWM1 = 5`
-6. `PWM2 = 4`
-7. `Encoder 1 A = 3`
-8. `Encoder 1 B = 2`
-9. `Encoder 2 A = 18`
-10. `Encoder 2 B = 19`
-
-Test-firmwaren støtter begge encoderne, men [mega_motor_test.py](/home/emiliam/Mekatronikk-4-MEPA2002/scripts/mega_motor_test.py) validerer foreløpig `ENC1` eksplisitt i den automatiske sekvensen.
-
-Last opp [mega_dfr0601_test.ino](/home/emiliam/Mekatronikk-4-MEPA2002/arduino/mega_dfr0601_test/mega_dfr0601_test.ino) til Mega, for eksempel med `MEGA_SKETCH=mega_dfr0601_test make mega-upload`, løft roboten opp fra gulvet, og kjør:
-
-```bash
-make mega-motor-test
-```
-
-Dette gjør en kort sekvens:
-
-1. `M1` fremover
-2. `M1` bakover
-3. `M2` fremover
-4. `M2` bakover
-5. begge fremover
-6. begge bakover
-7. `STOP` mellom hvert steg
-8. leser `ENC1` før og etter `M1`-steppene for å verifisere at hall-sensoren teller
-
-Standardverdier:
-
-1. `PWM_VALUE=80`
-2. `STEP_DURATION=0.8`
-
-Du kan overstyre dem:
-
-```bash
-PWM_VALUE=60 STEP_DURATION=0.5 make mega-motor-test
-```
-
-Hvis auto-detection bommer:
-
-```bash
-MEGA_PORT=/dev/ttyACM0 make mega-motor-test
-```
-
-Praktisk:
-
-1. Etter endring av farger, eksponering, bitrate, intra eller denoise i `camera_stream.*`, prøv `make camera-reload` på Pi.
-2. Hvis du endrer `camera_stream.width/height`, porter eller `teddy_detector.*`, gjør full restart av `make pi-bringup`.
-3. `make camera-stop` er bare en recovery-knapp hvis gamle kameraprosesser henger igjen.
-4. Du kan fortsatt overstyre midlertidig med env vars, for eksempel `WIDTH=640 FPS=10 SATURATION=1.2 make pi-bringup`.
 
 ## Pi ytelse (host, ikke Docker)
 
@@ -397,45 +233,6 @@ Praktisk:
 | `cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor` | Verifiserer aktiv governor. |
 | `watch -n1 'vcgencmd measure_temp; vcgencmd measure_clock arm; vcgencmd get_throttled'` | Overvåker temperatur, klokke og throttling live. |
 
-Gjør `performance` permanent etter reboot:
-
-| Kommando | Hva den gjør |
-|---|---|
-| `sudo nano /etc/systemd/system/cpu-governor-performance.service` | Oppretter systemd-service for governor ved boot. |
-| `sudo systemctl daemon-reload` | Leser inn ny servicefil. |
-| `sudo systemctl enable --now cpu-governor-performance.service` | Aktiverer service nå og ved neste reboot. |
-| `sudo systemctl status cpu-governor-performance.service --no-pager` | Sjekker at service kjører uten feil. |
-| `cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor` | Verifiserer at governor fortsatt er `performance`. |
-
-Service-innhold:
-
-```ini
-[Unit]
-Description=Set CPU governor to performance
-After=multi-user.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/cpupower frequency-set -g performance
-RemainAfterExit=yes
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Tilbake til `ondemand` permanent:
-
-| Kommando | Hva den gjør |
-|---|---|
-| `sudo systemctl disable --now cpu-governor-performance.service` | Skrur av permanent `performance`-service. |
-| `sudo cpupower frequency-set -g ondemand` | Setter governor tilbake med en gang. |
-
-Valgfritt (mer aktiv viftekurve):
-
-| Kommando | Hva den gjør |
-|---|---|
-| `sudo nano /boot/firmware/config.txt` | Åpner Pi-bootconfig for vifteparametre. |
-| `sudo reboot` | Rebooter Pi etter endringer i `config.txt`. |
 
 ## Rydd lagring på Pi
 

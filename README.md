@@ -138,6 +138,45 @@ Automatikken fungerer best når:
 2. Pi og PC faktisk når hverandre på samme nett
 3. PC kan løse `gruppe5pi5`, eller du overstyrer med IP
 
+### Fast SSH-navn for hele gruppa
+
+Repoet setter ikke opp SSH-navnet selv. Alle scripts antar bare at Pi allerede kan naaes som `gruppe5pi5`.
+
+Det er to ulike ting som skjer:
+
+1. `ssh gruppe5@gruppe5pi5` krever at PC-en kan resolve `gruppe5pi5` til riktig adresse.
+2. `make pi-bringup` bruker den aktive SSH-sesjonen til aa lese klient-IP fra `SSH_CONNECTION` eller `SSH_CLIENT`, slik at ROS discovery og UDP-streamen peker tilbake til riktig PC.
+
+Hvis samme kommando bare virker paa noen maskiner, er det normalt et navneoppslag-problem, ikke et ROS-problem.
+
+Anbefalt permanent oppsett:
+
+1. installer Tailscale paa Pi og alle PC-er
+2. gi Pi et stabilt navn, for eksempel `gruppe5pi5`
+3. bruk MagicDNS eller Tailscale sitt fulle vertsnavn som faktisk resolver i tailnettet
+4. legg samme alias i `~/.ssh/config` paa alle klient-PC-er
+
+Eksempel paa klient-PC:
+
+```sshconfig
+Host gruppe5pi5
+  HostName gruppe5pi5.<tailnet-navn>.ts.net
+  User gruppe5
+```
+
+Da kan alle bruke samme kommando:
+
+```bash
+ssh gruppe5@gruppe5pi5
+```
+
+Alternativer:
+
+1. `gruppe5pi5.local` via mDNS/Avahi kan fungere paa et vanlig lokalt nett, men er ofte upaalitelig paa Eduroam fordi multicast og klient-til-klient-trafikk kan vaere begrenset.
+2. `/etc/hosts` paa hver PC fungerer, men maa oppdateres manuelt hvis adressen endrer seg.
+
+Kort sagt: hvis dere vil slippe aa finne IP hver gang og vaere uavhengige av hvordan Eduroam oppfoerer seg, er Tailscale + felles `~/.ssh/config` den mest robuste loesningen.
+
 ## Vision og LiDAR
 
 | Kommando | Hva den gjør |

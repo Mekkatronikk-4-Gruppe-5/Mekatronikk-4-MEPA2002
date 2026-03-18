@@ -208,14 +208,28 @@ Kort oppdeling:
 
 Arduino-sketchene i repoet kan lastes opp direkte fra Pi-host. Dette bør kjøre paa hosten, ikke i Docker, siden dagens container bare mapper inn LiDAR-porten og ikke Mega over USB.
 
-1. Installer `arduino-cli` paa Pi-host.
-2. Installer board-stoette én gang:
+Første gang paa Pi-host:
 
 ```bash
+sudo apt update
+sudo apt install curl
+mkdir -p ~/bin
+curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | BINDIR=~/bin sh
+echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+arduino-cli version
+arduino-cli core update-index
 arduino-cli core install arduino:avr
 ```
 
-3. Last opp ønsket sketch:
+Hvis USB-porten senere gir `Permission denied`, legg brukeren i `dialout`:
+
+```bash
+sudo usermod -aG dialout $USER
+newgrp dialout
+```
+
+Vanlig upload:
 
 ```bash
 make mega-upload

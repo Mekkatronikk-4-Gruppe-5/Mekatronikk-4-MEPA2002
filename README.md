@@ -246,6 +246,18 @@ Dette:
 4. stopper roboten og skriver ut encoder-delta
 5. beregner `left_m_per_tick` og `right_m_per_tick` hvis `--distance-m` er satt
 
+Hvis roboten trekker til en side, kan dere kjøre en egen trim-test som foreslår `LEFT_CMD_SCALE` og `RIGHT_CMD_SCALE` for Mega-driveren:
+
+```bash
+make mega-calibrate ARGS="straight-trim --pwm 90 --duration 10.4 --left-m-per-tick 0.000057460 --right-m-per-tick 0.000051824"
+```
+
+Dette:
+
+1. kjører samme type rettlinjetest
+2. sammenligner venstre og høyre bevegelse
+3. foreslår nye `left_cmd_scale` og `right_cmd_scale` uten å endre encoder-odometrien
+
 Kjør en spinn-kalibrering når du allerede har meter-per-tick og har målt faktisk rotasjon:
 
 ```bash
@@ -257,8 +269,9 @@ Dette beregner `track_width_eff_m`, som er den effektive sporvidden dere bør br
 Nyttige flagg:
 
 1. `--direction reverse` på `straight` for bakoverkalibrering
-2. `--direction ccw` på `spin` for motsatt spinnretning
-3. `MEGA_PORT=/dev/ttyACM0 make mega-calibrate ARGS="snapshot"` hvis port-auto-detect bommer
+2. `--current-left-cmd-scale` og `--current-right-cmd-scale` på `straight-trim` hvis dere finjusterer rundt en eksisterende trim
+3. `--direction ccw` på `spin` for motsatt spinnretning
+4. `MEGA_PORT=/dev/ttyACM0 make mega-calibrate ARGS="snapshot"` hvis port-auto-detect bommer
 
 ### ROS Mega-driver på Pi
 
@@ -272,6 +285,8 @@ Eksempel:
 
 ```bash
 WITH_IMU=1 WITH_MEGA_DRIVER=1 \
+LEFT_CMD_SCALE=1.000000 \
+RIGHT_CMD_SCALE=1.000000 \
 LEFT_M_PER_TICK=0.000500000 \
 RIGHT_M_PER_TICK=0.000505000 \
 TRACK_WIDTH_EFF_M=0.340000000 \
@@ -283,6 +298,7 @@ Merk:
 1. `pc-mega-keyboard` og ROS Mega-driveren kan ikke bruke samme serial-port samtidig.
 2. Hvis `LEFT_M_PER_TICK` og `RIGHT_M_PER_TICK` står på `0.0`, kjører driveren fortsatt motorstyring fra `/cmd_vel`, men `/odom` blir deaktivert.
 3. `MEGA_PORT=/dev/ttyACM0` og `MEGA_BAUDRATE=115200` kan overstyres i samme kommando hvis auto-defaulten ikke passer.
+4. `LEFT_CMD_SCALE` og `RIGHT_CMD_SCALE` kan brukes til å få roboten til å gå rettere uten å endre encoder-odometrien. Start med små justeringer som `LEFT_CMD_SCALE=0.98` eller `RIGHT_CMD_SCALE=0.98`.
 
 
 ## Pi ytelse (host, ikke Docker)

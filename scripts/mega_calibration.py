@@ -161,6 +161,61 @@ def print_spin_calibration(
     print(f"track_width_eff_m: {track_width_eff_m:.9f}")
 
 
+def print_straight_trim_calibration(
+    delta_left: int,
+    delta_right: int,
+    current_left_cmd_scale: float,
+    current_right_cmd_scale: float,
+    left_m_per_tick: float,
+    right_m_per_tick: float,
+) -> None:
+    left_metric = abs(delta_left)
+    right_metric = abs(delta_right)
+    metric_label = "ticks"
+
+    if left_m_per_tick > 0.0 and right_m_per_tick > 0.0:
+        left_metric *= left_m_per_tick
+        right_metric *= right_m_per_tick
+        metric_label = "meters"
+
+    if left_metric == 0.0 or right_metric == 0.0:
+        raise RuntimeError("encoder delta was zero; cannot compute straight-trim suggestion")
+
+    ratio = right_metric / left_metric if left_metric > right_metric else left_metric / right_metric
+    suggested_left_cmd_scale = current_left_cmd_scale
+    suggested_right_cmd_scale = current_right_cmd_scale
+    faster_side = "balanced"
+
+    if left_metric > right_metric:
+        faster_side = "left"
+        suggested_left_cmd_scale = current_left_cmd_scale * ratio
+    elif right_metric > left_metric:
+        faster_side = "right"
+        suggested_right_cmd_scale = current_right_cmd_scale * ratio
+
+    print()
+    print("[mega-cal] Straight trim")
+    print(f"[mega-cal]   comparison_metric={metric_label}")
+    print(f"[mega-cal]   left_metric={left_metric:.9f}")
+    print(f"[mega-cal]   right_metric={right_metric:.9f}")
+    print(f"[mega-cal]   faster_side={faster_side}")
+    print(
+        f"[mega-cal]   current_left_cmd_scale={current_left_cmd_scale:.9f}"
+    )
+    print(
+        f"[mega-cal]   current_right_cmd_scale={current_right_cmd_scale:.9f}"
+    )
+    print(
+        f"[mega-cal]   suggested_left_cmd_scale={suggested_left_cmd_scale:.9f}"
+    )
+    print(
+        f"[mega-cal]   suggested_right_cmd_scale={suggested_right_cmd_scale:.9f}"
+    )
+    print("[mega-cal] YAML snippet:")
+    print(f"left_cmd_scale: {suggested_left_cmd_scale:.9f}")
+    print(f"right_cmd_scale: {suggested_right_cmd_scale:.9f}")
+
+
 def add_common_serial_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--port", required=True, help="Serial device path, for example /dev/ttyACM0")
     parser.add_argument("--baudrate", type=int, default=115200, help="Serial baudrate")
@@ -213,6 +268,61 @@ def build_parser() -> argparse.ArgumentParser:
         help="Seconds between repeated BOTH commands so the Mega watchdog stays armed",
     )
     straight.add_argument(
+        "--settle-time",
+        type=float,
+        default=0.25,
+        help="Seconds to wait after STOP before reading final encoders",
+    )
+
+    straight_trim = subparsers.add_parser(
+        "straight-trim",
+        help="Reset encoders, drive straight for a fixed duration, and suggest LEFT_CMD_SCALE/RIGHT_CMD_SCALE",
+    )
+    add_common_serial_args(straight_trim)
+    straight_trim.add_argument("--pwm", type=int, default=90, help="PWM magnitude to use (0-255)")
+    straight_trim.add_argument(
+        "--duration",
+        type=float,
+        default=1.6,
+        help="Seconds to drive straight while comparing left/right encoder motion",
+    )
+    straight_trim.add_argument(
+        "--direction",
+        choices=("forward", "reverse"),
+        default="forward",
+        help="Direction to drive during the trim run",
+    )
+    straight_trim.add_argument(
+        "--current-left-cmd-scale",
+        type=float,
+        default=1.0,
+        help="Current LEFT_CMD_SCALE value, used when suggesting the next value",
+    )
+    straight_trim.add_argument(
+        "--current-right-cmd-scale",
+        type=float,
+        default=1.0,
+        help="Current RIGHT_CMD_SCALE value, used when suggesting the next value",
+    )
+    straight_trim.add_argument(
+        "--left-m-per-tick",
+        type=float,
+        default=0.0,
+        help="Optional calibrated left meters-per-tick; used to compare physical distance instead of raw ticks",
+    )
+    straight_trim.add_argument(
+        "--right-m-per-tick",
+        type=float,
+        default=0.0,
+        help="Optional calibrated right meters-per-tick; used to compare physical distance instead of raw ticks",
+    )
+    straight_trim.add_argument(
+        "--send-period",
+        type=float,
+        default=0.2,
+        help="Seconds between repeated BOTH commands so the Mega watchdog stays armed",
+    )
+    straight_trim.add_argument(
         "--settle-time",
         type=float,
         default=0.25,
@@ -338,6 +448,35 @@ def handle_spin(ser: serial.Serial, args: argparse.Namespace) -> int:
     return 0
 
 
+def handle_straight_trim(ser: serial.Serial, args: argparse.Namespace) -> int:
+    verify_keyboard_firmware(ser, args.reply_timeout)
+    reset_encoders(ser, args.reply_timeout)
+    start_left, start_right = read_encoders(ser, args.reply_timeout)
+
+    pwm = max(0, min(255, abs(args.pwm)))
+    signed_pwm = pwm if args.direction == "forward" else -pwm
+    command = f"BOTH {signed_pwm} {signed_pwm}"
+
+    print()
+    print("[mega-cal] Straight trim run")
+    print(f"[mega-cal]   command={command}")
+    print(f"[mega-cal]   duration_s={args.duration:.3f}")
+    print(f"[mega-cal]   send_period_s={args.send_period:.3f}")
+
+    drive_for(ser, command, args.duration, args.send_period, args.settle_time, args.reply_timeout)
+    end_left, end_right = read_encoders(ser, args.reply_timeout)
+    delta_left, delta_right = print_encoder_summary(start_left, start_right, end_left, end_right)
+    print_straight_trim_calibration(
+        delta_left,
+        delta_right,
+        args.current_left_cmd_scale,
+        args.current_right_cmd_scale,
+        args.left_m_per_tick,
+        args.right_m_per_tick,
+    )
+    return 0
+
+
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
@@ -353,6 +492,8 @@ def main() -> int:
                 return handle_snapshot(ser, args)
             if args.mode == "straight":
                 return handle_straight(ser, args)
+            if args.mode == "straight-trim":
+                return handle_straight_trim(ser, args)
             if args.mode == "spin":
                 return handle_spin(ser, args)
 

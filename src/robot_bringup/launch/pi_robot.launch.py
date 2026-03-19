@@ -34,6 +34,8 @@ def generate_launch_description():
     mega_baudrate = LaunchConfiguration('mega_baudrate')
     left_cmd_sign = LaunchConfiguration('left_cmd_sign')
     right_cmd_sign = LaunchConfiguration('right_cmd_sign')
+    left_cmd_scale = LaunchConfiguration('left_cmd_scale')
+    right_cmd_scale = LaunchConfiguration('right_cmd_scale')
     left_tick_sign = LaunchConfiguration('left_tick_sign')
     right_tick_sign = LaunchConfiguration('right_tick_sign')
     left_m_per_tick = LaunchConfiguration('left_m_per_tick')
@@ -121,6 +123,8 @@ def generate_launch_description():
                 'base_frame_id': ParameterValue(base_frame, value_type=str),
                 'left_cmd_sign': ParameterValue(left_cmd_sign, value_type=int),
                 'right_cmd_sign': ParameterValue(right_cmd_sign, value_type=int),
+                'left_cmd_scale': ParameterValue(left_cmd_scale, value_type=float),
+                'right_cmd_scale': ParameterValue(right_cmd_scale, value_type=float),
                 'left_tick_sign': ParameterValue(left_tick_sign, value_type=int),
                 'right_tick_sign': ParameterValue(right_tick_sign, value_type=int),
                 'left_m_per_tick': ParameterValue(left_m_per_tick, value_type=float),
@@ -145,6 +149,8 @@ def generate_launch_description():
         DeclareLaunchArgument('mega_baudrate', default_value='115200'),
         DeclareLaunchArgument('left_cmd_sign', default_value='1'),
         DeclareLaunchArgument('right_cmd_sign', default_value='1'),
+        DeclareLaunchArgument('left_cmd_scale', default_value='1.0'),
+        DeclareLaunchArgument('right_cmd_scale', default_value='1.0'),
         DeclareLaunchArgument('left_tick_sign', default_value='1'),
         DeclareLaunchArgument('right_tick_sign', default_value='1'),
         DeclareLaunchArgument('left_m_per_tick', default_value='0.0'),

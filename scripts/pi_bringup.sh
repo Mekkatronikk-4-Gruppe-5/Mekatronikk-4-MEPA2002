@@ -65,11 +65,11 @@ if [[ "${WITH_CAMERA_RVIZ}" == "1" && -z "${CAMERA_REMOTE_HOST}" ]]; then
   CAMERA_REMOTE_HOST="${ROS_STATIC_PEERS}"
 fi
 
-if [[ "${MEKK4_DEBUG_STREAM:-0}" == "1" && -z "${CAMERA_REMOTE_HOST}" ]]; then
+if [[ "${WITH_TEDDY}" == "1" && "${MEKK4_DEBUG_STREAM:-0}" == "1" && -z "${CAMERA_REMOTE_HOST}" ]]; then
   CAMERA_REMOTE_HOST="${ROS_STATIC_PEERS}"
 fi
 
-if [[ "${WITH_TEDDY}" == "1" || -n "${CAMERA_REMOTE_HOST}" ]]; then
+if [[ "${WITH_TEDDY}" == "1" || "${WITH_CAMERA_RVIZ}" == "1" ]]; then
   if ! command -v rpicam-vid >/dev/null 2>&1; then
     echo "[pi-bringup] Camera streaming requires rpicam-vid on the Pi host." >&2
     exit 1

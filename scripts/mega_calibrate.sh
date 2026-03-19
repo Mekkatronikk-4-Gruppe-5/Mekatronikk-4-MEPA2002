@@ -55,6 +55,6 @@ if [[ "$#" -eq 0 ]]; then
 fi
 
 python3 "${SCRIPT_DIR}/mega_calibration.py" \
+  "$@" \
   --port "${MEGA_PORT}" \
-  --baudrate "${MEGA_BAUDRATE}" \
-  "$@"
+  --baudrate "${MEGA_BAUDRATE}"

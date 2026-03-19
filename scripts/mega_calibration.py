@@ -1,13 +1,21 @@
 #!/usr/bin/env python3
 import argparse
 import math
+import os
 import sys
 import time
 
 import serial
 
+try:
+    import yaml
+except Exception:
+    yaml = None
+
 
 IGNORED_PREFIXES = ("EVENT ", "MEGA_KEYBOARD_READY")
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+DEFAULT_CONFIG = os.path.join(REPO_ROOT, "config", "robot_calibration.yaml")
 
 
 def read_line(ser: serial.Serial, timeout: float, ignored_prefixes: tuple[str, ...] = ()) -> str | None:
@@ -151,7 +159,7 @@ def print_encoder_summary(start_left: int, start_right: int, end_left: int, end_
     return delta_left, delta_right
 
 
-def print_straight_calibration(distance_m: float, delta_left: int, delta_right: int) -> None:
+def print_straight_calibration(distance_m: float, delta_left: int, delta_right: int) -> dict[str, float]:
     if delta_left == 0 or delta_right == 0:
         raise RuntimeError("encoder delta was zero; cannot compute meters per tick")
 
@@ -169,6 +177,11 @@ def print_straight_calibration(distance_m: float, delta_left: int, delta_right: 
     print(f"left_m_per_tick: {left_m_per_tick:.9f}")
     print(f"right_m_per_tick: {right_m_per_tick:.9f}")
     print(f"mean_m_per_tick: {mean_m_per_tick:.9f}")
+    return {
+        "left_m_per_tick": left_m_per_tick,
+        "right_m_per_tick": right_m_per_tick,
+        "mean_m_per_tick": mean_m_per_tick,
+    }
 
 
 def print_spin_calibration(
@@ -177,7 +190,7 @@ def print_spin_calibration(
     right_m_per_tick: float,
     delta_left: int,
     delta_right: int,
-) -> None:
+) -> dict[str, float]:
     angle_rad = math.radians(abs(angle_deg))
     if angle_rad == 0.0:
         raise RuntimeError("angle_deg must be non-zero")
@@ -194,6 +207,9 @@ def print_spin_calibration(
     print(f"[mega-cal]   track_width_eff_m={track_width_eff_m:.9f}")
     print("[mega-cal] YAML snippet:")
     print(f"track_width_eff_m: {track_width_eff_m:.9f}")
+    return {
+        "track_width_eff_m": track_width_eff_m,
+    }
 
 
 def print_straight_trim_calibration(
@@ -203,7 +219,7 @@ def print_straight_trim_calibration(
     current_right_cmd_scale: float,
     left_m_per_tick: float,
     right_m_per_tick: float,
-) -> None:
+) -> dict[str, float]:
     left_metric = abs(delta_left)
     right_metric = abs(delta_right)
     metric_label = "ticks"
@@ -249,6 +265,66 @@ def print_straight_trim_calibration(
     print("[mega-cal] YAML snippet:")
     print(f"left_cmd_scale: {suggested_left_cmd_scale:.9f}")
     print(f"right_cmd_scale: {suggested_right_cmd_scale:.9f}")
+    return {
+        "left_cmd_scale": suggested_left_cmd_scale,
+        "right_cmd_scale": suggested_right_cmd_scale,
+    }
+
+
+def load_config(config_path: str) -> dict:
+    if yaml is None:
+        raise RuntimeError("Missing python yaml support. Install python3-yaml.")
+    if not os.path.exists(config_path):
+        return {}
+    with open(config_path, "r", encoding="utf-8") as handle:
+        return yaml.safe_load(handle) or {}
+
+
+def save_config(config_path: str, data: dict) -> None:
+    if yaml is None:
+        raise RuntimeError("Missing python yaml support. Install python3-yaml.")
+    os.makedirs(os.path.dirname(config_path), exist_ok=True)
+    with open(config_path, "w", encoding="utf-8") as handle:
+        yaml.safe_dump(data, handle, sort_keys=False)
+
+
+def maybe_update_config(args: argparse.Namespace, updates: dict[str, float] | None) -> None:
+    if not getattr(args, "write_config", True) or not updates:
+        return
+
+    config_path = args.config_file
+    data = load_config(config_path)
+    mega = data.setdefault("mega_driver", {})
+
+    if "swap_sides" not in mega:
+        mega["swap_sides"] = bool(args.swap_sides)
+    if "left_cmd_sign" not in mega:
+        mega["left_cmd_sign"] = 1
+    if "right_cmd_sign" not in mega:
+        mega["right_cmd_sign"] = 1
+    if "left_tick_sign" not in mega:
+        mega["left_tick_sign"] = 1
+    if "right_tick_sign" not in mega:
+        mega["right_tick_sign"] = 1
+
+    if args.mode in ("straight", "straight-trim", "spin"):
+        mega["swap_sides"] = bool(args.swap_sides)
+        mega["left_cmd_scale"] = float(args.left_cmd_scale)
+        mega["right_cmd_scale"] = float(args.right_cmd_scale)
+
+    if "left_cmd_scale" in updates:
+        mega["left_cmd_scale"] = float(updates["left_cmd_scale"])
+    if "right_cmd_scale" in updates:
+        mega["right_cmd_scale"] = float(updates["right_cmd_scale"])
+    if "left_m_per_tick" in updates:
+        mega["left_m_per_tick"] = float(updates["left_m_per_tick"])
+    if "right_m_per_tick" in updates:
+        mega["right_m_per_tick"] = float(updates["right_m_per_tick"])
+    if "track_width_eff_m" in updates:
+        mega["track_width_eff_m"] = float(updates["track_width_eff_m"])
+
+    save_config(config_path, data)
+    print(f"[mega-cal] Saved calibration values to {config_path}")
 
 
 def add_common_serial_args(parser: argparse.ArgumentParser) -> None:
@@ -271,6 +347,17 @@ def add_common_serial_args(parser: argparse.ArgumentParser) -> None:
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Treat Mega M1/ENC1 as robot right and M2/ENC2 as robot left (default: enabled)",
+    )
+    parser.add_argument(
+        "--config-file",
+        default=DEFAULT_CONFIG,
+        help="Calibration YAML file to read/write",
+    )
+    parser.add_argument(
+        "--write-config",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Write computed calibration values back to the calibration YAML (default: enabled)",
     )
 
 
@@ -485,7 +572,8 @@ def handle_straight(ser: serial.Serial, args: argparse.Namespace) -> int:
     delta_left, delta_right = print_encoder_summary(start_left, start_right, end_left, end_right)
 
     if args.distance_m > 0.0:
-        print_straight_calibration(args.distance_m, delta_left, delta_right)
+        updates = print_straight_calibration(args.distance_m, delta_left, delta_right)
+        maybe_update_config(args, updates)
 
     return 0
 
@@ -522,13 +610,14 @@ def handle_spin(ser: serial.Serial, args: argparse.Namespace) -> int:
             raise RuntimeError(
                 "spin calibration needs --left-m-per-tick and --right-m-per-tick when --angle-deg is set"
             )
-        print_spin_calibration(
+        updates = print_spin_calibration(
             args.angle_deg,
             args.left_m_per_tick,
             args.right_m_per_tick,
             delta_left,
             delta_right,
         )
+        maybe_update_config(args, updates)
 
     return 0
 
@@ -559,7 +648,7 @@ def handle_straight_trim(ser: serial.Serial, args: argparse.Namespace) -> int:
     drive_for(ser, command, args.duration, args.send_period, args.settle_time, args.reply_timeout)
     end_left, end_right = read_encoders(ser, args.reply_timeout, swap_sides=args.swap_sides)
     delta_left, delta_right = print_encoder_summary(start_left, start_right, end_left, end_right)
-    print_straight_trim_calibration(
+    updates = print_straight_trim_calibration(
         delta_left,
         delta_right,
         args.left_cmd_scale,
@@ -567,6 +656,7 @@ def handle_straight_trim(ser: serial.Serial, args: argparse.Namespace) -> int:
         args.left_m_per_tick,
         args.right_m_per_tick,
     )
+    maybe_update_config(args, updates)
     return 0
 
 

@@ -281,6 +281,14 @@ Nyttige flagg:
 3. `--direction ccw` på `spin` for motsatt spinnretning
 4. `MEGA_PORT=/dev/ttyACM0 make mega-calibrate ARGS="snapshot"` hvis port-auto-detect bommer
 
+Kalibreringsscriptet skriver nå som standard resultatene tilbake til [robot_calibration.yaml](/home/emiliam/Mekatronikk-4-MEPA2002/config/robot_calibration.yaml). Det betyr at:
+
+1. `straight-trim` oppdaterer `left_cmd_scale` og `right_cmd_scale`
+2. `straight --distance-m ...` oppdaterer `left_m_per_tick` og `right_m_per_tick`
+3. `spin --angle-deg ...` oppdaterer `track_width_eff_m`
+
+Hvis dere bare vil teste uten å lagre, bruk `--no-write-config`.
+
 ### ROS Mega-driver på Pi
 
 Repoet har nå også en ROS 2 Mega-driver som kan brukes i Docker-bringup. Den:
@@ -310,6 +318,7 @@ Merk:
 3. `MEGA_PORT=/dev/ttyACM0` og `MEGA_BAUDRATE=115200` kan overstyres i samme kommando hvis auto-defaulten ikke passer.
 4. `LEFT_CMD_SCALE` og `RIGHT_CMD_SCALE` kan brukes til å få roboten til å gå rettere uten å endre encoder-odometrien. Start med små justeringer som `LEFT_CMD_SCALE=0.98` eller `RIGHT_CMD_SCALE=0.98`.
 5. `SWAP_SIDES=1` er nå default i Pi-bringup og bytter venstre/høyre mapping i Mega-driveren. Hvis dere rewierer fysisk senere, kan dere overstyre med `SWAP_SIDES=0`.
+6. Pi-bringup leser nå default kalibreringsverdier fra [robot_calibration.yaml](/home/emiliam/Mekatronikk-4-MEPA2002/config/robot_calibration.yaml), så dere slipper å lime inn alle `LEFT_*`/`RIGHT_*`-verdiene hver gang. Manuelle env-vars overstyrer fortsatt YAML-fila hvis dere vil teste noe midlertidig.
 
 ### `robot_localization` EKF på Pi
 

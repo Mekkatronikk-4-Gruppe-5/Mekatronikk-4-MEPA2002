@@ -6,6 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${REPO_ROOT}"
 
 eval "$(python3 "${SCRIPT_DIR}/camera_config_env.py")"
+eval "$(python3 "${SCRIPT_DIR}/robot_calibration_env.py")"
 
 WITH_NAV2="${WITH_NAV2:-1}"
 WITH_TEDDY="${WITH_TEDDY:-0}"

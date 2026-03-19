@@ -61,10 +61,20 @@ def parse_encoder_reply(reply: str, label: str) -> int:
         raise RuntimeError(f"failed to parse {label} count from {reply!r}") from exc
 
 
-def read_encoders(ser: serial.Serial, timeout: float) -> tuple[int, int]:
+def read_encoders(ser: serial.Serial, timeout: float, swap_sides: bool = False) -> tuple[int, int]:
     left_reply = expect_reply(ser, "ENC1", "ENC1 ", timeout)
     right_reply = expect_reply(ser, "ENC2", "ENC2 ", timeout)
-    return parse_encoder_reply(left_reply, "ENC1"), parse_encoder_reply(right_reply, "ENC2")
+    first = parse_encoder_reply(left_reply, "ENC1")
+    second = parse_encoder_reply(right_reply, "ENC2")
+    if swap_sides:
+        return second, first
+    return first, second
+
+
+def make_both_command(left_value: int, right_value: int, swap_sides: bool) -> str:
+    if swap_sides:
+        left_value, right_value = right_value, left_value
+    return f"BOTH {left_value} {right_value}"
 
 
 def verify_keyboard_firmware(ser: serial.Serial, timeout: float) -> str:
@@ -231,6 +241,11 @@ def add_common_serial_args(parser: argparse.ArgumentParser) -> None:
         default=2.0,
         help="Seconds to wait for commands that are expected to reply",
     )
+    parser.add_argument(
+        "--swap-sides",
+        action="store_true",
+        help="Treat Mega M1/ENC1 as robot right and M2/ENC2 as robot left",
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -378,7 +393,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def handle_snapshot(ser: serial.Serial, args: argparse.Namespace) -> int:
     verify_keyboard_firmware(ser, args.reply_timeout)
-    left, right = read_encoders(ser, args.reply_timeout)
+    left, right = read_encoders(ser, args.reply_timeout, swap_sides=args.swap_sides)
     state = expect_reply(ser, "STATE", "STATE ", args.reply_timeout)
     print()
     print("[mega-cal] Snapshot")
@@ -391,11 +406,11 @@ def handle_snapshot(ser: serial.Serial, args: argparse.Namespace) -> int:
 def handle_straight(ser: serial.Serial, args: argparse.Namespace) -> int:
     verify_keyboard_firmware(ser, args.reply_timeout)
     reset_encoders(ser, args.reply_timeout)
-    start_left, start_right = read_encoders(ser, args.reply_timeout)
+    start_left, start_right = read_encoders(ser, args.reply_timeout, swap_sides=args.swap_sides)
 
     pwm = max(0, min(255, abs(args.pwm)))
     signed_pwm = pwm if args.direction == "forward" else -pwm
-    command = f"BOTH {signed_pwm} {signed_pwm}"
+    command = make_both_command(signed_pwm, signed_pwm, args.swap_sides)
 
     print()
     print("[mega-cal] Straight run")
@@ -404,7 +419,7 @@ def handle_straight(ser: serial.Serial, args: argparse.Namespace) -> int:
     print(f"[mega-cal]   send_period_s={args.send_period:.3f}")
 
     drive_for(ser, command, args.duration, args.send_period, args.settle_time, args.reply_timeout)
-    end_left, end_right = read_encoders(ser, args.reply_timeout)
+    end_left, end_right = read_encoders(ser, args.reply_timeout, swap_sides=args.swap_sides)
     delta_left, delta_right = print_encoder_summary(start_left, start_right, end_left, end_right)
 
     if args.distance_m > 0.0:
@@ -416,11 +431,11 @@ def handle_straight(ser: serial.Serial, args: argparse.Namespace) -> int:
 def handle_spin(ser: serial.Serial, args: argparse.Namespace) -> int:
     verify_keyboard_firmware(ser, args.reply_timeout)
     reset_encoders(ser, args.reply_timeout)
-    start_left, start_right = read_encoders(ser, args.reply_timeout)
+    start_left, start_right = read_encoders(ser, args.reply_timeout, swap_sides=args.swap_sides)
 
     pwm = max(0, min(255, abs(args.pwm)))
     left_pwm, right_pwm = (pwm, -pwm) if args.direction == "cw" else (-pwm, pwm)
-    command = f"BOTH {left_pwm} {right_pwm}"
+    command = make_both_command(left_pwm, right_pwm, args.swap_sides)
 
     print()
     print("[mega-cal] Spin run")
@@ -429,7 +444,7 @@ def handle_spin(ser: serial.Serial, args: argparse.Namespace) -> int:
     print(f"[mega-cal]   send_period_s={args.send_period:.3f}")
 
     drive_for(ser, command, args.duration, args.send_period, args.settle_time, args.reply_timeout)
-    end_left, end_right = read_encoders(ser, args.reply_timeout)
+    end_left, end_right = read_encoders(ser, args.reply_timeout, swap_sides=args.swap_sides)
     delta_left, delta_right = print_encoder_summary(start_left, start_right, end_left, end_right)
 
     if args.angle_deg > 0.0:
@@ -451,11 +466,11 @@ def handle_spin(ser: serial.Serial, args: argparse.Namespace) -> int:
 def handle_straight_trim(ser: serial.Serial, args: argparse.Namespace) -> int:
     verify_keyboard_firmware(ser, args.reply_timeout)
     reset_encoders(ser, args.reply_timeout)
-    start_left, start_right = read_encoders(ser, args.reply_timeout)
+    start_left, start_right = read_encoders(ser, args.reply_timeout, swap_sides=args.swap_sides)
 
     pwm = max(0, min(255, abs(args.pwm)))
     signed_pwm = pwm if args.direction == "forward" else -pwm
-    command = f"BOTH {signed_pwm} {signed_pwm}"
+    command = make_both_command(signed_pwm, signed_pwm, args.swap_sides)
 
     print()
     print("[mega-cal] Straight trim run")
@@ -464,7 +479,7 @@ def handle_straight_trim(ser: serial.Serial, args: argparse.Namespace) -> int:
     print(f"[mega-cal]   send_period_s={args.send_period:.3f}")
 
     drive_for(ser, command, args.duration, args.send_period, args.settle_time, args.reply_timeout)
-    end_left, end_right = read_encoders(ser, args.reply_timeout)
+    end_left, end_right = read_encoders(ser, args.reply_timeout, swap_sides=args.swap_sides)
     delta_left, delta_right = print_encoder_summary(start_left, start_right, end_left, end_right)
     print_straight_trim_calibration(
         delta_left,

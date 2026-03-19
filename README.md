@@ -260,6 +260,12 @@ Dette:
 2. sammenligner venstre og høyre bevegelse
 3. foreslår nye `left_cmd_scale` og `right_cmd_scale` uten å endre encoder-odometrien
 
+De samme trim-verdiene kan deretter brukes direkte i `straight` og `spin`, for eksempel:
+
+```bash
+make mega-calibrate ARGS="straight --pwm 90 --duration 10.4 --left-cmd-scale 0.91 --right-cmd-scale 1.0 --distance-m 2.0"
+```
+
 Kjør en spinn-kalibrering når du allerede har meter-per-tick og har målt faktisk rotasjon:
 
 ```bash
@@ -271,7 +277,7 @@ Dette beregner `track_width_eff_m`, som er den effektive sporvidden dere bør br
 Nyttige flagg:
 
 1. `--direction reverse` på `straight` for bakoverkalibrering
-2. `--current-left-cmd-scale` og `--current-right-cmd-scale` på `straight-trim` hvis dere finjusterer rundt en eksisterende trim
+2. `--left-cmd-scale` og `--right-cmd-scale` kan brukes på `straight`, `straight-trim` og `spin`
 3. `--direction ccw` på `spin` for motsatt spinnretning
 4. `MEGA_PORT=/dev/ttyACM0 make mega-calibrate ARGS="snapshot"` hvis port-auto-detect bommer
 

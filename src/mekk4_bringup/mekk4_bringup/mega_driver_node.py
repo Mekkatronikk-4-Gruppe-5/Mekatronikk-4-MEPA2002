@@ -190,9 +190,9 @@ class MegaDriverNode(Node):
             if self._reset_encoders_on_connect:
                 self._send_expect("RESET ENC1", "OK RESET ENC1")
                 self._send_expect("RESET ENC2", "OK RESET ENC2")
-            left_ticks, right_ticks = self._read_encoder_pair()
-            self._last_left_ticks = left_ticks
-            self._last_right_ticks = right_ticks
+            left_ticks_raw, right_ticks_raw = self._read_encoder_pair()
+            self._last_left_ticks = left_ticks_raw * self._left_tick_sign
+            self._last_right_ticks = right_ticks_raw * self._right_tick_sign
             self._last_encoder_stamp = time.monotonic()
             self._last_motion_command = "STOP"
             self._last_stop_sent = True

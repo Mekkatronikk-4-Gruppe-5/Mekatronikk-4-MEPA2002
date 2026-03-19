@@ -32,6 +32,7 @@ def generate_launch_description():
     imu_frame = LaunchConfiguration('imu_frame')
     mega_port = LaunchConfiguration('mega_port')
     mega_baudrate = LaunchConfiguration('mega_baudrate')
+    swap_sides = LaunchConfiguration('swap_sides')
     left_cmd_sign = LaunchConfiguration('left_cmd_sign')
     right_cmd_sign = LaunchConfiguration('right_cmd_sign')
     left_cmd_scale = LaunchConfiguration('left_cmd_scale')
@@ -121,6 +122,7 @@ def generate_launch_description():
                 'port': ParameterValue(mega_port, value_type=str),
                 'baudrate': ParameterValue(mega_baudrate, value_type=int),
                 'base_frame_id': ParameterValue(base_frame, value_type=str),
+                'swap_sides': ParameterValue(swap_sides, value_type=bool),
                 'left_cmd_sign': ParameterValue(left_cmd_sign, value_type=int),
                 'right_cmd_sign': ParameterValue(right_cmd_sign, value_type=int),
                 'left_cmd_scale': ParameterValue(left_cmd_scale, value_type=float),
@@ -147,6 +149,7 @@ def generate_launch_description():
         DeclareLaunchArgument('imu_frame', default_value='imu_link'),
         DeclareLaunchArgument('mega_port', default_value='/dev/ttyACM0'),
         DeclareLaunchArgument('mega_baudrate', default_value='115200'),
+        DeclareLaunchArgument('swap_sides', default_value='false'),
         DeclareLaunchArgument('left_cmd_sign', default_value='1'),
         DeclareLaunchArgument('right_cmd_sign', default_value='1'),
         DeclareLaunchArgument('left_cmd_scale', default_value='1.0'),

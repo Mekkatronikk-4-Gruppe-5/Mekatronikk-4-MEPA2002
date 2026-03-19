@@ -33,6 +33,7 @@ class MegaDriverNode(Node):
         self.declare_parameter("base_frame_id", "chassis")
         self.declare_parameter("odom_frame_id", "odom")
         self.declare_parameter("publish_tf", True)
+        self.declare_parameter("swap_sides", False)
         self.declare_parameter("max_track_speed_mps", 0.45)
         self.declare_parameter("max_pwm", 255)
         self.declare_parameter("min_nonzero_pwm", 55)
@@ -66,6 +67,7 @@ class MegaDriverNode(Node):
         self._base_frame_id = self.get_parameter("base_frame_id").get_parameter_value().string_value
         self._odom_frame_id = self.get_parameter("odom_frame_id").get_parameter_value().string_value
         self._publish_tf = self.get_parameter("publish_tf").get_parameter_value().bool_value
+        self._swap_sides = self.get_parameter("swap_sides").get_parameter_value().bool_value
         self._max_track_speed_mps = (
             self.get_parameter("max_track_speed_mps").get_parameter_value().double_value
         )
@@ -250,7 +252,11 @@ class MegaDriverNode(Node):
     def _read_encoder_pair(self) -> tuple[int, int]:
         left_reply = self._send_expect("ENC1", "ENC1 ")
         right_reply = self._send_expect("ENC2", "ENC2 ")
-        return self._parse_encoder(left_reply, "ENC1"), self._parse_encoder(right_reply, "ENC2")
+        first = self._parse_encoder(left_reply, "ENC1")
+        second = self._parse_encoder(right_reply, "ENC2")
+        if self._swap_sides:
+            return second, first
+        return first, second
 
     @staticmethod
     def _parse_encoder(reply: str, label: str) -> int:
@@ -279,6 +285,8 @@ class MegaDriverNode(Node):
         right_pwm = self._speed_to_pwm(right_speed, self._right_cmd_sign)
         if left_pwm == 0 and right_pwm == 0:
             return "STOP"
+        if self._swap_sides:
+            left_pwm, right_pwm = right_pwm, left_pwm
         return f"BOTH {left_pwm} {right_pwm}"
 
     def _speed_to_pwm(self, track_speed_mps: float, sign: int) -> int:

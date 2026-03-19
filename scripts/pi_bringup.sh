@@ -20,6 +20,7 @@ BASE_FRAME="${BASE_FRAME:-chassis}"
 IMU_FRAME="${IMU_FRAME:-imu_link}"
 MEGA_PORT="${MEGA_PORT:-/dev/ttyACM0}"
 MEGA_BAUDRATE="${MEGA_BAUDRATE:-115200}"
+SWAP_SIDES="${SWAP_SIDES:-1}"
 LEFT_CMD_SIGN="${LEFT_CMD_SIGN:-1}"
 RIGHT_CMD_SIGN="${RIGHT_CMD_SIGN:-1}"
 LEFT_CMD_SCALE="${LEFT_CMD_SCALE:-1.0}"
@@ -163,4 +164,4 @@ docker "${docker_run_args[@]}" \
   -e MEKK4_DEBUG_STREAM_SCALE="${MEKK4_DEBUG_STREAM_SCALE}" \
   -e MEKK4_DEBUG_STREAM_FPS="${MEKK4_DEBUG_STREAM_FPS}" \
   -e MEKK4_DEBUG_STREAM_BITRATE="${MEKK4_DEBUG_STREAM_BITRATE}" \
-  ros bash -lc "source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && ros2 launch robot_bringup pi_robot.launch.py use_nav2:=${WITH_NAV2} use_teddy:=${WITH_TEDDY} use_imu:=${WITH_IMU} use_mega_driver:=${WITH_MEGA_DRIVER} product_name:=${PRODUCT_NAME} port_name:=${PORT_NAME} port_baudrate:=${PORT_BAUDRATE} frame_id:=${LIDAR_FRAME} base_frame:=${BASE_FRAME} imu_frame:=${IMU_FRAME} mega_port:=${MEGA_PORT} mega_baudrate:=${MEGA_BAUDRATE} left_cmd_sign:=${LEFT_CMD_SIGN} right_cmd_sign:=${RIGHT_CMD_SIGN} left_cmd_scale:=${LEFT_CMD_SCALE} right_cmd_scale:=${RIGHT_CMD_SCALE} left_tick_sign:=${LEFT_TICK_SIGN} right_tick_sign:=${RIGHT_TICK_SIGN} left_m_per_tick:=${LEFT_M_PER_TICK} right_m_per_tick:=${RIGHT_M_PER_TICK} track_width_eff_m:=${TRACK_WIDTH_EFF_M} map:=${MAP_FILE} params_file:=${PARAMS_FILE}"
+  ros bash -lc "source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && ros2 launch robot_bringup pi_robot.launch.py use_nav2:=${WITH_NAV2} use_teddy:=${WITH_TEDDY} use_imu:=${WITH_IMU} use_mega_driver:=${WITH_MEGA_DRIVER} product_name:=${PRODUCT_NAME} port_name:=${PORT_NAME} port_baudrate:=${PORT_BAUDRATE} frame_id:=${LIDAR_FRAME} base_frame:=${BASE_FRAME} imu_frame:=${IMU_FRAME} mega_port:=${MEGA_PORT} mega_baudrate:=${MEGA_BAUDRATE} swap_sides:=${SWAP_SIDES} left_cmd_sign:=${LEFT_CMD_SIGN} right_cmd_sign:=${RIGHT_CMD_SIGN} left_cmd_scale:=${LEFT_CMD_SCALE} right_cmd_scale:=${RIGHT_CMD_SCALE} left_tick_sign:=${LEFT_TICK_SIGN} right_tick_sign:=${RIGHT_TICK_SIGN} left_m_per_tick:=${LEFT_M_PER_TICK} right_m_per_tick:=${RIGHT_M_PER_TICK} track_width_eff_m:=${TRACK_WIDTH_EFF_M} map:=${MAP_FILE} params_file:=${PARAMS_FILE}"

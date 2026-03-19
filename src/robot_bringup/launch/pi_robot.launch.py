@@ -3,6 +3,7 @@ from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetE
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
+from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.actions import Node, SetParameter
 from ament_index_python.packages import get_package_share_directory
 import os
@@ -22,12 +23,18 @@ def generate_launch_description():
     use_nav2 = LaunchConfiguration('use_nav2')
     use_teddy = LaunchConfiguration('use_teddy')
     use_imu = LaunchConfiguration('use_imu')
+    use_mega_driver = LaunchConfiguration('use_mega_driver')
     product_name = LaunchConfiguration('product_name')
     port_name = LaunchConfiguration('port_name')
     port_baudrate = LaunchConfiguration('port_baudrate')
     frame_id = LaunchConfiguration('frame_id')
     base_frame = LaunchConfiguration('base_frame')
     imu_frame = LaunchConfiguration('imu_frame')
+    mega_port = LaunchConfiguration('mega_port')
+    mega_baudrate = LaunchConfiguration('mega_baudrate')
+    left_m_per_tick = LaunchConfiguration('left_m_per_tick')
+    right_m_per_tick = LaunchConfiguration('right_m_per_tick')
+    track_width_eff_m = LaunchConfiguration('track_width_eff_m')
     tf_x = LaunchConfiguration('tf_x')
     tf_y = LaunchConfiguration('tf_y')
     tf_z = LaunchConfiguration('tf_z')
@@ -97,16 +104,40 @@ def generate_launch_description():
         parameters=[{'frame_id': imu_frame}],
     )
 
+    mega_driver_node = Node(
+        package='mekk4_bringup',
+        executable='mega_driver_node',
+        name='mega_driver',
+        output='screen',
+        condition=IfCondition(use_mega_driver),
+        parameters=[
+            {
+                'port': ParameterValue(mega_port, value_type=str),
+                'baudrate': ParameterValue(mega_baudrate, value_type=int),
+                'base_frame_id': ParameterValue(base_frame, value_type=str),
+                'left_m_per_tick': ParameterValue(left_m_per_tick, value_type=float),
+                'right_m_per_tick': ParameterValue(right_m_per_tick, value_type=float),
+                'track_width_eff_m': ParameterValue(track_width_eff_m, value_type=float),
+            }
+        ],
+    )
+
     return LaunchDescription([
         DeclareLaunchArgument('use_nav2', default_value='true'),
         DeclareLaunchArgument('use_teddy', default_value='false'),
         DeclareLaunchArgument('use_imu', default_value='false'),
+        DeclareLaunchArgument('use_mega_driver', default_value='false'),
         DeclareLaunchArgument('product_name', default_value='LDLiDAR_LD06'),
         DeclareLaunchArgument('port_name', default_value='/dev/ttyAMA0'),
         DeclareLaunchArgument('port_baudrate', default_value='230400'),
         DeclareLaunchArgument('frame_id', default_value='base_laser'),
         DeclareLaunchArgument('base_frame', default_value='chassis'),
         DeclareLaunchArgument('imu_frame', default_value='imu_link'),
+        DeclareLaunchArgument('mega_port', default_value='/dev/ttyACM0'),
+        DeclareLaunchArgument('mega_baudrate', default_value='115200'),
+        DeclareLaunchArgument('left_m_per_tick', default_value='0.0'),
+        DeclareLaunchArgument('right_m_per_tick', default_value='0.0'),
+        DeclareLaunchArgument('track_width_eff_m', default_value='0.35'),
         DeclareLaunchArgument('tf_x', default_value='0.0'),
         DeclareLaunchArgument('tf_y', default_value='0.0'),
         DeclareLaunchArgument('tf_z', default_value='0.18'),
@@ -121,6 +152,7 @@ def generate_launch_description():
         SetParameter('use_sim_time', False),
         robot_state_publisher,
         imu_node,
+        mega_driver_node,
         lidar_launch,
         nav2_launch,
         teddy_detector,

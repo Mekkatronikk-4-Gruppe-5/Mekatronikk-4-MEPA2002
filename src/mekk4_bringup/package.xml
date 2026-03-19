@@ -7,9 +7,12 @@
   <maintainer email="gruppe5pi5@users.noreply.github.com">ubuntu</maintainer>
   <license>MIT</license>
 
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
   <depend>rclpy</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
+  <depend>tf2_ros</depend>
   <exec_depend>mekk4_perception</exec_depend>
 
   <export>

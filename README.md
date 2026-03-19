@@ -222,6 +222,68 @@ Merk:
 1. `make mega-keyboard` finnes fortsatt som terminal-variant, men anbefales ikke over SSH siden vanlige terminaler ikke håndterer samtidige hold av flere taster like robust som GUI-varianten.
 2. Hvis GUI-broen faller ut, prøver den å koble opp SSH på nytt automatisk.
 
+### Encoder-kalibrering på Pi-host
+
+Kalibrering mot Mega kjøres på Pi-hosten, ikke i Docker. Dette verktøyet er laget for `mega_keyboard_drive`-firmwaren og bruker de eksisterende kommandoene `ENC1`, `ENC2`, `RESET ENC1`, `RESET ENC2`, `STATE`, `BOTH` og `STOP`.
+
+Ta et snapshot av dagens tellere:
+
+```bash
+make mega-calibrate ARGS="snapshot"
+```
+
+Kjør en rettlinjet kalibreringsrun og regn ut meter per tick etter at du har målt faktisk distanse:
+
+```bash
+make mega-calibrate ARGS="straight --pwm 90 --duration 1.6 --distance-m 2.0"
+```
+
+Dette:
+
+1. verifiserer at Mega kjører `mega_keyboard_drive`
+2. resetter encoderne
+3. kjører begge belter likt i valgt retning med watchdog-sikre repetisjoner
+4. stopper roboten og skriver ut encoder-delta
+5. beregner `left_m_per_tick` og `right_m_per_tick` hvis `--distance-m` er satt
+
+Kjør en spinn-kalibrering når du allerede har meter-per-tick og har målt faktisk rotasjon:
+
+```bash
+make mega-calibrate ARGS="spin --pwm 75 --duration 1.2 --angle-deg 360 --left-m-per-tick 0.000500000 --right-m-per-tick 0.000505000"
+```
+
+Dette beregner `track_width_eff_m`, som er den effektive sporvidden dere bør bruke i encoder-odometri for en belterobot.
+
+Nyttige flagg:
+
+1. `--direction reverse` på `straight` for bakoverkalibrering
+2. `--direction ccw` på `spin` for motsatt spinnretning
+3. `MEGA_PORT=/dev/ttyACM0 make mega-calibrate ARGS="snapshot"` hvis port-auto-detect bommer
+
+### ROS Mega-driver på Pi
+
+Repoet har nå også en ROS 2 Mega-driver som kan brukes i Docker-bringup. Den:
+
+1. abonnerer på `/cmd_vel`
+2. sender `BOTH` og `STOP` til Mega over serial
+3. publiserer `/odom` når `left_m_per_tick`, `right_m_per_tick` og `track_width_eff_m` er satt
+
+Eksempel:
+
+```bash
+WITH_IMU=1 WITH_MEGA_DRIVER=1 \
+LEFT_M_PER_TICK=0.000500000 \
+RIGHT_M_PER_TICK=0.000505000 \
+TRACK_WIDTH_EFF_M=0.340000000 \
+make pi-bringup
+```
+
+Merk:
+
+1. `pc-mega-keyboard` og ROS Mega-driveren kan ikke bruke samme serial-port samtidig.
+2. Hvis `LEFT_M_PER_TICK` og `RIGHT_M_PER_TICK` står på `0.0`, kjører driveren fortsatt motorstyring fra `/cmd_vel`, men `/odom` blir deaktivert.
+3. `MEGA_PORT=/dev/ttyACM0` og `MEGA_BAUDRATE=115200` kan overstyres i samme kommando hvis auto-defaulten ikke passer.
+
 
 ## Pi ytelse (host, ikke Docker)
 

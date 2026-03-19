@@ -10,6 +10,7 @@ eval "$(python3 "${SCRIPT_DIR}/camera_config_env.py")"
 WITH_NAV2="${WITH_NAV2:-1}"
 WITH_TEDDY="${WITH_TEDDY:-0}"
 WITH_IMU="${WITH_IMU:-0}"
+WITH_MEGA_DRIVER="${WITH_MEGA_DRIVER:-0}"
 PC_HOST="${PC_HOST:-}"
 PORT_NAME="${PORT_NAME:-/dev/ttyAMA0}"
 PORT_BAUDRATE="${PORT_BAUDRATE:-230400}"
@@ -17,6 +18,11 @@ PRODUCT_NAME="${PRODUCT_NAME:-LDLiDAR_LD06}"
 LIDAR_FRAME="${LIDAR_FRAME:-base_laser}"
 BASE_FRAME="${BASE_FRAME:-chassis}"
 IMU_FRAME="${IMU_FRAME:-imu_link}"
+MEGA_PORT="${MEGA_PORT:-/dev/ttyACM0}"
+MEGA_BAUDRATE="${MEGA_BAUDRATE:-115200}"
+LEFT_M_PER_TICK="${LEFT_M_PER_TICK:-0.0}"
+RIGHT_M_PER_TICK="${RIGHT_M_PER_TICK:-0.0}"
+TRACK_WIDTH_EFF_M="${TRACK_WIDTH_EFF_M:-0.35}"
 MAP_FILE="${MAP_FILE:-/ws/maps/my_map.yaml}"
 PARAMS_FILE="${PARAMS_FILE:-/ws/config/nav2_params.yaml}"
 WIDTH="${WIDTH:-1296}"
@@ -98,7 +104,19 @@ if [[ "${WITH_TEDDY}" == "1" || -n "${CAMERA_REMOTE_HOST}" ]]; then
 fi
 
 echo "[pi-bringup] Launching robot stack in Docker..." >&2
-docker compose run --rm \
+docker_run_args=(
+  compose run --rm
+)
+
+if [[ "${WITH_MEGA_DRIVER}" == "1" ]]; then
+  if [[ ! -e "${MEGA_PORT}" ]]; then
+    echo "[pi-bringup] Mega serial device not found: ${MEGA_PORT}" >&2
+    exit 1
+  fi
+  docker_run_args+=(--device "${MEGA_PORT}:${MEGA_PORT}")
+fi
+
+docker "${docker_run_args[@]}" \
   -e ROS_DOMAIN_ID="${ROS_DOMAIN_ID}" \
   -e ROS_AUTOMATIC_DISCOVERY_RANGE="${ROS_AUTOMATIC_DISCOVERY_RANGE}" \
   -e ROS_STATIC_PEERS="${ROS_STATIC_PEERS}" \
@@ -121,4 +139,4 @@ docker compose run --rm \
   -e MEKK4_DEBUG_STREAM_SCALE="${MEKK4_DEBUG_STREAM_SCALE}" \
   -e MEKK4_DEBUG_STREAM_FPS="${MEKK4_DEBUG_STREAM_FPS}" \
   -e MEKK4_DEBUG_STREAM_BITRATE="${MEKK4_DEBUG_STREAM_BITRATE}" \
-  ros bash -lc "source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && ros2 launch robot_bringup pi_robot.launch.py use_nav2:=${WITH_NAV2} use_teddy:=${WITH_TEDDY} use_imu:=${WITH_IMU} product_name:=${PRODUCT_NAME} port_name:=${PORT_NAME} port_baudrate:=${PORT_BAUDRATE} frame_id:=${LIDAR_FRAME} base_frame:=${BASE_FRAME} imu_frame:=${IMU_FRAME} map:=${MAP_FILE} params_file:=${PARAMS_FILE}"
+  ros bash -lc "source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && ros2 launch robot_bringup pi_robot.launch.py use_nav2:=${WITH_NAV2} use_teddy:=${WITH_TEDDY} use_imu:=${WITH_IMU} use_mega_driver:=${WITH_MEGA_DRIVER} product_name:=${PRODUCT_NAME} port_name:=${PORT_NAME} port_baudrate:=${PORT_BAUDRATE} frame_id:=${LIDAR_FRAME} base_frame:=${BASE_FRAME} imu_frame:=${IMU_FRAME} mega_port:=${MEGA_PORT} mega_baudrate:=${MEGA_BAUDRATE} left_m_per_tick:=${LEFT_M_PER_TICK} right_m_per_tick:=${RIGHT_M_PER_TICK} track_width_eff_m:=${TRACK_WIDTH_EFF_M} map:=${MAP_FILE} params_file:=${PARAMS_FILE}"

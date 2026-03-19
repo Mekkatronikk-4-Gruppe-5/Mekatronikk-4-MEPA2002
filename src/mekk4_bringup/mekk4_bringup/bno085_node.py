@@ -25,6 +25,7 @@ class BNO085Node(Node):
         super().__init__("bno085")
 
         self.declare_parameter("frame_id", "imu_link")
+        self.declare_parameter("i2c_bus", 1)
         self.declare_parameter("publish_rate_hz", 50.0)
         self.declare_parameter("report_interval_us", 20_000)
         self.declare_parameter("use_game_rotation_vector", True)
@@ -33,6 +34,7 @@ class BNO085Node(Node):
         self.declare_parameter("linear_acceleration_covariance_diagonal", [0.2, 0.2, 0.3])
 
         self._frame_id = self.get_parameter("frame_id").get_parameter_value().string_value
+        self._i2c_bus = self.get_parameter("i2c_bus").get_parameter_value().integer_value
         publish_rate_hz = self.get_parameter("publish_rate_hz").get_parameter_value().double_value
         requested_interval_us = self.get_parameter("report_interval_us").get_parameter_value().integer_value
         self._use_game_rotation_vector = (
@@ -60,8 +62,6 @@ class BNO085Node(Node):
         )
         self._consecutive_failures = 0
 
-        self._board = None
-        self._busio = None
         self._bno = None
         self._gyro_attr = "gyro"
         self._linear_accel_attr = "linear_acceleration"
@@ -72,9 +72,10 @@ class BNO085Node(Node):
         self._timer = self.create_timer(self._publish_period_s, self._on_timer)
 
         self.get_logger().info(
-            "BNO085 node started on /imu/data with frame_id=%s report_interval_us=%d orientation=%s"
+            "BNO085 node started on /imu/data with frame_id=%s i2c_bus=%d report_interval_us=%d orientation=%s"
             % (
                 self._frame_id,
+                self._i2c_bus,
                 self._report_interval_us,
                 "game_rotation_vector" if self._use_game_rotation_vector else "rotation_vector",
             )
@@ -82,25 +83,21 @@ class BNO085Node(Node):
 
     def _load_driver(self) -> None:
         try:
-            import board  # type: ignore
-            import busio  # type: ignore
             from adafruit_bno08x import (  # type: ignore
                 BNO_REPORT_GAME_ROTATION_VECTOR,
                 BNO_REPORT_GYROSCOPE,
                 BNO_REPORT_LINEAR_ACCELERATION,
                 BNO_REPORT_ROTATION_VECTOR,
             )
+            from adafruit_extended_bus import ExtendedI2C  # type: ignore
             from adafruit_bno08x.i2c import BNO08X_I2C  # type: ignore
         except ImportError as exc:
             raise RuntimeError(
-                "Missing BNO085 dependencies. Install adafruit-blinka, "
-                "adafruit-circuitpython-bno08x and lgpio in the runtime environment."
+                "Missing BNO085 dependencies. Install adafruit-circuitpython-bno08x "
+                "and adafruit-extended-bus in the runtime environment."
             ) from exc
 
-        self._board = board
-        self._busio = busio
-
-        i2c = self._busio.I2C(self._board.SCL, self._board.SDA)
+        i2c = ExtendedI2C(self._i2c_bus)
         self._bno = BNO08X_I2C(i2c)
 
         orientation_report = (

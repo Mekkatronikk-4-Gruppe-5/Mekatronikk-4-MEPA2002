@@ -77,6 +77,31 @@ def make_both_command(left_value: int, right_value: int, swap_sides: bool) -> st
     return f"BOTH {left_value} {right_value}"
 
 
+def scale_signed_pwm(value: int, scale: float) -> int:
+    if scale <= 0.0:
+        raise RuntimeError("left_cmd_scale and right_cmd_scale must be greater than zero")
+    if value == 0:
+        return 0
+
+    scaled = int(round(abs(value) * scale))
+    scaled = max(1, min(255, scaled))
+    return scaled if value > 0 else -scaled
+
+
+def make_scaled_both_command(
+    left_value: int,
+    right_value: int,
+    left_cmd_scale: float,
+    right_cmd_scale: float,
+    swap_sides: bool,
+) -> str:
+    return make_both_command(
+        scale_signed_pwm(left_value, left_cmd_scale),
+        scale_signed_pwm(right_value, right_cmd_scale),
+        swap_sides,
+    )
+
+
 def verify_keyboard_firmware(ser: serial.Serial, timeout: float) -> str:
     firmware = expect_reply(ser, "ID", "MEGA_", timeout)
     if firmware != "MEGA_KEYBOARD_DRIVE":
@@ -289,6 +314,18 @@ def build_parser() -> argparse.ArgumentParser:
         default=0.25,
         help="Seconds to wait after STOP before reading final encoders",
     )
+    straight.add_argument(
+        "--left-cmd-scale",
+        type=float,
+        default=1.0,
+        help="Scale applied to the robot-left command during the run",
+    )
+    straight.add_argument(
+        "--right-cmd-scale",
+        type=float,
+        default=1.0,
+        help="Scale applied to the robot-right command during the run",
+    )
 
     straight_trim = subparsers.add_parser(
         "straight-trim",
@@ -309,13 +346,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Direction to drive during the trim run",
     )
     straight_trim.add_argument(
+        "--left-cmd-scale",
         "--current-left-cmd-scale",
+        dest="left_cmd_scale",
         type=float,
         default=1.0,
         help="Current LEFT_CMD_SCALE value, used when suggesting the next value",
     )
     straight_trim.add_argument(
+        "--right-cmd-scale",
         "--current-right-cmd-scale",
+        dest="right_cmd_scale",
         type=float,
         default=1.0,
         help="Current RIGHT_CMD_SCALE value, used when suggesting the next value",
@@ -388,6 +429,18 @@ def build_parser() -> argparse.ArgumentParser:
         default=0.25,
         help="Seconds to wait after STOP before reading final encoders",
     )
+    spin.add_argument(
+        "--left-cmd-scale",
+        type=float,
+        default=1.0,
+        help="Scale applied to the robot-left command during the run",
+    )
+    spin.add_argument(
+        "--right-cmd-scale",
+        type=float,
+        default=1.0,
+        help="Scale applied to the robot-right command during the run",
+    )
 
     return parser
 
@@ -411,13 +464,21 @@ def handle_straight(ser: serial.Serial, args: argparse.Namespace) -> int:
 
     pwm = max(0, min(255, abs(args.pwm)))
     signed_pwm = pwm if args.direction == "forward" else -pwm
-    command = make_both_command(signed_pwm, signed_pwm, args.swap_sides)
+    command = make_scaled_both_command(
+        signed_pwm,
+        signed_pwm,
+        args.left_cmd_scale,
+        args.right_cmd_scale,
+        args.swap_sides,
+    )
 
     print()
     print("[mega-cal] Straight run")
     print(f"[mega-cal]   command={command}")
     print(f"[mega-cal]   duration_s={args.duration:.3f}")
     print(f"[mega-cal]   send_period_s={args.send_period:.3f}")
+    print(f"[mega-cal]   left_cmd_scale={args.left_cmd_scale:.6f}")
+    print(f"[mega-cal]   right_cmd_scale={args.right_cmd_scale:.6f}")
 
     drive_for(ser, command, args.duration, args.send_period, args.settle_time, args.reply_timeout)
     end_left, end_right = read_encoders(ser, args.reply_timeout, swap_sides=args.swap_sides)
@@ -436,13 +497,21 @@ def handle_spin(ser: serial.Serial, args: argparse.Namespace) -> int:
 
     pwm = max(0, min(255, abs(args.pwm)))
     left_pwm, right_pwm = (pwm, -pwm) if args.direction == "cw" else (-pwm, pwm)
-    command = make_both_command(left_pwm, right_pwm, args.swap_sides)
+    command = make_scaled_both_command(
+        left_pwm,
+        right_pwm,
+        args.left_cmd_scale,
+        args.right_cmd_scale,
+        args.swap_sides,
+    )
 
     print()
     print("[mega-cal] Spin run")
     print(f"[mega-cal]   command={command}")
     print(f"[mega-cal]   duration_s={args.duration:.3f}")
     print(f"[mega-cal]   send_period_s={args.send_period:.3f}")
+    print(f"[mega-cal]   left_cmd_scale={args.left_cmd_scale:.6f}")
+    print(f"[mega-cal]   right_cmd_scale={args.right_cmd_scale:.6f}")
 
     drive_for(ser, command, args.duration, args.send_period, args.settle_time, args.reply_timeout)
     end_left, end_right = read_encoders(ser, args.reply_timeout, swap_sides=args.swap_sides)
@@ -471,13 +540,21 @@ def handle_straight_trim(ser: serial.Serial, args: argparse.Namespace) -> int:
 
     pwm = max(0, min(255, abs(args.pwm)))
     signed_pwm = pwm if args.direction == "forward" else -pwm
-    command = make_both_command(signed_pwm, signed_pwm, args.swap_sides)
+    command = make_scaled_both_command(
+        signed_pwm,
+        signed_pwm,
+        args.left_cmd_scale,
+        args.right_cmd_scale,
+        args.swap_sides,
+    )
 
     print()
     print("[mega-cal] Straight trim run")
     print(f"[mega-cal]   command={command}")
     print(f"[mega-cal]   duration_s={args.duration:.3f}")
     print(f"[mega-cal]   send_period_s={args.send_period:.3f}")
+    print(f"[mega-cal]   left_cmd_scale={args.left_cmd_scale:.6f}")
+    print(f"[mega-cal]   right_cmd_scale={args.right_cmd_scale:.6f}")
 
     drive_for(ser, command, args.duration, args.send_period, args.settle_time, args.reply_timeout)
     end_left, end_right = read_encoders(ser, args.reply_timeout, swap_sides=args.swap_sides)
@@ -485,8 +562,8 @@ def handle_straight_trim(ser: serial.Serial, args: argparse.Namespace) -> int:
     print_straight_trim_calibration(
         delta_left,
         delta_right,
-        args.current_left_cmd_scale,
-        args.current_right_cmd_scale,
+        args.left_cmd_scale,
+        args.right_cmd_scale,
         args.left_m_per_tick,
         args.right_m_per_tick,
     )

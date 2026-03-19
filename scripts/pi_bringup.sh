@@ -32,16 +32,31 @@ CAM_PORT="${CAM_PORT:-5600}"
 WITH_CAMERA_RVIZ="${WITH_CAMERA_RVIZ:-0}"
 CAMERA_REMOTE_HOST="${CAMERA_REMOTE_HOST:-}"
 CAMERA_REMOTE_PORT="${CAMERA_REMOTE_PORT:-5601}"
+DOCKER_LIDAR_GID="${DOCKER_LIDAR_GID:-}"
+DOCKER_I2C_GID="${DOCKER_I2C_GID:-}"
 DOCKER_GPIO_GID="${DOCKER_GPIO_GID:-}"
+DOCKER_MEGA_GID="${DOCKER_MEGA_GID:-}"
 SOURCE_LAUNCH="${REPO_ROOT}/src/robot_bringup/launch/pi_robot.launch.py"
 INSTALLED_LAUNCH="${REPO_ROOT}/install/robot_bringup/share/robot_bringup/launch/pi_robot.launch.py"
 SOURCE_PKG_XML="${REPO_ROOT}/src/robot_bringup/package.xml"
 SOURCE_CMAKE="${REPO_ROOT}/src/robot_bringup/CMakeLists.txt"
 
+if [[ -z "${DOCKER_LIDAR_GID}" && -e "${PORT_NAME}" ]]; then
+  DOCKER_LIDAR_GID="$(stat -c '%g' "${PORT_NAME}")"
+fi
+if [[ -z "${DOCKER_I2C_GID}" && -e /dev/i2c-1 ]]; then
+  DOCKER_I2C_GID="$(stat -c '%g' /dev/i2c-1)"
+fi
 if [[ -z "${DOCKER_GPIO_GID}" && -e /dev/gpiochip0 ]]; then
   DOCKER_GPIO_GID="$(stat -c '%g' /dev/gpiochip0)"
 fi
+if [[ -z "${DOCKER_MEGA_GID}" && -e "${MEGA_PORT}" ]]; then
+  DOCKER_MEGA_GID="$(stat -c '%g' "${MEGA_PORT}")"
+fi
+export DOCKER_LIDAR_GID
+export DOCKER_I2C_GID
 export DOCKER_GPIO_GID
+export DOCKER_MEGA_GID
 
 needs_ws_build=0
 if [[ ! -f "${REPO_ROOT}/install/setup.bash" ]]; then

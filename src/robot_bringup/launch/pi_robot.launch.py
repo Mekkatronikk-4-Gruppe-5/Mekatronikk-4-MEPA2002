@@ -24,6 +24,7 @@ def generate_launch_description():
     use_teddy = LaunchConfiguration('use_teddy')
     use_imu = LaunchConfiguration('use_imu')
     use_mega_driver = LaunchConfiguration('use_mega_driver')
+    use_ekf = LaunchConfiguration('use_ekf')
     product_name = LaunchConfiguration('product_name')
     port_name = LaunchConfiguration('port_name')
     port_baudrate = LaunchConfiguration('port_baudrate')
@@ -32,6 +33,8 @@ def generate_launch_description():
     imu_frame = LaunchConfiguration('imu_frame')
     mega_port = LaunchConfiguration('mega_port')
     mega_baudrate = LaunchConfiguration('mega_baudrate')
+    mega_odom_topic = LaunchConfiguration('mega_odom_topic')
+    mega_publish_tf = LaunchConfiguration('mega_publish_tf')
     swap_sides = LaunchConfiguration('swap_sides')
     left_cmd_sign = LaunchConfiguration('left_cmd_sign')
     right_cmd_sign = LaunchConfiguration('right_cmd_sign')
@@ -42,6 +45,7 @@ def generate_launch_description():
     left_m_per_tick = LaunchConfiguration('left_m_per_tick')
     right_m_per_tick = LaunchConfiguration('right_m_per_tick')
     track_width_eff_m = LaunchConfiguration('track_width_eff_m')
+    ekf_params_file = LaunchConfiguration('ekf_params_file')
     tf_x = LaunchConfiguration('tf_x')
     tf_y = LaunchConfiguration('tf_y')
     tf_z = LaunchConfiguration('tf_z')
@@ -122,6 +126,7 @@ def generate_launch_description():
                 'port': ParameterValue(mega_port, value_type=str),
                 'baudrate': ParameterValue(mega_baudrate, value_type=int),
                 'base_frame_id': ParameterValue(base_frame, value_type=str),
+                'publish_tf': ParameterValue(mega_publish_tf, value_type=bool),
                 'swap_sides': ParameterValue(swap_sides, value_type=bool),
                 'left_cmd_sign': ParameterValue(left_cmd_sign, value_type=int),
                 'right_cmd_sign': ParameterValue(right_cmd_sign, value_type=int),
@@ -134,6 +139,17 @@ def generate_launch_description():
                 'track_width_eff_m': ParameterValue(track_width_eff_m, value_type=float),
             }
         ],
+        remappings=[('odom', mega_odom_topic)],
+    )
+
+    ekf_node = Node(
+        package='robot_localization',
+        executable='ekf_node',
+        name='ekf_filter_node',
+        output='screen',
+        condition=IfCondition(use_ekf),
+        parameters=[ekf_params_file],
+        remappings=[('odometry/filtered', 'odom')],
     )
 
     return LaunchDescription([
@@ -141,6 +157,7 @@ def generate_launch_description():
         DeclareLaunchArgument('use_teddy', default_value='false'),
         DeclareLaunchArgument('use_imu', default_value='false'),
         DeclareLaunchArgument('use_mega_driver', default_value='false'),
+        DeclareLaunchArgument('use_ekf', default_value='false'),
         DeclareLaunchArgument('product_name', default_value='LDLiDAR_LD06'),
         DeclareLaunchArgument('port_name', default_value='/dev/ttyAMA0'),
         DeclareLaunchArgument('port_baudrate', default_value='230400'),
@@ -149,6 +166,8 @@ def generate_launch_description():
         DeclareLaunchArgument('imu_frame', default_value='imu_link'),
         DeclareLaunchArgument('mega_port', default_value='/dev/ttyACM0'),
         DeclareLaunchArgument('mega_baudrate', default_value='115200'),
+        DeclareLaunchArgument('mega_odom_topic', default_value='odom'),
+        DeclareLaunchArgument('mega_publish_tf', default_value='true'),
         DeclareLaunchArgument('swap_sides', default_value='true'),
         DeclareLaunchArgument('left_cmd_sign', default_value='1'),
         DeclareLaunchArgument('right_cmd_sign', default_value='1'),
@@ -159,6 +178,7 @@ def generate_launch_description():
         DeclareLaunchArgument('left_m_per_tick', default_value='0.0'),
         DeclareLaunchArgument('right_m_per_tick', default_value='0.0'),
         DeclareLaunchArgument('track_width_eff_m', default_value='0.35'),
+        DeclareLaunchArgument('ekf_params_file', default_value='/ws/config/ekf.yaml'),
         DeclareLaunchArgument('tf_x', default_value='0.0'),
         DeclareLaunchArgument('tf_y', default_value='0.0'),
         DeclareLaunchArgument('tf_z', default_value='0.18'),
@@ -174,6 +194,7 @@ def generate_launch_description():
         robot_state_publisher,
         imu_node,
         mega_driver_node,
+        ekf_node,
         lidar_launch,
         nav2_launch,
         teddy_detector,

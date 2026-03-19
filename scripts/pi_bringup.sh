@@ -11,6 +11,7 @@ WITH_NAV2="${WITH_NAV2:-1}"
 WITH_TEDDY="${WITH_TEDDY:-0}"
 WITH_IMU="${WITH_IMU:-0}"
 WITH_MEGA_DRIVER="${WITH_MEGA_DRIVER:-0}"
+WITH_EKF="${WITH_EKF:-0}"
 PC_HOST="${PC_HOST:-}"
 PORT_NAME="${PORT_NAME:-/dev/ttyAMA0}"
 PORT_BAUDRATE="${PORT_BAUDRATE:-230400}"
@@ -30,6 +31,7 @@ RIGHT_TICK_SIGN="${RIGHT_TICK_SIGN:-1}"
 LEFT_M_PER_TICK="${LEFT_M_PER_TICK:-0.0}"
 RIGHT_M_PER_TICK="${RIGHT_M_PER_TICK:-0.0}"
 TRACK_WIDTH_EFF_M="${TRACK_WIDTH_EFF_M:-0.35}"
+EKF_PARAMS_FILE="${EKF_PARAMS_FILE:-/ws/config/ekf.yaml}"
 MAP_FILE="${MAP_FILE:-/ws/maps/my_map.yaml}"
 PARAMS_FILE="${PARAMS_FILE:-/ws/config/nav2_params.yaml}"
 WIDTH="${WIDTH:-1296}"
@@ -60,6 +62,13 @@ fi
 export DOCKER_LIDAR_GID
 export DOCKER_I2C_GID
 export DOCKER_GPIO_GID
+
+MEGA_ODOM_TOPIC="odom"
+MEGA_PUBLISH_TF="true"
+if [[ "${WITH_EKF}" == "1" ]]; then
+  MEGA_ODOM_TOPIC="wheel/odom"
+  MEGA_PUBLISH_TF="false"
+fi
 
 needs_ws_build=0
 if [[ ! -f "${REPO_ROOT}/install/setup.bash" ]]; then
@@ -164,4 +173,4 @@ docker "${docker_run_args[@]}" \
   -e MEKK4_DEBUG_STREAM_SCALE="${MEKK4_DEBUG_STREAM_SCALE}" \
   -e MEKK4_DEBUG_STREAM_FPS="${MEKK4_DEBUG_STREAM_FPS}" \
   -e MEKK4_DEBUG_STREAM_BITRATE="${MEKK4_DEBUG_STREAM_BITRATE}" \
-  ros bash -lc "source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && ros2 launch robot_bringup pi_robot.launch.py use_nav2:=${WITH_NAV2} use_teddy:=${WITH_TEDDY} use_imu:=${WITH_IMU} use_mega_driver:=${WITH_MEGA_DRIVER} product_name:=${PRODUCT_NAME} port_name:=${PORT_NAME} port_baudrate:=${PORT_BAUDRATE} frame_id:=${LIDAR_FRAME} base_frame:=${BASE_FRAME} imu_frame:=${IMU_FRAME} mega_port:=${MEGA_PORT} mega_baudrate:=${MEGA_BAUDRATE} swap_sides:=${SWAP_SIDES} left_cmd_sign:=${LEFT_CMD_SIGN} right_cmd_sign:=${RIGHT_CMD_SIGN} left_cmd_scale:=${LEFT_CMD_SCALE} right_cmd_scale:=${RIGHT_CMD_SCALE} left_tick_sign:=${LEFT_TICK_SIGN} right_tick_sign:=${RIGHT_TICK_SIGN} left_m_per_tick:=${LEFT_M_PER_TICK} right_m_per_tick:=${RIGHT_M_PER_TICK} track_width_eff_m:=${TRACK_WIDTH_EFF_M} map:=${MAP_FILE} params_file:=${PARAMS_FILE}"
+  ros bash -lc "source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && ros2 launch robot_bringup pi_robot.launch.py use_nav2:=${WITH_NAV2} use_teddy:=${WITH_TEDDY} use_imu:=${WITH_IMU} use_mega_driver:=${WITH_MEGA_DRIVER} use_ekf:=${WITH_EKF} product_name:=${PRODUCT_NAME} port_name:=${PORT_NAME} port_baudrate:=${PORT_BAUDRATE} frame_id:=${LIDAR_FRAME} base_frame:=${BASE_FRAME} imu_frame:=${IMU_FRAME} mega_port:=${MEGA_PORT} mega_baudrate:=${MEGA_BAUDRATE} mega_odom_topic:=${MEGA_ODOM_TOPIC} mega_publish_tf:=${MEGA_PUBLISH_TF} swap_sides:=${SWAP_SIDES} left_cmd_sign:=${LEFT_CMD_SIGN} right_cmd_sign:=${RIGHT_CMD_SIGN} left_cmd_scale:=${LEFT_CMD_SCALE} right_cmd_scale:=${RIGHT_CMD_SCALE} left_tick_sign:=${LEFT_TICK_SIGN} right_tick_sign:=${RIGHT_TICK_SIGN} left_m_per_tick:=${LEFT_M_PER_TICK} right_m_per_tick:=${RIGHT_M_PER_TICK} track_width_eff_m:=${TRACK_WIDTH_EFF_M} ekf_params_file:=${EKF_PARAMS_FILE} map:=${MAP_FILE} params_file:=${PARAMS_FILE}"

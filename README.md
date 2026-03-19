@@ -287,7 +287,8 @@ Repoet har nå også en ROS 2 Mega-driver som kan brukes i Docker-bringup. Den:
 
 1. abonnerer på `/cmd_vel`
 2. sender `BOTH` og `STOP` til Mega over serial
-3. publiserer `/odom` når `left_m_per_tick`, `right_m_per_tick` og `track_width_eff_m` er satt
+3. publiserer rå hjulodometri som `/odom` når EKF er av
+4. publiserer rå hjulodometri som `/wheel/odom` når EKF er på
 
 Eksempel:
 
@@ -309,6 +310,35 @@ Merk:
 3. `MEGA_PORT=/dev/ttyACM0` og `MEGA_BAUDRATE=115200` kan overstyres i samme kommando hvis auto-defaulten ikke passer.
 4. `LEFT_CMD_SCALE` og `RIGHT_CMD_SCALE` kan brukes til å få roboten til å gå rettere uten å endre encoder-odometrien. Start med små justeringer som `LEFT_CMD_SCALE=0.98` eller `RIGHT_CMD_SCALE=0.98`.
 5. `SWAP_SIDES=1` er nå default i Pi-bringup og bytter venstre/høyre mapping i Mega-driveren. Hvis dere rewierer fysisk senere, kan dere overstyre med `SWAP_SIDES=0`.
+
+### `robot_localization` EKF på Pi
+
+Repoet har nå også en enkel EKF-bane for å flette rå hjulodometri fra Mega med `/imu/data` fra BNO085.
+
+Når `WITH_EKF=1`:
+
+1. Mega-driveren remappes til å publisere rå odometri på `/wheel/odom`
+2. Mega-driveren slutter å publisere `odom -> chassis` TF direkte
+3. `robot_localization` leser `/wheel/odom` og `/imu/data`
+4. EKF publiserer filtrert `/odom` og `odom -> chassis`
+
+Eksempel:
+
+```bash
+WITH_IMU=1 WITH_MEGA_DRIVER=1 WITH_EKF=1 \
+LEFT_CMD_SCALE=0.937 \
+RIGHT_CMD_SCALE=1.000 \
+LEFT_M_PER_TICK=0.000051019 \
+RIGHT_M_PER_TICK=0.000055084 \
+TRACK_WIDTH_EFF_M=0.186605297 \
+make pi-bringup
+```
+
+Merk:
+
+1. Dette krever `ros-jazzy-robot-localization` i Docker-imaget, så første gang etter denne endringen må dere kjøre `make build`.
+2. EKF-konfigen ligger i [ekf.yaml](/home/emiliam/Mekatronikk-4-MEPA2002/config/ekf.yaml) og kan overstyres med `EKF_PARAMS_FILE=/ws/config/ekf.yaml`.
+3. Nav2 kan fortsette å bruke `/odom`; når EKF er på, er det den filtrerte odometrien.
 
 
 ## Pi ytelse (host, ikke Docker)

@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     ros-jazzy-navigation2 \
     ros-jazzy-cv-bridge \
+    ros-jazzy-robot-localization \
     ros-dev-tools \
     build-essential \
     i2c-tools \

@@ -243,8 +243,9 @@ def add_common_serial_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--swap-sides",
-        action="store_true",
-        help="Treat Mega M1/ENC1 as robot right and M2/ENC2 as robot left",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Treat Mega M1/ENC1 as robot right and M2/ENC2 as robot left (default: enabled)",
     )
 
 

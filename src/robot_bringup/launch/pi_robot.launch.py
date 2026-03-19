@@ -149,7 +149,7 @@ def generate_launch_description():
         DeclareLaunchArgument('imu_frame', default_value='imu_link'),
         DeclareLaunchArgument('mega_port', default_value='/dev/ttyACM0'),
         DeclareLaunchArgument('mega_baudrate', default_value='115200'),
-        DeclareLaunchArgument('swap_sides', default_value='false'),
+        DeclareLaunchArgument('swap_sides', default_value='true'),
         DeclareLaunchArgument('left_cmd_sign', default_value='1'),
         DeclareLaunchArgument('right_cmd_sign', default_value='1'),
         DeclareLaunchArgument('left_cmd_scale', default_value='1.0'),

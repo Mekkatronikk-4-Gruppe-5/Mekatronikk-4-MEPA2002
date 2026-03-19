@@ -33,7 +33,7 @@ class MegaDriverNode(Node):
         self.declare_parameter("base_frame_id", "chassis")
         self.declare_parameter("odom_frame_id", "odom")
         self.declare_parameter("publish_tf", True)
-        self.declare_parameter("swap_sides", False)
+        self.declare_parameter("swap_sides", True)
         self.declare_parameter("max_track_speed_mps", 0.45)
         self.declare_parameter("max_pwm", 255)
         self.declare_parameter("min_nonzero_pwm", 55)

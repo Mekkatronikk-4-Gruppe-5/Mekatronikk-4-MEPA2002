@@ -238,7 +238,7 @@ Kjør en rettlinjet kalibreringsrun og regn ut meter per tick etter at du har m�
 make mega-calibrate ARGS="straight --pwm 90 --duration 1.6 --distance-m 2.0"
 ```
 
-Hvis venstre/høyre side er byttet mellom Mega (`M1/ENC1`, `M2/ENC2`) og roboten, legg til `--swap-sides` i kalibreringskommandoene.
+Kalibreringsverktøyet antar nå som standard at venstre/høyre er byttet mellom Mega (`M1/ENC1`, `M2/ENC2`) og roboten. Hvis dere senere rewierer riktig fysisk, bruk `--no-swap-sides`.
 
 Dette:
 
@@ -302,7 +302,7 @@ Merk:
 2. Hvis `LEFT_M_PER_TICK` og `RIGHT_M_PER_TICK` står på `0.0`, kjører driveren fortsatt motorstyring fra `/cmd_vel`, men `/odom` blir deaktivert.
 3. `MEGA_PORT=/dev/ttyACM0` og `MEGA_BAUDRATE=115200` kan overstyres i samme kommando hvis auto-defaulten ikke passer.
 4. `LEFT_CMD_SCALE` og `RIGHT_CMD_SCALE` kan brukes til å få roboten til å gå rettere uten å endre encoder-odometrien. Start med små justeringer som `LEFT_CMD_SCALE=0.98` eller `RIGHT_CMD_SCALE=0.98`.
-5. `SWAP_SIDES=1` bytter venstre/høyre mapping i Mega-driveren hvis `M1/ENC1` og `M2/ENC2` er fysisk krysset.
+5. `SWAP_SIDES=1` er nå default i Pi-bringup og bytter venstre/høyre mapping i Mega-driveren. Hvis dere rewierer fysisk senere, kan dere overstyre med `SWAP_SIDES=0`.
 
 
 ## Pi ytelse (host, ikke Docker)

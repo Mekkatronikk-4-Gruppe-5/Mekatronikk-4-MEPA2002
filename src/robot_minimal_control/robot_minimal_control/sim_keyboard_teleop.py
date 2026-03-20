@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import argparse
+import sys
 import time
 import tkinter as tk
 
 import rclpy
 from geometry_msgs.msg import Twist
+from rclpy.utilities import remove_ros_args
 
 
 def clamp(value: float, low: float, high: float) -> float:
@@ -222,7 +224,7 @@ def main() -> int:
     parser.add_argument("--max-speed", type=float, default=1.00, help="Maximum linear speed in m/s")
     parser.add_argument("--max-turn-speed", type=float, default=3.00, help="Maximum angular speed in rad/s")
     parser.add_argument("--send-period", type=float, default=0.03, help="Seconds between repeated cmd_vel publishes")
-    args = parser.parse_args()
+    args = parser.parse_args(remove_ros_args(args=sys.argv)[1:])
 
     rclpy.init()
     app = SimKeyboardTeleop(args)

@@ -87,6 +87,18 @@ def generate_launch_description():
             remappings=remappings + [('cmd_vel', 'cmd_vel_nav')],
         ),
         Node(
+            package='mekk4_bringup',
+            executable='nav_cmd_vel_flip_node',
+            name='nav_cmd_vel_flip',
+            output='screen',
+            parameters=[
+                {
+                    'input_topic': 'cmd_vel_smoothed',
+                    'output_topic': 'cmd_vel_smoothed_flipped',
+                }
+            ],
+        ),
+        Node(
             package='nav2_collision_monitor',
             executable='collision_monitor',
             name='collision_monitor',

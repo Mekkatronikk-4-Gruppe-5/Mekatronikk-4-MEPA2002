@@ -578,7 +578,7 @@
         <sensor name="camera" type="camera">
           <always_on>true</always_on>
           <update_rate>30</update_rate>
-          <visualize>false</visualize>
+          <visualize>true</visualize>
           <topic>camera</topic>
           <gz_frame_id>camera_link</gz_frame_id>
           <camera>
@@ -630,7 +630,7 @@
         <sensor name="lidar" type="gpu_lidar">
           <always_on>true</always_on>
           <update_rate>10</update_rate>
-          <visualize>false</visualize>
+          <visualize>true</visualize>
           <topic>lidar</topic>
           <gz_frame_id>base_laser</gz_frame_id>
           <lidar>

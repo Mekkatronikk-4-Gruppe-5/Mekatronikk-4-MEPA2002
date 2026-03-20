@@ -53,7 +53,7 @@ def generate_launch_description():
         condition=IfCondition(headless),
     )
 
-    core_bridge = ExecuteProcess(
+    bridge = ExecuteProcess(
         cmd=[
             'ros2', 'run', 'ros_gz_bridge', 'parameter_bridge',
             '/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
@@ -62,12 +62,6 @@ def generate_launch_description():
             '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
             '/lidar@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
             '/lidar/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
-        ],
-        output='screen'
-    )
-    camera_bridge = ExecuteProcess(
-        cmd=[
-            'ros2', 'run', 'ros_gz_bridge', 'parameter_bridge',
             '/camera@sensor_msgs/msg/Image[gz.msgs.Image',
         ],
         output='screen'
@@ -119,8 +113,7 @@ def generate_launch_description():
     start_rest = TimerAction(
         period=1.0,
         actions=[
-            core_bridge,
-            camera_bridge,
+            bridge,
             robot_state_publisher,
             joint_state_publisher,
             lidar_static_tf,

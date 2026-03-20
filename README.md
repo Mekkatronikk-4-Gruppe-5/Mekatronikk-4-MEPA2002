@@ -102,14 +102,14 @@ Dette skjer automatisk:
 2. Pi setter `ROS_DOMAIN_ID`, `ROS_AUTOMATIC_DISCOVERY_RANGE` og `ROS_STATIC_PEERS`.
 3. Pi starter samlet bringup i Docker med `robot_state_publisher`, LiDAR og teddy-detektor.
 4. Pi sender annotert YOLO-video over UDP til PC hvis `teddy_detector.stream_debug_video: true` i [config/camera_params.yaml](/home/emiliam/Mekatronikk-4-MEPA2002/config/camera_params.yaml).
-5. PC setter ROS discovery mot Pi automatisk, starter lokal UDP->ROS bridge for YOLO-debugbildet og åpner RViz med [pre_odom_lidar.rviz](/home/emiliam/Mekatronikk-4-MEPA2002/src/robot_bringup/rviz/pre_odom_lidar.rviz).
+5. PC setter ROS discovery mot Pi automatisk, starter lokal UDP->ROS bridge for YOLO-debugbildet og åpner RViz med [rviz.rviz](/home/emiliam/Mekatronikk-4-MEPA2002/src/robot_bringup/rviz/rviz.rviz).
 
 I denne RViz-konfigen er standarden:
 
-1. `Fixed Frame = chassis`
+1. `Fixed Frame = odom`
 2. `/lidar` vises som LaserScan
-3. `/teddy_detector/debug_image` vises som Image
-4. `TF` er dempet for å unngå støy før dere har odom
+3. `/camera` vises som Image
+4. `TF`, odometri, costmaps og planer kan vises i samme konfig
 
 ### Nyttige varianter
 

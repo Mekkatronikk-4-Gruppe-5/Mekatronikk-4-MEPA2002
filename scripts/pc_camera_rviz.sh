@@ -14,7 +14,7 @@ HEIGHT="${HEIGHT:-972}"
 PC_JITTER_MS="${PC_JITTER_MS:-40}"
 TOPIC_NAME="${TOPIC_NAME:-/camera}"
 FRAME_ID="${FRAME_ID:-camera_link}"
-RVIZ_CONFIG="${RVIZ_CONFIG:-${REPO_ROOT}/src/robot_bringup/rviz/pre_odom_lidar.rviz}"
+RVIZ_CONFIG="${RVIZ_CONFIG:-${REPO_ROOT}/src/robot_bringup/rviz/rviz.rviz}"
 
 if [[ ! -f "${REPO_ROOT}/install/setup.bash" ]]; then
   echo "[pc-camera-rviz] Missing install/setup.bash. Build the local workspace first." >&2

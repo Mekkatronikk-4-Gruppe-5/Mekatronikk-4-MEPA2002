@@ -39,7 +39,7 @@ Dette scriptet:
 
 1. setter ROS discovery mot Pi automatisk
 2. starter lokal UDP->ROS bridge for annotert YOLO-bilde
-3. aapner RViz med [pre_odom_lidar.rviz](/home/emiliam/Mekatronikk-4-MEPA2002/src/robot_bringup/rviz/pre_odom_lidar.rviz)
+3. aapner RViz med [rviz.rviz](/home/emiliam/Mekatronikk-4-MEPA2002/src/robot_bringup/rviz/rviz.rviz)
 
 Hvis hostnavnet ikke virker, bruk Pi-IP direkte:
 
@@ -60,22 +60,22 @@ ros2 topic list | grep teddy_detector
 
 Denne konfigen er laget for situasjonen deres akkurat naa:
 
-1. `Fixed Frame = chassis`
+1. `Fixed Frame = odom`
 2. `LaserScan` bruker `/lidar` med `Reliability = Best Effort`
 3. `RobotModel` bruker `/robot_description`
-4. `Image`-display viser `/teddy_detector/debug_image`
-5. `TF`-display er av som standard, siden det fort bare blir visuelt stoy uten `odom`
+4. `Image`-display viser `/camera`
+5. `TF`, odometri, costmaps og planer kan slas av/paa i samme konfig
 
 Hvis du vil sette opp manuelt i stedet:
 
-1. `Global Options -> Fixed Frame = chassis`
+1. `Global Options -> Fixed Frame = odom`
 2. `Add -> LaserScan`
 3. `Topic = /lidar`
 4. Under `Topic`:
    `Reliability Policy = Best Effort`
 5. `Add -> RobotModel` og bruk `/robot_description`
-6. `Add -> Image` og bruk `/teddy_detector/debug_image`
-7. Ikke bruk `odom` eller `map` som fixed frame foer dere faktisk har odometri
+6. `Add -> Image` og bruk `/camera`
+7. Bruk `odom` som fixed frame naar odometri er oppe
 
 ## 5) Valgfritt: raa kamera til RViz over UDP
 

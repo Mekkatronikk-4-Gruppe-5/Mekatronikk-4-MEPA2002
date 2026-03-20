@@ -29,7 +29,7 @@ def generate_launch_description():
     rviz_config = os.path.join(
         get_package_share_directory('robot_bringup'),
         'rviz',
-        'minimal_all.rviz'
+        'rviz.rviz'
     )
     calibration_path = os.path.join(
         get_package_share_directory('robot_bringup'),

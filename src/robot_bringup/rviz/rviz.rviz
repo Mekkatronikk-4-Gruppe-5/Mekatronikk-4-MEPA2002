@@ -5,7 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /YOLO Image1
+        - /Camera1
         - /LaserScan1
         - /Odometry1
         - /RobotModel1
@@ -17,7 +17,6 @@ Panels:
     Name: Selection
   - Class: rviz_common/Tool Properties
     Expanded:
-      - /2D Pose Estimate1
       - /2D Goal Pose1
     Name: Tool Properties
     Splitter Ratio: 0.5886790156364441
@@ -26,6 +25,11 @@ Panels:
       - /Current View1
     Name: Views
     Splitter Ratio: 0.5
+  - Class: rviz_common/Time
+    Experimental: false
+    Name: Time
+    SyncMode: 0
+    SyncSource: LaserScan
 Visualization Manager:
   Class: ""
   Displays:
@@ -52,14 +56,14 @@ Visualization Manager:
       Max Value: 1
       Median window: 5
       Min Value: 0
-      Name: YOLO Image
+      Name: Camera
       Normalize Range: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /teddy_detector/debug_image
+        Value: /camera
       Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true

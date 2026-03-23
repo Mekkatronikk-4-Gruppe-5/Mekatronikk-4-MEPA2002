@@ -109,6 +109,7 @@ def generate_launch_description():
                 {
                     'input_topic': 'cmd_vel_smoothed',
                     'output_topic': 'cmd_vel_nav_flipped',
+                    'flip_angular_z': False,
                 }
             ],
         ),

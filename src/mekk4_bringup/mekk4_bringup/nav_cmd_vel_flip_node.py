@@ -11,9 +11,13 @@ class NavCmdVelFlipNode(Node):
 
         self.declare_parameter("input_topic", "cmd_vel_smoothed")
         self.declare_parameter("output_topic", "cmd_vel_smoothed_flipped")
+        self.declare_parameter("flip_angular_z", True)
 
         input_topic = self.get_parameter("input_topic").get_parameter_value().string_value
         output_topic = self.get_parameter("output_topic").get_parameter_value().string_value
+        self._flip_angular_z = (
+            self.get_parameter("flip_angular_z").get_parameter_value().bool_value
+        )
 
         self._pub = self.create_publisher(Twist, output_topic, 10)
         self._sub = self.create_subscription(Twist, input_topic, self._on_cmd_vel, 10)
@@ -25,7 +29,7 @@ class NavCmdVelFlipNode(Node):
         flipped.linear.z = msg.linear.z
         flipped.angular.x = msg.angular.x
         flipped.angular.y = msg.angular.y
-        flipped.angular.z = -msg.angular.z
+        flipped.angular.z = -msg.angular.z if self._flip_angular_z else msg.angular.z
         self._pub.publish(flipped)
 
 

@@ -153,7 +153,7 @@ planner_server:
       max_planning_time: 2.0
       analytic_expansion_max_cost: 200.0
       analytic_expansion_max_cost_override: false
-      reverse_penalty: 3.05
+      reverse_penalty: 4.05
       change_penalty: 0.0
       non_straight_penalty: 1.05
       rotation_penalty: 3.0

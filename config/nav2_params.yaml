@@ -43,8 +43,8 @@ controller_server:
     FollowPath:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
       desired_linear_vel: 0.4
-      lookahead_dist: 0.55
-      min_lookahead_dist: 0.35
+      lookahead_dist: 0.65
+      min_lookahead_dist: 0.45
       max_lookahead_dist: 0.90
       lookahead_time: 1.5
       use_velocity_scaled_lookahead_dist: true
@@ -55,7 +55,7 @@ controller_server:
       use_regulated_linear_velocity_scaling: true
       use_cost_regulated_linear_velocity_scaling: false
       use_fixed_curvature_lookahead: true
-      curvature_lookahead_dist: 0.45
+      curvature_lookahead_dist: 0.55
       regulated_linear_scaling_min_radius: 0.60
       regulated_linear_scaling_min_speed: 0.12
       use_rotate_to_heading: true
@@ -204,8 +204,8 @@ velocity_smoother:
     feedback: "OPEN_LOOP"
     max_velocity: [0.5, 0.0, 2.0]
     min_velocity: [-0.5, 0.0, -2.0]
-    max_accel: [0.12, 0.0, 0.8]
-    max_decel: [-0.12, 0.0, -0.8]
+    max_accel: [0.12, 0.0, 0.55]
+    max_decel: [-0.12, 0.0, -0.55]
     odom_topic: "odom"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]

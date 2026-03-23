@@ -99,10 +99,10 @@ class MegaKeyboardGui:
         self.root.protocol("WM_DELETE_WINDOW", self.close)
 
         self.status_var = tk.StringVar(value=f"Connecting to {args.host} ...")
-        self.command_var = tk.StringVar(value="mode=mix cmd=(0, 0)")
+        self.command_var = tk.StringVar(value="cmd=(0, 0)")
         self.speed_var = tk.StringVar(value=self._speed_text())
         self.hint_var = tk.StringVar(
-            value="Hold W/S/A/D for mix. Hold Y/H for raw M1 +/- and I/U forward, J reverse for raw M2. E/Q speed. P/O turn speed. SPACE stop. - quit."
+            value="Hold W/S/A/D. E/Q speed. P/O turn speed. SPACE stop. - quit."
         )
 
         self._build_ui()
@@ -181,17 +181,9 @@ class MegaKeyboardGui:
         )
         hint.pack(pady=(12, 6))
 
-        raw_frame = tk.Frame(self.root, bg="#111111")
-        raw_frame.pack(pady=(6, 6))
-
-        self._make_hold_button(raw_frame, "M1+", "y").grid(row=0, column=0, padx=6)
-        self._make_hold_button(raw_frame, "M1-", "h").grid(row=0, column=1, padx=6)
-        self._make_hold_button(raw_frame, "M2+", "u").grid(row=0, column=2, padx=6)
-        self._make_hold_button(raw_frame, "M2-", "j").grid(row=0, column=3, padx=6)
-
         focus_hint = tk.Label(
             self.root,
-            text="Klikk i vinduet hvis tastene ikke fanges. Du kan også holde inne M1/M2-knappene.",
+            text="Klikk i vinduet hvis tastene ikke fanges.",
             font=("TkDefaultFont", 10),
             fg="#8f8f8f",
             bg="#111111",
@@ -202,23 +194,6 @@ class MegaKeyboardGui:
         self.root.bind("<KeyPress>", self._on_key_press)
         self.root.bind("<KeyRelease>", self._on_key_release)
         self.root.focus_force()
-
-    def _make_hold_button(self, parent: tk.Widget, label: str, key: str) -> tk.Button:
-        button = tk.Button(
-            parent,
-            text=label,
-            width=8,
-            font=("TkDefaultFont", 11, "bold"),
-            bg="#202020",
-            fg="#f5f5f5",
-            activebackground="#3a3a3a",
-            activeforeground="#ffffff",
-            relief="raised",
-        )
-        button.bind("<ButtonPress-1>", lambda _event, k=key: self.pressed_keys.add(k))
-        button.bind("<ButtonRelease-1>", lambda _event, k=key: self.pressed_keys.discard(k))
-        button.bind("<Leave>", lambda _event, k=key: self.pressed_keys.discard(k))
-        return button
 
     def _start_remote_bridge(self) -> subprocess.Popen[str]:
         remote_repo = self.args.remote_repo
@@ -356,7 +331,7 @@ class MegaKeyboardGui:
             return
 
         first_press = key not in self.pressed_keys
-        if key in {"w", "a", "s", "d", "y", "h", "i", "u", "j"}:
+        if key in {"w", "a", "s", "d"}:
             self.pressed_keys.add(key)
 
         if not first_press:
@@ -399,48 +374,31 @@ class MegaKeyboardGui:
 
         self._restart_remote_bridge_if_needed()
 
-        raw_mode = any(key in self.pressed_keys for key in ("y", "h", "i", "u", "j"))
+        drive = 0
+        if "w" in self.pressed_keys and "s" not in self.pressed_keys:
+            drive = 1
+        elif "s" in self.pressed_keys and "w" not in self.pressed_keys:
+            drive = -1
 
-        if raw_mode:
-            m1 = 0
-            if "y" in self.pressed_keys and "h" not in self.pressed_keys:
-                m1 = self.speed
-            elif "h" in self.pressed_keys and "y" not in self.pressed_keys:
-                m1 = -self.speed
+        steer = 0
+        if "a" in self.pressed_keys and "d" not in self.pressed_keys:
+            steer = 1
+        elif "d" in self.pressed_keys and "a" not in self.pressed_keys:
+            steer = -1
 
-            m2 = 0
-            if ("i" in self.pressed_keys or "u" in self.pressed_keys) and "j" not in self.pressed_keys:
-                m2 = self.speed
-            elif "j" in self.pressed_keys and "i" not in self.pressed_keys:
-                m2 = -self.speed
+        left, right = tank_mix(drive, steer, self.speed, self.turn_speed)
+        send_left, send_right = map_robot_commands(
+            left,
+            right,
+            left_cmd_scale=self.args.left_cmd_scale,
+            right_cmd_scale=self.args.right_cmd_scale,
+            left_cmd_sign=self.args.left_cmd_sign,
+            right_cmd_sign=self.args.right_cmd_sign,
+            swap_sides=self.args.swap_sides,
+        )
+        command = "STOP" if send_left == 0 and send_right == 0 else f"BOTH {send_left} {send_right}"
 
-            command = "STOP" if m1 == 0 and m2 == 0 else f"BOTH {m1} {m2}"
-            self.command_var.set(f"mode=raw m1={m1} m2={m2}")
-        else:
-            drive = 0
-            if "w" in self.pressed_keys and "s" not in self.pressed_keys:
-                drive = 1
-            elif "s" in self.pressed_keys and "w" not in self.pressed_keys:
-                drive = -1
-
-            steer = 0
-            if "a" in self.pressed_keys and "d" not in self.pressed_keys:
-                steer = 1
-            elif "d" in self.pressed_keys and "a" not in self.pressed_keys:
-                steer = -1
-
-            left, right = tank_mix(drive, steer, self.speed, self.turn_speed)
-            send_left, send_right = map_robot_commands(
-                left,
-                right,
-                left_cmd_scale=self.args.left_cmd_scale,
-                right_cmd_scale=self.args.right_cmd_scale,
-                left_cmd_sign=self.args.left_cmd_sign,
-                right_cmd_sign=self.args.right_cmd_sign,
-                swap_sides=self.args.swap_sides,
-            )
-            command = "STOP" if send_left == 0 and send_right == 0 else f"BOTH {send_left} {send_right}"
-            self.command_var.set(f"mode=mix cmd=({send_left}, {send_right})")
+        self.command_var.set(f"cmd=({send_left}, {send_right})")
 
         self.speed_var.set(self._speed_text())
 

@@ -95,7 +95,6 @@ def tank_mix(drive: int, steer: int, speed: int, turn_speed: int) -> tuple[int, 
 
 
 def print_status(
-    mode: str,
     forward: bool,
     reverse: bool,
     left_turn: bool,
@@ -121,7 +120,7 @@ def print_status(
     message = f" msg={latest_message}" if latest_message else ""
     sys.stdout.write(
         "\r"
-        f"[mega-keyboard] mode={mode} drive={drive_label} steer={steer_label} "
+        f"[mega-keyboard] drive={drive_label} steer={steer_label} "
         f"speed={speed} turn_speed={turn_speed} cmd=({left_cmd}, {right_cmd}){message}   "
     )
     sys.stdout.flush()
@@ -168,10 +167,6 @@ def main() -> int:
     last_reverse_at = -1.0
     last_left_at = -1.0
     last_right_at = -1.0
-    last_m1_forward_at = -1.0
-    last_m1_reverse_at = -1.0
-    last_m2_forward_at = -1.0
-    last_m2_reverse_at = -1.0
     latest_message = ""
     last_sent_at = 0.0
     last_sent_command = ""
@@ -185,8 +180,7 @@ def main() -> int:
 
             tty.setcbreak(fd)
             print(
-                "[mega-keyboard] Hold W/S/A/D for mix. "
-                "Hold Y/H for raw M1 +/- and I/U forward, J reverse for raw M2. "
+                "[mega-keyboard] Hold W/S/A/D. "
                 "E/Q speed up/down. P/O turn speed up/down. "
                 "SPACE stop. - quit."
             )
@@ -216,23 +210,11 @@ def main() -> int:
                             last_left_at = key_now
                         elif key in ("d", "D"):
                             last_right_at = key_now
-                        elif key in ("y", "Y"):
-                            last_m1_forward_at = key_now
-                        elif key in ("h", "H"):
-                            last_m1_reverse_at = key_now
-                        elif key in ("i", "I", "u", "U"):
-                            last_m2_forward_at = key_now
-                        elif key in ("j", "J"):
-                            last_m2_reverse_at = key_now
                         elif key == " ":
                             last_forward_at = -1.0
                             last_reverse_at = -1.0
                             last_left_at = -1.0
                             last_right_at = -1.0
-                            last_m1_forward_at = -1.0
-                            last_m1_reverse_at = -1.0
-                            last_m2_forward_at = -1.0
-                            last_m2_reverse_at = -1.0
                         elif key in ("e", "E"):
                             speed = min(255, speed + 5)
                         elif key in ("q", "Q"):
@@ -247,52 +229,29 @@ def main() -> int:
                     reverse = is_active(last_reverse_at, now, args.hold_timeout)
                     left_turn = is_active(last_left_at, now, args.hold_timeout)
                     right_turn = is_active(last_right_at, now, args.hold_timeout)
-                    raw_m1_forward = is_active(last_m1_forward_at, now, args.hold_timeout)
-                    raw_m1_reverse = is_active(last_m1_reverse_at, now, args.hold_timeout)
-                    raw_m2_forward = is_active(last_m2_forward_at, now, args.hold_timeout)
-                    raw_m2_reverse = is_active(last_m2_reverse_at, now, args.hold_timeout)
+                    drive = 0
+                    if forward and not reverse:
+                        drive = 1
+                    elif reverse and not forward:
+                        drive = -1
 
-                    raw_mode = raw_m1_forward or raw_m1_reverse or raw_m2_forward or raw_m2_reverse
-                    mode = "raw" if raw_mode else "mix"
+                    steer = 0
+                    if left_turn and not right_turn:
+                        steer = 1
+                    elif right_turn and not left_turn:
+                        steer = -1
 
-                    if raw_mode:
-                        send_left = 0
-                        send_right = 0
-                        if raw_m1_forward and not raw_m1_reverse:
-                            send_left = speed
-                        elif raw_m1_reverse and not raw_m1_forward:
-                            send_left = -speed
-
-                        if raw_m2_forward and not raw_m2_reverse:
-                            send_right = speed
-                        elif raw_m2_reverse and not raw_m2_forward:
-                            send_right = -speed
-
-                        command = "STOP" if send_left == 0 and send_right == 0 else f"BOTH {send_left} {send_right}"
-                    else:
-                        drive = 0
-                        if forward and not reverse:
-                            drive = 1
-                        elif reverse and not forward:
-                            drive = -1
-
-                        steer = 0
-                        if left_turn and not right_turn:
-                            steer = 1
-                        elif right_turn and not left_turn:
-                            steer = -1
-
-                        left_cmd, right_cmd = tank_mix(drive, steer, speed, turn_speed)
-                        send_left, send_right = map_robot_commands(
-                            left_cmd,
-                            right_cmd,
-                            left_cmd_scale=args.left_cmd_scale,
-                            right_cmd_scale=args.right_cmd_scale,
-                            left_cmd_sign=args.left_cmd_sign,
-                            right_cmd_sign=args.right_cmd_sign,
-                            swap_sides=args.swap_sides,
-                        )
-                        command = "STOP" if send_left == 0 and send_right == 0 else f"BOTH {send_left} {send_right}"
+                    left_cmd, right_cmd = tank_mix(drive, steer, speed, turn_speed)
+                    send_left, send_right = map_robot_commands(
+                        left_cmd,
+                        right_cmd,
+                        left_cmd_scale=args.left_cmd_scale,
+                        right_cmd_scale=args.right_cmd_scale,
+                        left_cmd_sign=args.left_cmd_sign,
+                        right_cmd_sign=args.right_cmd_sign,
+                        swap_sides=args.swap_sides,
+                    )
+                    command = "STOP" if send_left == 0 and send_right == 0 else f"BOTH {send_left} {send_right}"
 
                     should_repeat = command != "STOP"
                     should_send = command != last_sent_command or (should_repeat and now - last_sent_at >= args.send_period)
@@ -303,7 +262,6 @@ def main() -> int:
                         last_sent_at = now
 
                     print_status(
-                        mode,
                         forward,
                         reverse,
                         left_turn,

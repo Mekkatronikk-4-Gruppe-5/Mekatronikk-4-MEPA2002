@@ -102,7 +102,7 @@ class MegaKeyboardGui:
         self.command_var = tk.StringVar(value="mode=mix cmd=(0, 0)")
         self.speed_var = tk.StringVar(value=self._speed_text())
         self.hint_var = tk.StringVar(
-            value="Hold W/S/A/D for mix. Hold Y/H for raw M1 +/- and I/J for raw M2 +/-. E/Q speed. P/O turn speed. SPACE stop. - quit."
+            value="Hold W/S/A/D for mix. Hold Y/H for raw M1 +/- and I/U forward, J reverse for raw M2. E/Q speed. P/O turn speed. SPACE stop. - quit."
         )
 
         self._build_ui()
@@ -331,7 +331,7 @@ class MegaKeyboardGui:
             return
 
         first_press = key not in self.pressed_keys
-        if key in {"w", "a", "s", "d", "y", "h", "i", "j"}:
+        if key in {"w", "a", "s", "d", "y", "h", "i", "u", "j"}:
             self.pressed_keys.add(key)
 
         if not first_press:
@@ -374,7 +374,7 @@ class MegaKeyboardGui:
 
         self._restart_remote_bridge_if_needed()
 
-        raw_mode = any(key in self.pressed_keys for key in ("y", "h", "i", "j"))
+        raw_mode = any(key in self.pressed_keys for key in ("y", "h", "i", "u", "j"))
 
         if raw_mode:
             m1 = 0
@@ -384,7 +384,7 @@ class MegaKeyboardGui:
                 m1 = -self.speed
 
             m2 = 0
-            if "i" in self.pressed_keys and "j" not in self.pressed_keys:
+            if ("i" in self.pressed_keys or "u" in self.pressed_keys) and "j" not in self.pressed_keys:
                 m2 = self.speed
             elif "j" in self.pressed_keys and "i" not in self.pressed_keys:
                 m2 = -self.speed

@@ -86,7 +86,7 @@ Pi, via SSH fra samme PC som skal bruke RViz:
 
 ```bash
 cd ~/Mekatronikk-4-MEPA2002
-WITH_NAV2=0 WITH_TEDDY=1 make pi-bringup
+make pi-bringup
 ```
 
 PC:

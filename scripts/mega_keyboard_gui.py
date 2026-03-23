@@ -27,11 +27,19 @@ def tank_mix(drive: int, steer: int, speed: int, turn_speed: int) -> tuple[int, 
     turn_delta = min(speed, turn_speed)
 
     if steer > 0:
-        left = drive * speed
-        right = drive * (speed - turn_delta)
+        if drive > 0:
+            left = drive * (speed - turn_delta)
+            right = drive * speed
+        else:
+            left = drive * speed
+            right = drive * (speed - turn_delta)
     elif steer < 0:
-        left = drive * (speed - turn_delta)
-        right = drive * speed
+        if drive > 0:
+            left = drive * speed
+            right = drive * (speed - turn_delta)
+        else:
+            left = drive * (speed - turn_delta)
+            right = drive * speed
 
     return clamp_pwm(left), clamp_pwm(right)
 

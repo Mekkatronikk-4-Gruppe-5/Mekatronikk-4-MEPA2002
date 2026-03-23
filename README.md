@@ -236,68 +236,143 @@ Merk:
 
 Kalibrering mot Mega kjøres på Pi-hosten, ikke i Docker. Dette verktøyet er laget for `mega_keyboard_drive`-firmwaren og bruker de eksisterende kommandoene `ENC1`, `ENC2`, `RESET ENC1`, `RESET ENC2`, `STATE`, `BOTH` og `STOP`.
 
-Ta et snapshot av dagens tellere:
+Workflowen under er ment som en `clean slate`-kalibrering for dagens tracked robot:
+
+1. nullstill gamle kalibreringsverdier
+2. kjør `straight-trim` på `160 PWM`
+3. kjør `straight`-kalibrering på `160 PWM`
+4. kjør `spin`-kalibrering på `90 PWM`
+
+Før dere begynner:
+
+1. stopp alt annet som bruker Mega-porten
+2. sørg for at Mega kjører `mega_keyboard_drive`
+3. kjør dette på Pi-hosten, ikke inne i Docker
+
+Viktig å vite om wrapperen:
+
+1. `make mega-calibrate` autodetekterer normalt `MEGA_PORT`
+2. `ARGS="..."` sendes rett videre til `mega_calibration.py`
+3. `--swap-sides` er på som default fordi dagens wiring antar at Mega `M1/ENC1` og `M2/ENC2` er byttet relativt til robotens venstre/høyre
+4. hvis dere senere rewierer riktig fysisk, bruk `--no-swap-sides`
+
+Før workflowen er det lurt å verifisere at Mega svarer:
 
 ```bash
 make mega-calibrate ARGS="snapshot"
 ```
 
-Kjør en rettlinjet kalibreringsrun og regn ut meter per tick etter at du har målt faktisk distanse:
-
-```bash
-make mega-calibrate ARGS="straight --pwm 90 --duration 1.6 --distance-m 2.0"
-```
-
-Kalibreringsverktøyet antar nå som standard at venstre/høyre er byttet mellom Mega (`M1/ENC1`, `M2/ENC2`) og roboten. Hvis dere senere rewierer riktig fysisk, bruk `--no-swap-sides`.
-
 Dette:
 
-1. verifiserer at Mega kjører `mega_keyboard_drive`
-2. resetter encoderne
-3. kjører begge belter likt i valgt retning med watchdog-sikre repetisjoner
-4. stopper roboten og skriver ut encoder-delta
-5. beregner `left_m_per_tick` og `right_m_per_tick` hvis `--distance-m` er satt
+1. verifiserer firmware (`mega_keyboard_drive`)
+2. leser encoderne
+3. leser `STATE`
 
-Hvis roboten trekker til en side, kan dere kjøre en egen trim-test som foreslår `LEFT_CMD_SCALE` og `RIGHT_CMD_SCALE` for Mega-driveren:
+Steg 1: nullstill gamle kalibreringsverdier
 
-```bash
-make mega-calibrate ARGS="straight-trim --pwm 90 --duration 10.4 --left-m-per-tick 0.000057460 --right-m-per-tick 0.000051824"
+Nullstill bare selve kalibreringsverdiene i [robot_calibration.yaml](/home/emiliam/Mekatronikk-4-MEPA2002/config/robot_calibration.yaml). Behold `swap_sides`, `left/right_cmd_sign` og `left/right_tick_sign` som de er.
+
+Sett disse verdiene:
+
+```yaml
+mega_driver:
+  left_cmd_scale: 1.0
+  right_cmd_scale: 1.0
+  left_m_per_tick: 0.0
+  right_m_per_tick: 0.0
+  track_width_eff_m: 0.35
 ```
 
-Dette:
+Poenget er:
 
-1. kjører samme type rettlinjetest
-2. sammenligner venstre og høyre bevegelse
-3. foreslår nye `left_cmd_scale` og `right_cmd_scale` uten å endre encoder-odometrien
+1. `left_cmd_scale` og `right_cmd_scale` starter nøytralt
+2. `left_m_per_tick` og `right_m_per_tick` tvinges til å bli målt på nytt
+3. `track_width_eff_m` settes til en trygg placeholder fram til spin-testen er kjørt
 
-De samme trim-verdiene kan deretter brukes direkte i `straight` og `spin`, for eksempel:
+Steg 2: kjør `straight-trim` på `160 PWM`
 
-```bash
-make mega-calibrate ARGS="straight --pwm 90 --duration 10.4 --left-cmd-scale 0.91 --right-cmd-scale 1.0 --distance-m 2.0"
-```
-
-Kjør en spinn-kalibrering når du allerede har meter-per-tick og har målt faktisk rotasjon:
+Dette steget brukes først fordi roboten bør gå så rett som mulig før dere begynner å regne meter-per-tick.
 
 ```bash
-make mega-calibrate ARGS="spin --pwm 75 --duration 1.2 --angle-deg 360 --left-m-per-tick 0.000500000 --right-m-per-tick 0.000505000"
+make mega-calibrate ARGS="straight-trim --pwm 160 --duration 3.0 --left-cmd-scale 1.0 --right-cmd-scale 1.0"
 ```
 
-Dette beregner `track_width_eff_m`, som er den effektive sporvidden dere bør bruke i encoder-odometri for en belterobot.
+Dette gjør scriptet:
+
+1. resetter encoderne
+2. kjører rett fram med samme base-PWM på begge sider
+3. sammenligner venstre og høyre encoderbevegelse
+4. foreslår og lagrer nye `left_cmd_scale` og `right_cmd_scale`
+
+Les av disse verdiene i outputen:
+
+1. `suggested_left_cmd_scale`
+2. `suggested_right_cmd_scale`
+
+De lagres også automatisk i [robot_calibration.yaml](/home/emiliam/Mekatronikk-4-MEPA2002/config/robot_calibration.yaml), så lenge dere ikke bruker `--no-write-config`.
+
+Steg 3: kjør `straight`-kalibrering på `160 PWM`
+
+Bruk trimverdiene fra steg 2 direkte i kommandoen. Mål faktisk kjørt distanse og sett den inn som `--distance-m`.
+
+```bash
+make mega-calibrate ARGS="straight --pwm 160 --duration 3.0 --left-cmd-scale <left_cmd_scale_fra_steg_2> --right-cmd-scale <right_cmd_scale_fra_steg_2> --distance-m <målt_distanse_meter>"
+```
+
+Dette gjør scriptet:
+
+1. resetter encoderne
+2. kjører rett fram med de trimmede kommandoverdiene
+3. bruker målt distanse til å regne ut `left_m_per_tick` og `right_m_per_tick`
+4. lagrer dem i [robot_calibration.yaml](/home/emiliam/Mekatronikk-4-MEPA2002/config/robot_calibration.yaml)
+
+Les av disse verdiene i outputen:
+
+1. `left_m_per_tick`
+2. `right_m_per_tick`
+
+Steg 4: kjør `spin`-kalibrering på `90 PWM`
+
+Bruk både trimverdiene fra steg 2 og meter-per-tick-verdiene fra steg 3. Mål faktisk rotasjon og sett den inn som `--angle-deg`.
+
+```bash
+make mega-calibrate ARGS="spin --pwm 90 --duration 1.2 --left-cmd-scale <left_cmd_scale_fra_steg_2> --right-cmd-scale <right_cmd_scale_fra_steg_2> --left-m-per-tick <left_m_per_tick_fra_steg_3> --right-m-per-tick <right_m_per_tick_fra_steg_3> --angle-deg <målt_vinkel_grader>"
+```
+
+Dette gjør scriptet:
+
+1. resetter encoderne
+2. spinner roboten på stedet
+3. bruker målt vinkel til å regne ut `track_width_eff_m`
+4. lagrer den i [robot_calibration.yaml](/home/emiliam/Mekatronikk-4-MEPA2002/config/robot_calibration.yaml)
+
+Etter steg 4 har dere de tre kalibreringsresultatene dere faktisk trenger:
+
+1. `left_cmd_scale` og `right_cmd_scale`
+2. `left_m_per_tick` og `right_m_per_tick`
+3. `track_width_eff_m`
 
 Nyttige flagg:
 
 1. `--direction reverse` på `straight` for bakoverkalibrering
-2. `--left-cmd-scale` og `--right-cmd-scale` kan brukes på `straight`, `straight-trim` og `spin`
-3. `--direction ccw` på `spin` for motsatt spinnretning
-4. `MEGA_PORT=/dev/ttyACM0 make mega-calibrate ARGS="snapshot"` hvis port-auto-detect bommer
+2. `--direction ccw` på `spin` for motsatt spinnretning
+3. `--left-cmd-scale` og `--right-cmd-scale` kan brukes på `straight`, `straight-trim` og `spin`
+4. `--no-write-config` hvis dere bare vil teste uten å skrive tilbake til YAML
+5. `MEGA_PORT=/dev/ttyACM0 make mega-calibrate ARGS="snapshot"` hvis autodetektering bommer
 
-Kalibreringsscriptet skriver nå som standard resultatene tilbake til [robot_calibration.yaml](/home/emiliam/Mekatronikk-4-MEPA2002/config/robot_calibration.yaml). Det betyr at:
+Kalibreringsscriptet skriver som default tilbake til [robot_calibration.yaml](/home/emiliam/Mekatronikk-4-MEPA2002/config/robot_calibration.yaml). Det betyr at:
 
-1. `straight-trim` oppdaterer `left_cmd_scale` og `right_cmd_scale`
-2. `straight --distance-m ...` oppdaterer `left_m_per_tick` og `right_m_per_tick`
+1. `straight --distance-m ...` oppdaterer `left_m_per_tick` og `right_m_per_tick`
+2. `straight-trim` oppdaterer `left_cmd_scale` og `right_cmd_scale`
 3. `spin --angle-deg ...` oppdaterer `track_width_eff_m`
 
-Hvis dere bare vil teste uten å lagre, bruk `--no-write-config`.
+Disse verdiene brukes automatisk senere av `make pi-bringup` via [robot_calibration_env.py](/home/emiliam/Mekatronikk-4-MEPA2002/scripts/robot_calibration_env.py). Under selve kalibreringen må dere likevel kopiere resultatene fra forrige steg inn i neste kommando manuelt, fordi `mega_calibration.py` ikke leser dem tilbake som standard input-verdier for `straight` og `spin`.
+
+Hvis du vil se hvilke subkommandoer som faktisk finnes akkurat nå:
+
+```bash
+python3 scripts/mega_calibration.py --help
+```
 
 ### ROS Mega-driver på Pi
 

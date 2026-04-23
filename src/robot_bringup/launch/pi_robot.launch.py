@@ -10,6 +10,7 @@ import os
 
 
 def generate_launch_description():
+    robot_bringup_share = get_package_share_directory('robot_bringup')
     robot_description_path = os.path.join(
         get_package_share_directory('robot_description'),
         'urdf',
@@ -18,14 +19,19 @@ def generate_launch_description():
     with open(robot_description_path, 'r', encoding='utf-8') as handle:
         robot_description_content = handle.read()
 
-    robot_bringup_share = get_package_share_directory('robot_bringup')
+    default_ekf_params_path = os.path.join(robot_bringup_share, 'config', 'ekf.yaml')
+    default_nav2_params_path = os.path.join(robot_bringup_share, 'config', 'nav2_params.yaml')
+    default_rviz_config_path = os.path.join(robot_bringup_share, 'rviz', 'rviz.rviz')
 
     use_nav2 = LaunchConfiguration('use_nav2')
+    use_lidar = LaunchConfiguration('use_lidar')
     use_teddy = LaunchConfiguration('use_teddy')
     use_imu = LaunchConfiguration('use_imu')
     use_mega_driver = LaunchConfiguration('use_mega_driver')
     use_ekf = LaunchConfiguration('use_ekf')
     use_joint_states = LaunchConfiguration('use_joint_states')
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    rviz_enabled = LaunchConfiguration('rviz')
     product_name = LaunchConfiguration('product_name')
     port_name = LaunchConfiguration('port_name')
     port_baudrate = LaunchConfiguration('port_baudrate')
@@ -56,12 +62,13 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
+    rviz_config = LaunchConfiguration('rviz_config')
 
     robot_state_publisher = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
         output='screen',
-        parameters=[{'use_sim_time': False}, {'robot_description': robot_description_content}],
+        parameters=[{'use_sim_time': use_sim_time}, {'robot_description': robot_description_content}],
     )
 
     joint_state_publisher = Node(
@@ -76,6 +83,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(robot_bringup_share, 'launch', 'lidar_nav2_compat.launch.py')
         ),
+        condition=IfCondition(use_lidar),
         launch_arguments={
             'product_name': product_name,
             'port_name': port_name,
@@ -98,7 +106,7 @@ def generate_launch_description():
         ),
         condition=IfCondition(use_nav2),
         launch_arguments={
-            'use_sim_time': 'false',
+            'use_sim_time': use_sim_time,
             'params_file': params_file,
             'use_respawn': use_respawn,
             'log_level': log_level,
@@ -159,13 +167,25 @@ def generate_launch_description():
         remappings=[('odometry/filtered', 'odom')],
     )
 
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        output='screen',
+        arguments=['-d', rviz_config],
+        condition=IfCondition(rviz_enabled),
+        parameters=[{'use_sim_time': use_sim_time}],
+    )
+
     return LaunchDescription([
         DeclareLaunchArgument('use_nav2', default_value='true'),
+        DeclareLaunchArgument('use_lidar', default_value='true'),
         DeclareLaunchArgument('use_teddy', default_value='false'),
         DeclareLaunchArgument('use_imu', default_value='false'),
         DeclareLaunchArgument('use_mega_driver', default_value='false'),
         DeclareLaunchArgument('use_ekf', default_value='false'),
         DeclareLaunchArgument('use_joint_states', default_value='true'),
+        DeclareLaunchArgument('use_sim_time', default_value='false'),
+        DeclareLaunchArgument('rviz', default_value='false'),
         DeclareLaunchArgument('product_name', default_value='LDLiDAR_LD06'),
         DeclareLaunchArgument('port_name', default_value='/dev/ttyAMA0'),
         DeclareLaunchArgument('port_baudrate', default_value='230400'),
@@ -186,18 +206,19 @@ def generate_launch_description():
         DeclareLaunchArgument('left_m_per_tick', default_value='0.0'),
         DeclareLaunchArgument('right_m_per_tick', default_value='0.0'),
         DeclareLaunchArgument('track_width_eff_m', default_value='0.35'),
-        DeclareLaunchArgument('ekf_params_file', default_value='/ws/config/ekf.yaml'),
+        DeclareLaunchArgument('ekf_params_file', default_value=default_ekf_params_path),
         DeclareLaunchArgument('tf_x', default_value='0.0'),
         DeclareLaunchArgument('tf_y', default_value='0.0'),
         DeclareLaunchArgument('tf_z', default_value='0.0'),
         DeclareLaunchArgument('tf_roll', default_value='0.0'),
         DeclareLaunchArgument('tf_pitch', default_value='0.0'),
         DeclareLaunchArgument('tf_yaw', default_value='0.0'),
-        DeclareLaunchArgument('params_file', default_value='/ws/config/nav2_params.yaml'),
+        DeclareLaunchArgument('params_file', default_value=default_nav2_params_path),
+        DeclareLaunchArgument('rviz_config', default_value=default_rviz_config_path),
         DeclareLaunchArgument('use_respawn', default_value='false'),
         DeclareLaunchArgument('log_level', default_value='info'),
         SetEnvironmentVariable('RCUTILS_LOGGING_BUFFERED_STREAM', '1'),
-        SetParameter('use_sim_time', False),
+        SetParameter('use_sim_time', use_sim_time),
         joint_state_publisher,
         robot_state_publisher,
         imu_node,
@@ -206,4 +227,5 @@ def generate_launch_description():
         lidar_launch,
         nav2_launch,
         teddy_detector,
+        rviz_node,
     ])

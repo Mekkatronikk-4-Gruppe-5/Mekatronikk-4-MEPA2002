@@ -1,54 +1,47 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, SetEnvironmentVariable, TimerAction
+from launch.actions import (
+    DeclareLaunchArgument,
+    ExecuteProcess,
+    IncludeLaunchDescription,
+    SetEnvironmentVariable,
+    TimerAction,
+)
 from launch.conditions import IfCondition, UnlessCondition
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 import os
-import yaml
+
 
 def generate_launch_description():
     headless = LaunchConfiguration('headless')
     autostart = LaunchConfiguration('autostart')
     rviz_enabled = LaunchConfiguration('rviz')
     keyboard_teleop_enabled = LaunchConfiguration('keyboard_teleop')
+    use_nav2 = LaunchConfiguration('use_nav2')
+    use_ekf = LaunchConfiguration('use_ekf')
+    params_file = LaunchConfiguration('params_file')
+    ekf_params_file = LaunchConfiguration('ekf_params_file')
+    rviz_config = LaunchConfiguration('rviz_config')
+    sim_track_width_eff_m = LaunchConfiguration('sim_track_width_eff_m')
+    sim_max_track_speed_mps = LaunchConfiguration('sim_max_track_speed_mps')
+
+    robot_bringup_share = get_package_share_directory('robot_bringup')
 
     world = os.path.join(
         get_package_share_directory('robot_gz'),
         'worlds',
         'tracked_robot_world.sdf'
     )
-    urdf_path = os.path.join(
-        get_package_share_directory('robot_description'),
-        'urdf',
-        'tracked_robot.urdf'
-    )
-    with open(urdf_path, 'r', encoding='utf-8') as f:
-        robot_description_content = f.read()
 
-    rviz_config = os.path.join(
-        get_package_share_directory('robot_bringup'),
+    default_rviz_config = os.path.join(
+        robot_bringup_share,
         'rviz',
         'rviz.rviz'
     )
-    calibration_path = os.path.join(
-        get_package_share_directory('robot_bringup'),
-        'config',
-        'robot_calibration.yaml'
-    )
-    with open(calibration_path, 'r', encoding='utf-8') as f:
-        calibration = yaml.safe_load(f) or {}
-    mega_driver_calibration = calibration.get('mega_driver', {})
-
-    rviz = Node(
-        package='rviz2',
-        executable='rviz2',
-        output='screen',
-        arguments=['-d', rviz_config],
-        parameters=[{'use_sim_time': True}],
-        condition=IfCondition(rviz_enabled),
-    )
-
+    default_nav2_params = os.path.join(robot_bringup_share, 'config', 'nav2_params.yaml')
+    default_ekf_params = os.path.join(robot_bringup_share, 'config', 'ekf.yaml')
 
     gz_gui = ExecuteProcess(
         cmd=['gz', 'sim', '-v', '4', world],
@@ -67,11 +60,11 @@ def generate_launch_description():
             'ros2', 'run', 'ros_gz_bridge', 'parameter_bridge',
             '/model/tracked_robot/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
-            '/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
-            '/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
+            '/wheel/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
             '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',
             '/lidar@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
             '/lidar/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
+            '/imu/data@sensor_msgs/msg/Imu[gz.msgs.IMU',
             '/camera@sensor_msgs/msg/Image[gz.msgs.Image',
         ],
         output='screen'
@@ -82,15 +75,41 @@ def generate_launch_description():
         output='screen',
         parameters=[
             {'use_sim_time': True},
-            {'track_width_eff_m': float(mega_driver_calibration.get('track_width_eff_m', 0.186605297))},
-            {'max_track_speed_mps': 0.5555555555555556},
+            {'track_width_eff_m': sim_track_width_eff_m},
+            {'max_track_speed_mps': sim_max_track_speed_mps},
+            {'swap_sides': False},
+            {'left_cmd_sign': 1},
+            {'right_cmd_sign': 1},
+            {'left_cmd_scale': 1.0},
+            {'right_cmd_scale': 1.0},
             {'input_topic': '/cmd_vel'},
             {'output_topic': '/model/tracked_robot/cmd_vel'},
         ],
     )
+
+    shared_core_stack = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(robot_bringup_share, 'launch', 'pi_robot.launch.py')
+        ),
+        launch_arguments={
+            'use_nav2': use_nav2,
+            'use_lidar': 'false',
+            'use_teddy': 'false',
+            'use_imu': 'false',
+            'use_mega_driver': 'false',
+            'use_ekf': use_ekf,
+            'use_joint_states': 'false',
+            'use_sim_time': 'true',
+            'rviz': rviz_enabled,
+            'params_file': params_file,
+            'ekf_params_file': ekf_params_file,
+            'rviz_config': rviz_config,
+        }.items(),
+    )
+
     keyboard_teleop = Node(
-        package='robot_minimal_control',
-        executable='sim_keyboard_teleop',
+        package='mekk4_bringup',
+        executable='ros_keyboard_teleop',
         output='screen',
         condition=IfCondition(
             PythonExpression([
@@ -105,22 +124,12 @@ def generate_launch_description():
     lidar_static_tf = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
+        name='lidar_static_tf_sim',
         arguments=[
             '--x', '0', '--y', '0', '--z', '0',
             '--roll', '0', '--pitch', '0', '--yaw', '0',
             '--frame-id', 'lidar_link',
             '--child-frame-id', 'base_laser',
-        ],
-    )
-
-
-    robot_state_publisher = Node(
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        output='screen',
-        parameters=[
-            {'use_sim_time': True},
-            {'robot_description': robot_description_content},
         ],
     )
 
@@ -130,10 +139,9 @@ def generate_launch_description():
         actions=[
             bridge,
             sim_cmd_vel_calibrator,
-            robot_state_publisher,
             lidar_static_tf,
+            shared_core_stack,
             keyboard_teleop,
-            rviz,
         ]
     )
 
@@ -167,6 +175,41 @@ def generate_launch_description():
             'rviz',
             default_value='true',
             description='Run RViz visualizer.'
+        ),
+        DeclareLaunchArgument(
+            'use_nav2',
+            default_value='true',
+            description='Run Nav2 from the shared pi_robot core stack.'
+        ),
+        DeclareLaunchArgument(
+            'use_ekf',
+            default_value='true',
+            description='Run EKF from the shared pi_robot core stack.'
+        ),
+        DeclareLaunchArgument(
+            'params_file',
+            default_value=default_nav2_params,
+            description='Nav2 parameters file used by shared core stack.'
+        ),
+        DeclareLaunchArgument(
+            'ekf_params_file',
+            default_value=default_ekf_params,
+            description='EKF parameters file used by shared core stack.'
+        ),
+        DeclareLaunchArgument(
+            'rviz_config',
+            default_value=default_rviz_config,
+            description='RViz config used by shared core stack.'
+        ),
+        DeclareLaunchArgument(
+            'sim_track_width_eff_m',
+            default_value='0.186605297',
+            description='Effective track width for sim cmd_vel conversion.'
+        ),
+        DeclareLaunchArgument(
+            'sim_max_track_speed_mps',
+            default_value='0.5555555555555556',
+            description='Max per-track speed clamp for sim cmd_vel conversion.'
         ),
         DeclareLaunchArgument(
             'keyboard_teleop',

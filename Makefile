@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: build shell up down ws lidar-setup lidar-test mega-upload mega-test mega-motor-test mega-keyboard mega-calibrate pc-mega-keyboard pc-ros-keyboard sim-build sim sim-headless sim-topics sim-nav2 pi-bringup pc-camera-rviz pc-teddy-rviz camera-stop camera-reload
+.PHONY: build shell up down ws lidar-setup lidar-test mega-upload mega-test mega-motor-test mega-keyboard mega-calibrate pc-mega-keyboard pc-ros-keyboard sim-build sim-stop sim sim-headless sim-topics sim-nav2 pi-bringup pc-camera-rviz pc-teddy-rviz camera-stop camera-reload
 
 build:
 	docker compose build
@@ -48,10 +48,13 @@ pc-ros-keyboard:
 sim-build:
 	bash -lc 'source /opt/ros/jazzy/setup.bash && colcon build --symlink-install'
 
-sim:
+sim-stop:
+	bash ./scripts/sim_stop.sh
+
+sim: sim-stop
 	bash -lc 'source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 launch robot_bringup minimal_all.launch.py'
 
-sim-headless:
+sim-headless: sim-stop
 	bash -lc 'source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 launch robot_bringup minimal_all.launch.py headless:=true rviz:=false'
 
 sim-topics:

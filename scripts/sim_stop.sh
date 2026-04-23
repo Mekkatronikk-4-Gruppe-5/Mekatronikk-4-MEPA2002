@@ -9,6 +9,7 @@ patterns=(
   "ros2 run ros_gz_bridge parameter_bridge"
   "lib/ros_gz_bridge/parameter_bridge"
   "gz sim "
+  "gz sim server"
   "robot_state_publisher"
   "ekf_node"
   "controller_server"

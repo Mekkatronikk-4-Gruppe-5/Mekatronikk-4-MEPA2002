@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'robot_minimal_control'
+package_name = 'robot_sim_control'
 
 setup(
     name=package_name,
@@ -15,8 +15,8 @@ setup(
     zip_safe=True,
     maintainer='olav',
     maintainer_email='olavdrage@gmail.com',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    description='Simulation-only control adapters for the tracked robot.',
+    license='MIT',
     extras_require={
         'test': [
             'pytest',
@@ -24,9 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'cmd_vel_loop = robot_minimal_control.cmd_vel_loop:main',
-            'sim_cmd_vel_calibrator = robot_minimal_control.sim_cmd_vel_calibrator:main',
-            'sim_keyboard_teleop = robot_minimal_control.sim_keyboard_teleop:main',
+            'tracked_cmd_vel_adapter = robot_sim_control.tracked_cmd_vel_adapter:main',
         ],
     },
 )

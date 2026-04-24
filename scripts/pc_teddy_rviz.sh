@@ -14,4 +14,4 @@ export TOPIC_NAME="${TEDDY_TOPIC_NAME:-/camera}"
 export FRAME_ID="${TEDDY_FRAME_ID:-camera_link}"
 export RVIZ_CONFIG="${RVIZ_CONFIG:-${REPO_ROOT}/src/robot_bringup/rviz/rviz.rviz}"
 
-bash "${SCRIPT_DIR}/pc_camera_rviz.sh" "${1:-${PI_HOST:-gruppe5pi5}}"
+bash "${SCRIPT_DIR}/pc_udp_camera_rviz.sh" "${1:-${PI_HOST:-gruppe5pi5}}"

@@ -55,7 +55,7 @@ Primary packages in [src](src):
 - [src/mekk4_perception](src/mekk4_perception): teddy detector and UDP camera bridge.
 - [src/robot_description](src/robot_description): URDF and meshes.
 - [src/robot_gz](src/robot_gz): Gazebo models/world.
-- [src/robot_minimal_control](src/robot_minimal_control): sim control/calibration utilities.
+- [src/robot_sim_control](src/robot_sim_control): simulation-only tracked-drive command adapter.
 
 Treat [build](build), [install](install), and [log](log) as generated artifacts.
 

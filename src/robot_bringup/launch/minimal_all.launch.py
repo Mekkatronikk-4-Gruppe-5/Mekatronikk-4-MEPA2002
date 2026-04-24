@@ -88,9 +88,9 @@ def generate_launch_description():
         ],
         output='screen'
     )
-    sim_cmd_vel_calibrator = Node(
-        package='robot_minimal_control',
-        executable='sim_cmd_vel_calibrator',
+    tracked_cmd_vel_adapter = Node(
+        package='robot_sim_control',
+        executable='tracked_cmd_vel_adapter',
         output='screen',
         parameters=[
             {'use_sim_time': True},
@@ -196,7 +196,7 @@ def generate_launch_description():
         period=1.0,
         actions=[
             bridge,
-            sim_cmd_vel_calibrator,
+            tracked_cmd_vel_adapter,
             lidar_static_tf,
             lidar_scoped_frame_alias_tf,
             lidar_scoped_base_laser_alias_tf,

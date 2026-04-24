@@ -27,7 +27,7 @@ mega-upload:
 	bash ./scripts/mega_upload.sh "$(if $(MEGA_SKETCH),$(MEGA_SKETCH),mega_smoketest)"
 
 mega-test:
-	bash ./scripts/mega_test.sh
+	bash ./scripts/mega_smoketest.sh
 
 mega-motor-test:
 	bash ./scripts/mega_motor_test.sh
@@ -39,7 +39,7 @@ mega-calibrate:
 	bash ./scripts/mega_calibrate.sh $(ARGS)
 
 pc-mega-keyboard:
-	bash ./scripts/pc_mega_keyboard.sh "$(if $(PI_HOST),$(PI_HOST),gruppe5@gruppe5pi5)"
+	bash ./scripts/pc_mega_serial_keyboard.sh "$(if $(PI_HOST),$(PI_HOST),gruppe5@gruppe5pi5)"
 
 pc-ros-keyboard:
 	bash ./scripts/pc_ros_keyboard.sh "$(if $(PI_HOST),$(PI_HOST),gruppe5pi5)" $(ARGS)
@@ -67,7 +67,7 @@ pi-bringup:
 	bash ./scripts/pi_bringup.sh
 
 pc-camera-rviz:
-	bash ./scripts/pc_camera_rviz.sh "$(if $(PI_HOST),$(PI_HOST),gruppe5pi5)"
+	bash ./scripts/pc_udp_camera_rviz.sh "$(if $(PI_HOST),$(PI_HOST),gruppe5pi5)"
 
 pc-teddy-rviz:
 	bash ./scripts/pc_teddy_rviz.sh "$(if $(PI_HOST),$(PI_HOST),gruppe5pi5)"

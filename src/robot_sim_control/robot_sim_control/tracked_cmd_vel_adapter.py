@@ -8,9 +8,9 @@ def clamp(value: float, low: float, high: float) -> float:
     return max(low, min(high, value))
 
 
-class SimCmdVelCalibrator(Node):
+class TrackedCmdVelAdapter(Node):
     def __init__(self) -> None:
-        super().__init__("sim_cmd_vel_calibrator")
+        super().__init__("tracked_cmd_vel_adapter")
 
         self.declare_parameter("input_topic", "/cmd_vel")
         self.declare_parameter("output_topic", "/sim_cmd_vel")
@@ -45,7 +45,7 @@ class SimCmdVelCalibrator(Node):
         self._sub = self.create_subscription(Twist, self._input_topic, self._on_cmd_vel, 10)
 
         self.get_logger().info(
-            "Calibrating sim cmd_vel %s -> %s with track_width_eff_m=%.6f max_track_speed_mps=%.3f "
+            "Adapting tracked sim cmd_vel %s -> %s with track_width_eff_m=%.6f max_track_speed_mps=%.3f "
             "swap_sides=%s left_cmd_sign=%d right_cmd_sign=%d left_cmd_scale=%.3f right_cmd_scale=%.3f"
             % (
                 self._input_topic,
@@ -89,7 +89,7 @@ class SimCmdVelCalibrator(Node):
 
 def main() -> int:
     rclpy.init()
-    node = SimCmdVelCalibrator()
+    node = TrackedCmdVelAdapter()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

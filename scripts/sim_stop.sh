@@ -19,11 +19,10 @@ patterns=(
   "velocity_smoother"
   "collision_monitor"
   "lifecycle_manager_navigation"
-  "sim_cmd_vel_calibrator"
+  "tracked_cmd_vel_adapter"
   "cmd_vel_mux_node"
   "nav_cmd_vel_flip_node"
   "ros_keyboard_teleop"
-  "sim_keyboard_teleop"
   "lidar_static_tf_sim"
   "rviz2.*rviz.rviz"
 )

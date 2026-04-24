@@ -230,7 +230,7 @@ collision_monitor:
       min_points: 4
       visualize: true
       polygon_pub_topic: "polygon_front_stop"
-      enabled: true
+      enabled: false
     FrontSlow:
       type: "polygon"
       points: "[[0.46, 0.22], [0.46, -0.22], [0.10, -0.22], [0.10, 0.22]]"

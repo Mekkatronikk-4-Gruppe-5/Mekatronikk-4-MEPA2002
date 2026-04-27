@@ -59,10 +59,7 @@ sim-headless: sim-stop
 
 sim-topics:
 	bash -lc 'source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 topic list | grep -E "/clock|/odom|/lidar|/cmd_vel"'
-
-sim-nav2:
-	bash -lc 'source /opt/ros/jazzy/setup.bash && source install/setup.bash && mkdir -p /tmp/roslogs && ROS_LOG_DIR=/tmp/roslogs ros2 launch robot_bringup nav2_stack.launch.py use_sim_time:=true params_file:=$(CURDIR)/config/nav2_params.yaml'
-
+	
 pi-bringup:
 	bash ./scripts/pi_bringup.sh
 

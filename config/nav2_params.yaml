@@ -41,7 +41,16 @@ controller_server:
       yaw_goal_tolerance: 0.25
 
     FollowPath:
-      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      plugin: "nav2_rotation_shim_controller::RotationShimController"
+      primary_controller: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      angular_dist_threshold: 0.45
+      angular_disengage_threshold: 0.20
+      forward_sampling_distance: 0.30
+      rotate_to_heading_angular_vel: 0.8
+      max_angular_accel: 2.0
+      simulate_ahead_time: 1.0
+      rotate_to_goal_heading: true
+      closed_loop: false
       desired_linear_vel: 0.4
       lookahead_dist: 0.65
       min_lookahead_dist: 0.45
@@ -58,8 +67,8 @@ controller_server:
       curvature_lookahead_dist: 0.55
       regulated_linear_scaling_min_radius: 0.60
       regulated_linear_scaling_min_speed: 0.12
-      use_rotate_to_heading: true
-      allow_reversing: true
+      use_rotate_to_heading: false
+      allow_reversing: false
       rotate_to_heading_min_angle: 0.35
       max_robot_pose_search_dist: 10.0
       use_interpolation: true
@@ -145,24 +154,16 @@ planner_server:
     costmap_update_timeout: 0.5
     planner_plugins: ["GridBased"]
     GridBased:
-      plugin: "nav2_smac_planner::SmacPlannerLattice"
-      tolerance: 0.20
+      plugin: "nav2_smac_planner::SmacPlanner2D"
+      tolerance: 0.125
+      downsample_costmap: false
+      downsampling_factor: 1
       allow_unknown: true
       max_iterations: 1000000
       max_on_approach_iterations: 1000
-      max_planning_time: 2.0
-      analytic_expansion_max_cost: 200.0
-      analytic_expansion_max_cost_override: false
-      reverse_penalty: 50.0
-      change_penalty: 5.0
-      non_straight_penalty: 1.0
-      rotation_penalty: 1.0
-      cost_penalty: 20.0
-      retrospective_penalty: 0.015
-      lookup_table_size: 20.0
-      cache_obstacle_heuristic: true
-      allow_reverse_expansion: true
-      goal_heading_mode: "DEFAULT"
+      max_planning_time: 16.0
+      cost_travel_multiplier: 2.0
+      use_final_approach_orientation: false
       smooth_path: true
       smoother:
         max_iterations: 1000
@@ -193,9 +194,9 @@ behavior_server:
     robot_base_frame: base_link
     transform_tolerance: 0.2
     simulate_ahead_time: 1.5
-    max_rotational_vel: 0.5
+    max_rotational_vel: 0.8
     min_rotational_vel: 0.03
-    rotational_acc_lim: 1.0
+    rotational_acc_lim: 2.0
 
 velocity_smoother:
   ros__parameters:
@@ -204,8 +205,8 @@ velocity_smoother:
     feedback: "OPEN_LOOP"
     max_velocity: [0.5, 0.0, 1.0]
     min_velocity: [-0.5, 0.0, -1.0]
-    max_accel: [0.12, 0.0, 0.8]
-    max_decel: [-0.12, 0.0, -0.8]
+    max_accel: [0.12, 0.0, 2.0]
+    max_decel: [-0.12, 0.0, -2.0]
     odom_topic: "odom"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
@@ -218,7 +219,7 @@ collision_monitor:
     cmd_vel_in_topic: "cmd_vel_nav_flipped"
     cmd_vel_out_topic: "cmd_vel"
     state_topic: "collision_monitor_state"
-    transform_tolerance: 0.2
+    transform_tolerance: 0.1
     source_timeout: 0.5
     base_shift_correction: true
     stop_pub_timeout: 1.0

@@ -78,7 +78,7 @@ være:
 | Side | Motor | INA | INB | PWM | Hall A | Hall B |
 |---|---|---:|---:|---:|---:|---:|
 | Venstre | `M1` | `4` | `5` | `6` | `3` | `2` |
-| Høyre | `M2` | `12` | `11` | `10` | `18` | `19` |
+| Høyre | `M2` | `11` | `12` | `10` | `18` | `19` |
 
 ### Terminal Block Shield v1.1.0 på Arduino Mega
 
@@ -100,8 +100,8 @@ Koble `M2 = høyre` i denne skru-rekkefølgen. Denne ligger nær terminalraden
 | Steg | Terminal | Signal | Går til |
 |---:|---:|---|---|
 | 1 | `10` | `M2 PWM` | Høyre motor-driver PWM |
-| 2 | `12` | `M2 INA` | Høyre motor-driver INA |
-| 3 | `11` | `M2 INB` | Høyre motor-driver INB |
+| 2 | `12` | `M2 INB` | Høyre motor-driver INB |
+| 3 | `11` | `M2 INA` | Høyre motor-driver INA |
 | 4 | `19` | `ENC2 Hall B` | Høyre encoder Hall B |
 | 5 | `18` | `ENC2 Hall A` | Høyre encoder Hall A |
 
@@ -121,6 +121,10 @@ Ikke bruk `7-9`, `13`, `30-31`, `32-35` eller `44` for motor/encoder i denne
 firmwareversjonen.
 Encoder 5V/GND skal tas fra shieldets `5V`/`GND` terminaler, ikke fra digitale
 pins. Motor-driverens power skal følge motor-driverens egen power-wiring.
+
+M2-retningen er korrigert fysisk på roboten ved å bytte M2 `INA`/`INB` på
+driver-input. Firmware er derfor ikke invertert: positiv M2-kommando bruker
+`INA=11`, `INB=12`, `PWM=10`.
 
 Dette er ikke det samme som robotens venstre/høyre-side. Dagens ROS-kalibrering
 kan fortsatt bruke `swap_sides: true` hvis M1/ENC1 og M2/ENC2 er fysisk byttet

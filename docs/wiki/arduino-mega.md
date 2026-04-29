@@ -237,9 +237,27 @@ Driveren:
 ```bash
 make mega-test
 make mega-motor-test
+make mega-terminal
 make mega-keyboard
 make pc-mega-keyboard
 ```
 
 Viktig: direkte serial-verktøy og ROS Mega-driver kan ikke eie samme port
 samtidig.
+
+`make mega-terminal` åpner et manuelt serial-program. Bruk det for å teste én
+kommando om gangen:
+
+```text
+ID
+M1 120
+STOP
+M1 -120
+STOP
+M2 120
+STOP
+M2 -120
+STOP
+ENC1
+ENC2
+```

@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: build shell up down ws lidar-setup lidar-test mega-upload mega-test mega-motor-test mega-keyboard mega-calibrate pc-mega-keyboard pc-ros-keyboard sim-build sim-stop sim sim-headless sim-topics sim-nav2 plotjuggler pi-bringup pc-camera-rviz pc-teddy-rviz camera-stop camera-reload
+.PHONY: build shell up down ws lidar-setup lidar-test mega-upload mega-test mega-motor-test mega-terminal mega-keyboard mega-calibrate pc-mega-keyboard pc-ros-keyboard sim-build sim-stop sim sim-headless sim-topics sim-nav2 plotjuggler pi-bringup pc-camera-rviz pc-teddy-rviz camera-stop camera-reload
 
 MEGA_UPLOAD_DEFAULT_SKETCH := mega_keyboard_drive
 MEGA_UPLOAD_SKETCH := $(firstword $(filter-out mega-upload,$(MAKECMDGOALS)))
@@ -39,6 +39,9 @@ mega-test:
 
 mega-motor-test:
 	bash ./scripts/mega_motor_test.sh
+
+mega-terminal:
+	bash ./scripts/mega_serial_terminal.sh
 
 mega-keyboard:
 	bash ./scripts/mega_keyboard_teleop.sh

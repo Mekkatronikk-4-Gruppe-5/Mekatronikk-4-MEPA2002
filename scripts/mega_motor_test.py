@@ -37,8 +37,8 @@ def expect_reply(ser: serial.Serial, command: str, expected_prefix: str, timeout
     return reply
 
 
-def read_encoder_count(ser: serial.Serial, timeout: float) -> int:
-    reply = expect_reply(ser, "ENC1", "ENC1 ", timeout)
+def read_encoder_count(ser: serial.Serial, label: str, timeout: float) -> int:
+    reply = expect_reply(ser, label, f"{label} ", timeout)
     try:
         return int(reply.split()[1])
     except (IndexError, ValueError) as exc:
@@ -67,12 +67,8 @@ def read_encoder_pair(ser: serial.Serial, timeout: float, quiet: bool = False) -
         enc2 = read_encoder_count_quiet(ser, "ENC2", timeout)
         return enc1, enc2
 
-    enc1 = read_encoder_count(ser, timeout)
-    reply = expect_reply(ser, "ENC2", "ENC2 ", timeout)
-    try:
-        enc2 = int(reply.split()[1])
-    except (IndexError, ValueError) as exc:
-        raise RuntimeError(f"failed to parse encoder reply: {reply!r}") from exc
+    enc1 = read_encoder_count(ser, "ENC1", timeout)
+    enc2 = read_encoder_count(ser, "ENC2", timeout)
     return enc1, enc2
 
 
@@ -143,6 +139,27 @@ def dominant_encoder_name(delta1_a: int, delta2_a: int, delta1_b: int, delta2_b:
     return "ENC1" if enc1_score >= enc2_score else "ENC2"
 
 
+def motion_total(result: tuple[int, int, int, int]) -> int:
+    delta1, delta2, span1, span2 = result
+    return abs(delta1) + abs(delta2) + span1 + span2
+
+
+def encoder_value(result: tuple[int, int, int, int], encoder_name: str) -> int:
+    if encoder_name == "ENC1":
+        return result[0]
+    if encoder_name == "ENC2":
+        return result[1]
+    return 0
+
+
+def print_fault(message: str) -> None:
+    print(f"[mega-motor-test]   FAULT: {message}", file=sys.stderr)
+
+
+def print_note(message: str) -> None:
+    print(f"[mega-motor-test]   Note: {message}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Short DFR0601 motor test over Arduino Mega serial.")
     parser.add_argument("--port", required=True, help="Serial device path, for example /dev/ttyACM0")
@@ -179,7 +196,13 @@ def main() -> int:
             ser.reset_input_buffer()
             ser.reset_output_buffer()
 
-            expect_reply(ser, "ID", "MEGA_DFR0601_TEST", args.reply_timeout)
+            firmware = expect_reply(ser, "ID", "MEGA_", args.reply_timeout)
+            if firmware != "MEGA_DFR0601_TEST":
+                raise RuntimeError(
+                    "wrong firmware for motor wiring test: "
+                    f"expected 'MEGA_DFR0601_TEST', got {firmware!r}. "
+                    "Run: make mega-upload mega_dfr0601_test"
+                )
             expect_reply(ser, "PING", "PONG", args.reply_timeout)
             expect_reply(ser, "STOP", "OK STOP", args.reply_timeout)
             expect_reply(ser, "RESET ENC1", "OK RESET ENC1", args.reply_timeout)
@@ -227,6 +250,7 @@ def main() -> int:
             m2_dom = dominant_encoder_name(m2_f[0], m2_f[1], m2_r[0], m2_r[1])
 
             print("[mega-motor-test] Diagnostic summary:")
+            print("[mega-motor-test]   Expected electrical mapping: M1 -> ENC1, M2 -> ENC2")
             print(f"[mega-motor-test]   M1 dominant encoder: {m1_dom}")
             print(f"[mega-motor-test]   M2 dominant encoder: {m2_dom}")
 
@@ -244,35 +268,71 @@ def main() -> int:
             else:
                 m2_signs = (0, 0)
 
+            fault_count = 0
+
+            m1_total = motion_total(m1_f) + motion_total(m1_r)
+            m2_total = motion_total(m2_f) + motion_total(m2_r)
+            if m1_total == 0:
+                fault_count += 1
+                print_fault(
+                    "M1 command produced no encoder movement in either direction. "
+                    "Check M1 driver output, M1 motor wires, motor power, and ENC1/ENC2 supply/signal wiring."
+                )
+            if m2_total == 0:
+                fault_count += 1
+                print_fault(
+                    "M2 command produced no encoder movement in either direction. "
+                    "Check M2 driver output, M2 motor wires, motor power, and ENC1/ENC2 supply/signal wiring."
+                )
+
+            if m1_dom == "ENC2" and m2_dom == "ENC1":
+                fault_count += 1
+                print_fault(
+                    "M1 and M2 encoder mapping appears crossed: M1 moves ENC2 and M2 moves ENC1. "
+                    "Swap the encoder connections or swap the motor channel naming so M1 pairs with ENC1 and M2 pairs with ENC2."
+                )
+            elif m1_dom == "ENC2":
+                fault_count += 1
+                print_fault(
+                    "M1 appears to move ENC2 instead of ENC1. Check whether M1 motor or encoder wires are on the wrong channel."
+                )
+            elif m2_dom == "ENC1":
+                fault_count += 1
+                print_fault(
+                    "M2 appears to move ENC1 instead of ENC2. Check whether M2 motor or encoder wires are on the wrong channel."
+                )
+
             if m1_signs[0] != 0 and m1_signs[1] != 0 and m1_signs[0] == m1_signs[1]:
-                print(
-                    "[mega-motor-test]   Warning: M1 forward/reverse produced same encoder sign. "
-                    "Direction may be swapped or one direction not effective.",
-                    file=sys.stderr,
+                fault_count += 1
+                print_fault(
+                    "M1 forward and reverse produced the same encoder sign. "
+                    "The motor may not actually reverse, or one encoder phase may be missing/noisy."
                 )
             if m2_signs[0] != 0 and m2_signs[1] != 0 and m2_signs[0] == m2_signs[1]:
-                print(
-                    "[mega-motor-test]   Warning: M2 forward/reverse produced same encoder sign. "
-                    "Direction may be swapped or one direction not effective.",
-                    file=sys.stderr,
+                fault_count += 1
+                print_fault(
+                    "M2 forward and reverse produced the same encoder sign. "
+                    "The motor may not actually reverse, or one encoder phase may be missing/noisy."
                 )
 
             if (both_f[0] == 0 and both_f[1] == 0 and both_f[2] == 0 and both_f[3] == 0) or (
                 both_r[0] == 0 and both_r[1] == 0 and both_r[2] == 0 and both_r[3] == 0
             ):
-                print(
-                    "[mega-motor-test]   Warning: BOTH command did not move encoders in at least one direction.",
-                    file=sys.stderr,
+                fault_count += 1
+                print_fault(
+                    "BOTH command did not move encoders in at least one direction. "
+                    "If M1/M2 worked individually, check shared motor power, driver enable/current limit, and battery voltage sag."
                 )
 
             if m1_dom == m2_dom and m1_dom != "none":
-                print(
-                    "[mega-motor-test]   Warning: M1 and M2 appear to affect the same encoder. "
-                    "Check motor/encoder wiring mapping.",
-                    file=sys.stderr,
+                fault_count += 1
+                print_fault(
+                    "M1 and M2 appear to affect the same encoder. "
+                    "One encoder may be disconnected, or both motor channels are being observed through the same encoder channel."
                 )
 
             if failures:
+                fault_count += 1
                 print(
                     "[mega-motor-test] No encoder movement detected in: "
                     + ", ".join(failures),
@@ -282,9 +342,24 @@ def main() -> int:
                     "[mega-motor-test] Try higher PWM/duration, for example: PWM_VALUE=170 STEP_DURATION=2.0 make mega-motor-test",
                     file=sys.stderr,
                 )
-                raise RuntimeError("one or more motor steps produced zero encoder movement")
+            else:
+                print_note("Every individual step produced at least some encoder movement.")
 
-            print("[mega-motor-test] Success: motor commands produced encoder movement across all steps.")
+            if m1_dom == "ENC1" and m2_dom == "ENC2":
+                m1_forward_sign = sign(encoder_value(m1_f, "ENC1"))
+                m2_forward_sign = sign(encoder_value(m2_f, "ENC2"))
+                print_note(
+                    "M1/ENC1 and M2/ENC2 electrical pairing matches the firmware pin assumptions."
+                )
+                print_note(
+                    f"Forward sign observed: M1/ENC1={m1_forward_sign}, M2/ENC2={m2_forward_sign}. "
+                    "Use calibration tick signs if robot-forward odometry has the wrong sign."
+                )
+
+            if fault_count:
+                raise RuntimeError(f"motor wiring test found {fault_count} fault(s)")
+
+            print("[mega-motor-test] Success: motor and encoder wiring matches the expected electrical mapping.")
             return 0
     except serial.SerialException as exc:
         print(f"[mega-motor-test] Serial error: {exc}", file=sys.stderr)

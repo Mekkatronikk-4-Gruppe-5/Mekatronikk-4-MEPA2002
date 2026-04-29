@@ -51,15 +51,30 @@ Oversikt over sketchene:
 | `mega_dfr0601_test` | Motor-/encoder-test | `make mega-upload mega_dfr0601_test` |
 | `mega_keyboard_drive` | Runtime firmware | `make mega-upload mega_keyboard_drive` |
 
-Motor-/encoder-test kan også kjøres direkte via eget mål:
+Motor-/encoder-test bruker egen testfirmware. Last den opp først:
+
+```bash
+make mega-upload mega_dfr0601_test
+```
+
+Kjør deretter testen:
 
 ```bash
 make mega-motor-test
 ```
 
-Denne bruker [`mega_dfr0601_test`](../../arduino/mega_dfr0601_test) og er
-ment for å sjekke at venstre og høyre motor faktisk beveger seg som forventet
-før du justerer ROS-kalibrering.
+Testen forventer firmware-ID `MEGA_DFR0601_TEST`. Hvis runtime-firmware
+`mega_keyboard_drive` ligger på Megaen, stopper testen og ber deg laste opp
+`mega_dfr0601_test`.
+
+Denne testen sjekker elektrisk kanal-mapping i firmware:
+
+- `M1` skal bevege motoren som hører til `ENC1`
+- `M2` skal bevege motoren som hører til `ENC2`
+
+Dette er ikke det samme som robotens venstre/høyre-side. Dagens ROS-kalibrering
+kan fortsatt bruke `swap_sides: true` hvis M1/ENC1 og M2/ENC2 er fysisk byttet
+relativt til robotens sider.
 
 ### Motor-test prosedyre
 
@@ -77,14 +92,23 @@ Mens hvert steg går leses `ENC1` og `ENC2` kontinuerlig. Etter hvert steg får 
 Diagnose i output:
 
 - `M1 dominant encoder` og `M2 dominant encoder`: viser hvilken encoder som faktisk følger hver motor.
-- Warning om M1/M2 har samme fortegn i forward og reverse: tyder på byttet retning eller at én retning ikke tar.
-- Warning om `BOTH` uten encoderbevegelse: tyder på driver/wiring/power-problem for felles kjøring.
+- `FAULT: wrong firmware`: last opp `mega_dfr0601_test`.
+- `FAULT: M1 appears to move ENC2` / `M2 appears to move ENC1`: motor/encoder-kanaler er sannsynlig byttet.
+- `FAULT: M1 and M2 appear to affect the same encoder`: én encoder er trolig frakoblet, eller begge motorer observeres gjennom samme encoderkanal.
+- `FAULT: forward and reverse produced the same encoder sign`: motoren reverserer trolig ikke fysisk, eller én encoderfase mangler/støyer.
+- `FAULT: BOTH command did not move encoders`: hvis enkeltmotorene fungerte, sjekk felles motor-power, driver enable/current limit og batteridrop.
 
 Nyttige overstyringer:
 
 ```bash
 PWM_VALUE=170 STEP_DURATION=2.0 make mega-motor-test
 INTER_STEP_PAUSE=1.0 SAMPLE_PERIOD=0.10 make mega-motor-test
+```
+
+Etter motor-testen, last tilbake runtime-firmware før ROS-bringup:
+
+```bash
+make mega-upload mega_keyboard_drive
 ```
 
 Krav:
@@ -107,7 +131,9 @@ Fra [`mega_keyboard_drive.ino`](../../arduino/mega_keyboard_drive/mega_keyboard_
 | `RESET ENC1` | `OK RESET ENC1` | Nullstiller encoder 1 |
 | `RESET ENC2` | `OK RESET ENC2` | Nullstiller encoder 2 |
 | `STATE` | State-linje | Debug |
-| `BOTH <m1> <m2>` | `OK BOTH ...` | Setter PWM på begge motorer |
+| `M1 <pwm>` | ingen normal reply | Setter bare M1 PWM |
+| `M2 <pwm>` | ingen normal reply | Setter bare M2 PWM |
+| `BOTH <m1> <m2>` | ingen normal reply | Setter PWM på begge motorer |
 
 Watchdog stopper motorene hvis drive-kommandoer ikke repeteres innen `700 ms`.
 

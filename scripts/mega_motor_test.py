@@ -62,12 +62,30 @@ def run_step(ser: serial.Serial, command: str, timeout: float, duration: float) 
     time.sleep(0.2)
 
 
+def run_step_with_delta(
+    ser: serial.Serial,
+    label: str,
+    command: str,
+    timeout: float,
+    duration: float,
+    prev_enc1: int,
+    prev_enc2: int,
+) -> tuple[int, int, int, int]:
+    print(f"[mega-motor-test] Step: {label}")
+    run_step(ser, command, timeout, duration)
+    enc1_now, enc2_now = read_encoder_pair(ser, timeout)
+    delta1 = enc1_now - prev_enc1
+    delta2 = enc2_now - prev_enc2
+    print(f"[mega-motor-test] Encoder delta after {label}: ENC1={delta1} ENC2={delta2}")
+    return enc1_now, enc2_now, delta1, delta2
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Short DFR0601 motor test over Arduino Mega serial.")
     parser.add_argument("--port", required=True, help="Serial device path, for example /dev/ttyACM0")
     parser.add_argument("--baudrate", type=int, default=115200, help="Serial baudrate")
-    parser.add_argument("--pwm", type=int, default=80, help="PWM magnitude to use for the test (0-255)")
-    parser.add_argument("--step-duration", type=float, default=0.8, help="Seconds per motor step")
+    parser.add_argument("--pwm", type=int, default=140, help="PWM magnitude to use for the test (0-255)")
+    parser.add_argument("--step-duration", type=float, default=1.5, help="Seconds per motor step")
     parser.add_argument("--reply-timeout", type=float, default=2.0, help="Seconds to wait for a reply")
     parser.add_argument(
         "--post-open-wait",
@@ -94,61 +112,44 @@ def main() -> int:
             initial_enc1, initial_enc2 = read_encoder_pair(ser, args.reply_timeout)
             print(f"[mega-motor-test] Initial ENC1={initial_enc1} ENC2={initial_enc2}")
 
-            print("[mega-motor-test] Step 1: M1 forward")
-            run_step(ser, f"M1 {pwm}", args.reply_timeout, args.step_duration)
-            enc1_after_m1_forward, enc2_after_m1_forward = read_encoder_pair(ser, args.reply_timeout)
-            delta1_forward = enc1_after_m1_forward - initial_enc1
-            delta2_forward = enc2_after_m1_forward - initial_enc2
-            print(
-                "[mega-motor-test] Encoder delta after M1 forward: "
-                f"ENC1={delta1_forward} ENC2={delta2_forward}"
-            )
-            if delta1_forward == 0 and delta2_forward == 0:
-                raise RuntimeError("encoder counts did not change during M1 forward step")
+            current_enc1, current_enc2 = initial_enc1, initial_enc2
+            failures: list[str] = []
 
-            print("[mega-motor-test] Step 2: M1 reverse")
-            run_step(ser, f"M1 {-pwm}", args.reply_timeout, args.step_duration)
-            enc1_after_m1_reverse, enc2_after_m1_reverse = read_encoder_pair(ser, args.reply_timeout)
-            delta1_reverse = enc1_after_m1_reverse - enc1_after_m1_forward
-            delta2_reverse = enc2_after_m1_reverse - enc2_after_m1_forward
-            print(
-                "[mega-motor-test] Encoder delta after M1 reverse: "
-                f"ENC1={delta1_reverse} ENC2={delta2_reverse}"
-            )
-            if delta1_reverse == 0 and delta2_reverse == 0:
-                raise RuntimeError("encoder counts did not change during M1 reverse step")
+            steps = [
+                ("M1 forward", f"M1 {pwm}"),
+                ("M1 reverse", f"M1 {-pwm}"),
+                ("M2 forward", f"M2 {pwm}"),
+                ("M2 reverse", f"M2 {-pwm}"),
+                ("both forward", f"BOTH {pwm} {pwm}"),
+                ("both reverse", f"BOTH {-pwm} {-pwm}"),
+            ]
 
-            print("[mega-motor-test] Step 3: M2 forward")
-            run_step(ser, f"M2 {pwm}", args.reply_timeout, args.step_duration)
-            enc1_after_m2_forward, enc2_after_m2_forward = read_encoder_pair(ser, args.reply_timeout)
-            delta1_m2_forward = enc1_after_m2_forward - enc1_after_m1_reverse
-            delta2_m2_forward = enc2_after_m2_forward - enc2_after_m1_reverse
-            print(
-                "[mega-motor-test] Encoder delta after M2 forward: "
-                f"ENC1={delta1_m2_forward} ENC2={delta2_m2_forward}"
-            )
-            if delta1_m2_forward == 0 and delta2_m2_forward == 0:
-                raise RuntimeError("encoder counts did not change during M2 forward step")
+            for label, command in steps:
+                current_enc1, current_enc2, delta1, delta2 = run_step_with_delta(
+                    ser,
+                    label,
+                    command,
+                    args.reply_timeout,
+                    args.step_duration,
+                    current_enc1,
+                    current_enc2,
+                )
+                if delta1 == 0 and delta2 == 0:
+                    failures.append(label)
 
-            print("[mega-motor-test] Step 4: M2 reverse")
-            run_step(ser, f"M2 {-pwm}", args.reply_timeout, args.step_duration)
-            enc1_after_m2_reverse, enc2_after_m2_reverse = read_encoder_pair(ser, args.reply_timeout)
-            delta1_m2_reverse = enc1_after_m2_reverse - enc1_after_m2_forward
-            delta2_m2_reverse = enc2_after_m2_reverse - enc2_after_m2_forward
-            print(
-                "[mega-motor-test] Encoder delta after M2 reverse: "
-                f"ENC1={delta1_m2_reverse} ENC2={delta2_m2_reverse}"
-            )
-            if delta1_m2_reverse == 0 and delta2_m2_reverse == 0:
-                raise RuntimeError("encoder counts did not change during M2 reverse step")
+            if failures:
+                print(
+                    "[mega-motor-test] No encoder movement detected in: "
+                    + ", ".join(failures),
+                    file=sys.stderr,
+                )
+                print(
+                    "[mega-motor-test] Try higher PWM, for example: PWM_VALUE=140 STEP_DURATION=1.2 make mega-motor-test",
+                    file=sys.stderr,
+                )
+                raise RuntimeError("one or more motor steps produced zero encoder movement")
 
-            print("[mega-motor-test] Step 5: both forward")
-            run_step(ser, f"BOTH {pwm} {pwm}", args.reply_timeout, args.step_duration)
-
-            print("[mega-motor-test] Step 6: both reverse")
-            run_step(ser, f"BOTH {-pwm} {-pwm}", args.reply_timeout, args.step_duration)
-
-            print("[mega-motor-test] Success: motor controller commands were accepted.")
+            print("[mega-motor-test] Success: motor commands produced encoder movement across all steps.")
             return 0
     except serial.SerialException as exc:
         print(f"[mega-motor-test] Serial error: {exc}", file=sys.stderr)

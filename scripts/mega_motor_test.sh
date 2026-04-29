@@ -30,8 +30,8 @@ detect_mega_port() {
 
 MEGA_PORT="${MEGA_PORT:-}"
 MEGA_BAUDRATE="${MEGA_BAUDRATE:-115200}"
-PWM_VALUE="${PWM_VALUE:-80}"
-STEP_DURATION="${STEP_DURATION:-0.8}"
+PWM_VALUE="${PWM_VALUE:-140}"
+STEP_DURATION="${STEP_DURATION:-1.5}"
 
 if [[ -z "${MEGA_PORT}" ]]; then
   MEGA_PORT="$(detect_mega_port)" || {

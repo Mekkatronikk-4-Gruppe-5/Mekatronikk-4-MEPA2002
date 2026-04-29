@@ -21,6 +21,8 @@ setup(
         'console_scripts': [
             'teddy_detector = mekk4_perception.teddy_detector:main',
             'udp_camera_bridge = mekk4_perception.udp_camera_bridge:main',
+            'overhead_apriltag_odom = mekk4_perception.overhead_apriltag_odom:main',
+            'sim_camera_info_publisher = mekk4_perception.sim_camera_info_publisher:main',
         ],
     },
 )

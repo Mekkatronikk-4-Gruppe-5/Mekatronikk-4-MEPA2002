@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: build shell up down ws lidar-setup lidar-test mega-upload mega-test mega-motor-test mega-keyboard mega-calibrate pc-mega-keyboard pc-ros-keyboard sim-build sim-stop sim sim-headless sim-topics sim-nav2 pi-bringup pc-camera-rviz pc-teddy-rviz camera-stop camera-reload
+.PHONY: build shell up down ws lidar-setup lidar-test mega-upload mega-test mega-motor-test mega-keyboard mega-calibrate pc-mega-keyboard pc-ros-keyboard sim-build sim-stop sim sim-headless sim-topics sim-nav2 plotjuggler pi-bringup pc-camera-rviz pc-teddy-rviz camera-stop camera-reload
 
 build:
 	docker compose build
@@ -59,6 +59,9 @@ sim-headless: sim-stop
 
 sim-topics:
 	bash -lc 'source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 topic list | grep -E "/clock|/odom|/lidar|/cmd_vel"'
+
+plotjuggler:
+	bash ./scripts/plotjuggler_sim_monitor.sh
 	
 pi-bringup:
 	bash ./scripts/pi_bringup.sh

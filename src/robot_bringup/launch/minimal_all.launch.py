@@ -22,8 +22,11 @@ def generate_launch_description():
     keyboard_teleop_enabled = LaunchConfiguration('keyboard_teleop')
     use_nav2 = LaunchConfiguration('use_nav2')
     use_ekf = LaunchConfiguration('use_ekf')
+    use_overhead_apriltag = LaunchConfiguration('use_overhead_apriltag')
     params_file = LaunchConfiguration('params_file')
     ekf_params_file = LaunchConfiguration('ekf_params_file')
+    apriltag_params_file = LaunchConfiguration('apriltag_params_file')
+    overhead_odom_params_file = LaunchConfiguration('overhead_odom_params_file')
     rviz_config = LaunchConfiguration('rviz_config')
     sim_track_width_eff_m = LaunchConfiguration('sim_track_width_eff_m')
     sim_max_track_speed_mps = LaunchConfiguration('sim_max_track_speed_mps')
@@ -53,6 +56,8 @@ def generate_launch_description():
     )
     default_nav2_params = os.path.join(robot_bringup_share, 'config', 'nav2_params.yaml')
     default_ekf_params = os.path.join(robot_bringup_share, 'config', 'ekf.yaml')
+    default_apriltag_params = os.path.join(robot_bringup_share, 'config', 'apriltag_overhead.yaml')
+    default_overhead_odom_params = os.path.join(robot_bringup_share, 'config', 'overhead_odom.yaml')
 
     gz_gui = ExecuteProcess(
         cmd=['gz', 'sim', '-v', gz_verbosity, world],
@@ -77,7 +82,6 @@ def generate_launch_description():
             '/imu/data@sensor_msgs/msg/Imu[gz.msgs.IMU',
             '/camera@sensor_msgs/msg/Image[gz.msgs.Image',
             '/overhead_camera@sensor_msgs/msg/Image[gz.msgs.Image',
-            '/overhead_camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
         ],
         output='screen'
     )
@@ -198,10 +202,70 @@ def generate_launch_description():
         executable='static_transform_publisher',
         name='overhead_camera_static_tf',
         arguments=[
-            '--x', '0', '--y', '0', '--z', '3.0',
-            '--roll', '0', '--pitch', '-1.5707963267948966', '--yaw', '0',
-            '--frame-id', 'world',
+            '--x', '0', '--y', '0', '--z', '6.2',
+            '--roll', '0', '--pitch', '1.5707963267948966', '--yaw', '1.5707963267948966',
+            '--frame-id', 'odom',
             '--child-frame-id', 'overhead_camera_link',
+        ],
+    )
+
+    overhead_camera_alias_tf = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='overhead_camera_alias_tf',
+        arguments=[
+            '--x', '0', '--y', '0', '--z', '0',
+            '--roll', '0', '--pitch', '0', '--yaw', '0',
+            '--frame-id', 'overhead_camera_link',
+            '--child-frame-id', 'overhead_camera',
+        ],
+    )
+
+    overhead_apriltag_detector = Node(
+        package='apriltag_ros',
+        executable='apriltag_node',
+        name='apriltag',
+        output='screen',
+        condition=IfCondition(use_overhead_apriltag),
+        parameters=[
+            {'use_sim_time': True},
+            apriltag_params_file,
+        ],
+        remappings=[
+            ('image_rect', '/overhead_camera'),
+            ('camera_info', '/overhead_camera/camera_info'),
+            ('/camera_info', '/overhead_camera/camera_info'),
+            ('detections', '/overhead/tag_detections'),
+        ],
+    )
+
+    overhead_camera_info = Node(
+        package='mekk4_perception',
+        executable='sim_camera_info_publisher',
+        name='overhead_camera_info',
+        output='screen',
+        condition=IfCondition(use_overhead_apriltag),
+        parameters=[
+            {'use_sim_time': True},
+            {
+                'image_topic': '/overhead_camera',
+                'camera_info_topic': '/overhead_camera/camera_info',
+                'camera_info_alias_topic': '/camera_info',
+                'frame_id': 'overhead_camera_link',
+                'horizontal_fov': 0.4997595236619115,
+            },
+        ],
+    )
+
+    overhead_apriltag_odom = Node(
+        package='mekk4_perception',
+        executable='overhead_apriltag_odom',
+        name='overhead_apriltag_odom',
+        output='screen',
+        condition=IfCondition(use_overhead_apriltag),
+        parameters=[
+            {'use_sim_time': True},
+            overhead_odom_params_file,
         ],
     )
 
@@ -216,6 +280,10 @@ def generate_launch_description():
             lidar_scoped_base_laser_alias_tf,
             imu_scoped_frame_alias_tf,
             overhead_camera_static_tf,
+            overhead_camera_alias_tf,
+            overhead_camera_info,
+            overhead_apriltag_detector,
+            overhead_apriltag_odom,
             keyboard_teleop,
         ]
     )
@@ -276,6 +344,11 @@ def generate_launch_description():
             description='Run EKF from the shared pi_robot core stack.'
         ),
         DeclareLaunchArgument(
+            'use_overhead_apriltag',
+            default_value='true',
+            description='Run simulated overhead AprilTag detection and /overhead/odom publisher.'
+        ),
+        DeclareLaunchArgument(
             'params_file',
             default_value=default_nav2_params,
             description='Nav2 parameters file used by shared core stack.'
@@ -284,6 +357,16 @@ def generate_launch_description():
             'ekf_params_file',
             default_value=default_ekf_params,
             description='EKF parameters file used by shared core stack.'
+        ),
+        DeclareLaunchArgument(
+            'apriltag_params_file',
+            default_value=default_apriltag_params,
+            description='AprilTag detector parameters for the simulated overhead camera.'
+        ),
+        DeclareLaunchArgument(
+            'overhead_odom_params_file',
+            default_value=default_overhead_odom_params,
+            description='Parameters for converting overhead AprilTag detections to /overhead/odom.'
         ),
         DeclareLaunchArgument(
             'rviz_config',

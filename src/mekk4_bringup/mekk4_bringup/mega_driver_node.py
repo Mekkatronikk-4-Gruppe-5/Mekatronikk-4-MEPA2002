@@ -286,7 +286,8 @@ class MegaDriverNode(Node):
             return "STOP"
 
         half_width = self._track_width_eff_m / 2.0
-        angular = self._desired_angular * self._angular_cmd_sign
+        angular_sign = self._angular_cmd_sign if abs(self._desired_linear) < 1e-6 else 1
+        angular = self._desired_angular * angular_sign
         left_speed = self._desired_linear - (angular * half_width)
         right_speed = self._desired_linear + (angular * half_width)
         left_speed *= self._left_cmd_scale

@@ -55,9 +55,10 @@ mega_driver:
   track_width_eff_m: 0.35
 ```
 
-Behold `angular_cmd_sign: -1` for dagens fysiske robot hvis ROS/Nav2
-`angular.z > 0` ellers får roboten til å svinge høyre. ROS-konvensjonen er at
-positiv `angular.z` betyr venstresving.
+Behold `angular_cmd_sign: -1` for dagens fysiske robot hvis ren pivot med
+ROS/Nav2 `angular.z > 0` ellers spinner høyre. ROS-konvensjonen er at positiv
+`angular.z` betyr venstresving. Ved buesving med `linear.x != 0` bruker
+Mega-driveren vanlig ROS-differensialmiks, fordi roboten svinger riktig vei da.
 
 ## Steg 1: Straight-trim
 

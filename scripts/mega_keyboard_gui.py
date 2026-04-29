@@ -47,9 +47,9 @@ def map_robot_commands(
 def tank_mix(drive: int, steer: int, speed: int, turn_speed: int) -> tuple[int, int]:
     if drive == 0:
         if steer > 0:
-            return -turn_speed, turn_speed
-        if steer < 0:
             return turn_speed, -turn_speed
+        if steer < 0:
+            return -turn_speed, turn_speed
         return 0, 0
 
     left = drive * speed

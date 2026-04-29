@@ -78,7 +78,7 @@ være:
 | Side | Motor | INA | INB | PWM | Hall A | Hall B |
 |---|---|---:|---:|---:|---:|---:|
 | Venstre | `M1` | `4` | `5` | `6` | `3` | `2` |
-| Høyre | `M2` | `8` | `9` | `10` | `18` | `19` |
+| Høyre | `M2` | `11` | `12` | `10` | `18` | `19` |
 
 ### Terminal Block Shield v1.1.0 på Arduino Mega
 
@@ -95,13 +95,13 @@ Mega-pins med riktig hardware-støtte. `M1 PWM` pin `6` og `M2 PWM` pin `10`
 er hardware PWM på Arduino Mega.
 
 Koble `M2 = høyre` i denne skru-rekkefølgen. Denne ligger nær terminalraden
-`8/9/10` for korte motor-driverledninger:
+`10/11/12` for korte motor-driverledninger:
 
 | Steg | Terminal | Signal | Går til |
 |---:|---:|---|---|
 | 1 | `10` | `M2 PWM` | Høyre motor-driver PWM |
-| 2 | `9` | `M2 INB` | Høyre motor-driver INB |
-| 3 | `8` | `M2 INA` | Høyre motor-driver INA |
+| 2 | `12` | `M2 INB` | Høyre motor-driver INB |
+| 3 | `11` | `M2 INA` | Høyre motor-driver INA |
 | 4 | `19` | `ENC2 Hall B` | Høyre encoder Hall B |
 | 5 | `18` | `ENC2 Hall A` | Høyre encoder Hall A |
 
@@ -117,7 +117,8 @@ Koble `M1 = venstre` i denne skru-rekkefølgen. Denne følger terminalraden
 | 5 | `3` | `ENC1 Hall A` | Venstre encoder Hall A |
 | 6 | `2` | `ENC1 Hall B` | Venstre encoder Hall B |
 
-Ikke bruk `11-13`, `30-31`, `32-35` eller `44` for `M1` i denne firmwareversjonen.
+Ikke bruk `7-9`, `13`, `30-31`, `32-35` eller `44` for motor/encoder i denne
+firmwareversjonen.
 Encoder 5V/GND skal tas fra shieldets `5V`/`GND` terminaler, ikke fra digitale
 pins. Motor-driverens power skal følge motor-driverens egen power-wiring.
 

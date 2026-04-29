@@ -47,7 +47,7 @@ def main():
         mega = data.get("mega_driver", {})
         values.update(
             {
-                "SWAP_SIDES": pick("SWAP_SIDES", 1 if mega.get("swap_sides", True) else 0),
+                "SWAP_SIDES": pick("SWAP_SIDES", 1 if mega.get("swap_sides", False) else 0),
                 "LEFT_CMD_SIGN": pick("LEFT_CMD_SIGN", mega.get("left_cmd_sign", 1)),
                 "RIGHT_CMD_SIGN": pick("RIGHT_CMD_SIGN", mega.get("right_cmd_sign", 1)),
                 "LEFT_CMD_SCALE": pick("LEFT_CMD_SCALE", mega.get("left_cmd_scale", 1.0)),

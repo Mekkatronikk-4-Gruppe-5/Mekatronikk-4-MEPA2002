@@ -196,7 +196,7 @@ def generate_launch_description():
         DeclareLaunchArgument('mega_baudrate', default_value='115200'),
         DeclareLaunchArgument('mega_odom_topic', default_value='odom'),
         DeclareLaunchArgument('mega_publish_tf', default_value='true'),
-        DeclareLaunchArgument('swap_sides', default_value='true'),
+        DeclareLaunchArgument('swap_sides', default_value='false'),
         DeclareLaunchArgument('left_cmd_sign', default_value='1'),
         DeclareLaunchArgument('right_cmd_sign', default_value='1'),
         DeclareLaunchArgument('left_cmd_scale', default_value='1.0'),

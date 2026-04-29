@@ -10,13 +10,13 @@ og cmd_vel til PWM. Verdiene lagres i
 
 ```yaml
 mega_driver:
-  swap_sides: true
+  swap_sides: false
   left_cmd_sign: 1
   right_cmd_sign: 1
   left_cmd_scale: 1.0
   right_cmd_scale: 0.95
   left_tick_sign: 1
-  right_tick_sign: -1
+  right_tick_sign: 1
   left_m_per_tick: 5.4302082484863296e-05
   right_m_per_tick: 5.5104008816641413e-05
   track_width_eff_m: 0.24644042850855596
@@ -67,22 +67,52 @@ Resultat:
 - `left_cmd_scale`
 - `right_cmd_scale`
 
-## Steg 2: Straight
+## Steg 2: Straight Forward/Reverse
 
-Mål faktisk kjørt distanse og sett `--distance-m`.
+Mål faktisk kjørt distanse per retning. Denne kjører først framover og deretter
+bakover, skriver ut forskjellen mellom retningene, og lagrer snittet som
+`left_m_per_tick` og `right_m_per_tick`.
+
+Hvis begge retninger kjøres samme målte distanse:
 
 ```bash
-make mega-calibrate ARGS="straight --pwm 160 --duration 11.15 --left-cmd-scale 1.0 --right-cmd-scale 0.95 --distance-m 4"
+make mega-calibrate ARGS="straight-bidir --pwm 160 --duration 3.0 --left-cmd-scale 1.0 --right-cmd-scale 1.0 --distance-m 1.0"
+```
+
+Hvis framover og bakover faktisk ender på litt ulik distanse, mål begge og bruk:
+
+```bash
+make mega-calibrate ARGS="straight-bidir --pwm 160 --duration 3.0 --left-cmd-scale 1.0 --right-cmd-scale 1.0 --forward-distance-m 1.02 --reverse-distance-m 0.98"
 ```
 
 Resultat:
 
 - `left_m_per_tick`
 - `right_m_per_tick`
+- forward/reverse prosentforskjell for hver side
 
-## Steg 3: Spin
+Hvis du bare vil kjøre én retning:
 
-Mål faktisk rotasjon og sett `--angle-deg`.
+```bash
+make mega-calibrate ARGS="straight --direction forward --pwm 160 --duration 3.0 --distance-m 1.0"
+make mega-calibrate ARGS="straight --direction reverse --pwm 160 --duration 3.0 --distance-m 1.0"
+```
+
+## Steg 3: Spin / effektiv beltebredde
+
+`track_width_eff_m` er ikke nødvendigvis den fysiske avstanden mellom beltene.
+For skid-steer/belteplattform brukes en effektiv bredde som får odometriens yaw
+til å stemme med faktisk rotasjon. Simmen har en egen `sim_track_width_eff_m`;
+verdien her brukes av fysisk Mega-driver.
+
+Ikke bytt denne til fysisk målt belteavstand bare fordi den er "ekte". Hvis
+roboten spinner 360 grader fysisk, men wheel odom sier for lite/for mye yaw, er
+det `track_width_eff_m` som skal justeres. Simverdien bør holdes separat fordi
+simfriksjon og kontaktmodell ikke er den samme som fysisk beltegrep.
+
+Mål faktisk rotasjon og sett `--angle-deg` hvis du trenger god yaw fra hjulodom.
+Hvis EKF primært bruker IMU yaw kan denne kalibreringen prioriteres lavere enn
+straight forward/reverse.
 
 ```bash
 make mega-calibrate ARGS="spin --pwm 90 --duration 18.8 --left-cmd-scale 1.0 --right-cmd-scale 0.95 --left-m-per-tick 0.000054302 --right-m-per-tick 0.000055104 --angle-deg 1440"
@@ -104,11 +134,8 @@ make mega-calibrate ARGS="snapshot --no-swap-sides"
 MEGA_PORT=/dev/ttyACM0 make mega-calibrate ARGS="snapshot"
 ```
 
-Default i wrapperen er `--swap-sides`, fordi dagens wiring antar at Mega
-`M1/ENC1` og `M2/ENC2` er byttet relativt til robotens venstre/høyre.
-
-Hvis roboten rewires fysisk riktig, bruk `--no-swap-sides` og oppdater
-[`config/robot_calibration.yaml`](../../config/robot_calibration.yaml).
+Default i wrapperen er `--no-swap-sides`, fordi dagens wiring er
+`M1/ENC1 = venstre` og `M2/ENC2 = høyre`.
 
 ## Etter Kalibrering
 

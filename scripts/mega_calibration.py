@@ -184,6 +184,70 @@ def print_straight_calibration(distance_m: float, delta_left: int, delta_right: 
     }
 
 
+def print_straight_bidir_calibration(
+    forward_distance_m: float,
+    reverse_distance_m: float,
+    forward_delta_left: int,
+    forward_delta_right: int,
+    reverse_delta_left: int,
+    reverse_delta_right: int,
+) -> dict[str, float]:
+    if forward_distance_m <= 0.0:
+        raise RuntimeError("forward distance must be greater than zero")
+    if reverse_distance_m <= 0.0:
+        raise RuntimeError("reverse distance must be greater than zero")
+    if (
+        forward_delta_left == 0
+        or forward_delta_right == 0
+        or reverse_delta_left == 0
+        or reverse_delta_right == 0
+    ):
+        raise RuntimeError("encoder delta was zero; cannot compute bidirectional meters per tick")
+
+    forward_left_m_per_tick = abs(forward_distance_m / forward_delta_left)
+    forward_right_m_per_tick = abs(forward_distance_m / forward_delta_right)
+    reverse_left_m_per_tick = abs(reverse_distance_m / reverse_delta_left)
+    reverse_right_m_per_tick = abs(reverse_distance_m / reverse_delta_right)
+
+    left_m_per_tick = (forward_left_m_per_tick + reverse_left_m_per_tick) / 2.0
+    right_m_per_tick = (forward_right_m_per_tick + reverse_right_m_per_tick) / 2.0
+
+    def pct_diff(a: float, b: float) -> float:
+        mean = (abs(a) + abs(b)) / 2.0
+        if mean == 0.0:
+            return 0.0
+        return abs(a - b) / mean * 100.0
+
+    print()
+    print("[mega-cal] Bidirectional straight calibration")
+    print(f"[mega-cal]   forward_distance_m={forward_distance_m:.6f}")
+    print(f"[mega-cal]   reverse_distance_m={reverse_distance_m:.6f}")
+    print("[mega-cal]   forward:")
+    print(f"[mega-cal]     delta_left={forward_delta_left} delta_right={forward_delta_right}")
+    print(f"[mega-cal]     left_m_per_tick={forward_left_m_per_tick:.9f}")
+    print(f"[mega-cal]     right_m_per_tick={forward_right_m_per_tick:.9f}")
+    print("[mega-cal]   reverse:")
+    print(f"[mega-cal]     delta_left={reverse_delta_left} delta_right={reverse_delta_right}")
+    print(f"[mega-cal]     left_m_per_tick={reverse_left_m_per_tick:.9f}")
+    print(f"[mega-cal]     right_m_per_tick={reverse_right_m_per_tick:.9f}")
+    print("[mega-cal]   averaged:")
+    print(f"[mega-cal]     left_m_per_tick={left_m_per_tick:.9f}")
+    print(f"[mega-cal]     right_m_per_tick={right_m_per_tick:.9f}")
+    print(
+        f"[mega-cal]   forward_reverse_delta_pct: "
+        f"left={pct_diff(forward_left_m_per_tick, reverse_left_m_per_tick):.2f}% "
+        f"right={pct_diff(forward_right_m_per_tick, reverse_right_m_per_tick):.2f}%"
+    )
+    print("[mega-cal] YAML snippet:")
+    print(f"left_m_per_tick: {left_m_per_tick:.9f}")
+    print(f"right_m_per_tick: {right_m_per_tick:.9f}")
+
+    return {
+        "left_m_per_tick": left_m_per_tick,
+        "right_m_per_tick": right_m_per_tick,
+    }
+
+
 def print_spin_calibration(
     angle_deg: float,
     left_m_per_tick: float,
@@ -307,7 +371,7 @@ def maybe_update_config(args: argparse.Namespace, updates: dict[str, float] | No
     if "right_tick_sign" not in mega:
         mega["right_tick_sign"] = 1
 
-    if args.mode in ("straight", "straight-trim", "spin"):
+    if args.mode in ("straight", "straight-bidir", "straight-trim", "spin"):
         mega["swap_sides"] = bool(args.swap_sides)
         mega["left_cmd_scale"] = float(args.left_cmd_scale)
         mega["right_cmd_scale"] = float(args.right_cmd_scale)
@@ -345,8 +409,8 @@ def add_common_serial_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--swap-sides",
         action=argparse.BooleanOptionalAction,
-        default=True,
-        help="Treat Mega M1/ENC1 as robot right and M2/ENC2 as robot left (default: enabled)",
+        default=False,
+        help="Treat Mega M1/ENC1 as robot right and M2/ENC2 as robot left (default: disabled)",
     )
     parser.add_argument(
         "--config-file",
@@ -408,6 +472,62 @@ def build_parser() -> argparse.ArgumentParser:
         help="Scale applied to the robot-left command during the run",
     )
     straight.add_argument(
+        "--right-cmd-scale",
+        type=float,
+        default=1.0,
+        help="Scale applied to the robot-right command during the run",
+    )
+
+    straight_bidir = subparsers.add_parser(
+        "straight-bidir",
+        help="Run straight forward and reverse, then compute averaged meters/tick and direction asymmetry",
+    )
+    add_common_serial_args(straight_bidir)
+    straight_bidir.add_argument("--pwm", type=int, default=90, help="PWM magnitude to use (0-255)")
+    straight_bidir.add_argument("--duration", type=float, default=1.6, help="Seconds per direction")
+    straight_bidir.add_argument(
+        "--distance-m",
+        type=float,
+        default=0.0,
+        help="Measured absolute traveled distance in meters for both directions",
+    )
+    straight_bidir.add_argument(
+        "--forward-distance-m",
+        type=float,
+        default=0.0,
+        help="Measured absolute traveled distance in meters for the forward run",
+    )
+    straight_bidir.add_argument(
+        "--reverse-distance-m",
+        type=float,
+        default=0.0,
+        help="Measured absolute traveled distance in meters for the reverse run",
+    )
+    straight_bidir.add_argument(
+        "--send-period",
+        type=float,
+        default=0.2,
+        help="Seconds between repeated BOTH commands so the Mega watchdog stays armed",
+    )
+    straight_bidir.add_argument(
+        "--settle-time",
+        type=float,
+        default=0.25,
+        help="Seconds to wait after STOP before reading final encoders",
+    )
+    straight_bidir.add_argument(
+        "--between-runs-pause",
+        type=float,
+        default=2.0,
+        help="Seconds to wait between the forward and reverse runs",
+    )
+    straight_bidir.add_argument(
+        "--left-cmd-scale",
+        type=float,
+        default=1.0,
+        help="Scale applied to the robot-left command during the run",
+    )
+    straight_bidir.add_argument(
         "--right-cmd-scale",
         type=float,
         default=1.0,
@@ -578,6 +698,66 @@ def handle_straight(ser: serial.Serial, args: argparse.Namespace) -> int:
     return 0
 
 
+def run_straight_once(
+    ser: serial.Serial,
+    args: argparse.Namespace,
+    direction: str,
+) -> tuple[int, int]:
+    reset_encoders(ser, args.reply_timeout)
+    start_left, start_right = read_encoders(ser, args.reply_timeout, swap_sides=args.swap_sides)
+
+    pwm = max(0, min(255, abs(args.pwm)))
+    signed_pwm = pwm if direction == "forward" else -pwm
+    command = make_scaled_both_command(
+        signed_pwm,
+        signed_pwm,
+        args.left_cmd_scale,
+        args.right_cmd_scale,
+        args.swap_sides,
+    )
+
+    print()
+    print(f"[mega-cal] Straight {direction} run")
+    print(f"[mega-cal]   command={command}")
+    print(f"[mega-cal]   duration_s={args.duration:.3f}")
+    print(f"[mega-cal]   send_period_s={args.send_period:.3f}")
+    print(f"[mega-cal]   left_cmd_scale={args.left_cmd_scale:.6f}")
+    print(f"[mega-cal]   right_cmd_scale={args.right_cmd_scale:.6f}")
+
+    drive_for(ser, command, args.duration, args.send_period, args.settle_time, args.reply_timeout)
+    end_left, end_right = read_encoders(ser, args.reply_timeout, swap_sides=args.swap_sides)
+    return print_encoder_summary(start_left, start_right, end_left, end_right)
+
+
+def handle_straight_bidir(ser: serial.Serial, args: argparse.Namespace) -> int:
+    verify_keyboard_firmware(ser, args.reply_timeout)
+    forward_distance_m = args.forward_distance_m if args.forward_distance_m > 0.0 else args.distance_m
+    reverse_distance_m = args.reverse_distance_m if args.reverse_distance_m > 0.0 else args.distance_m
+    if forward_distance_m <= 0.0 or reverse_distance_m <= 0.0:
+        raise RuntimeError(
+            "straight-bidir needs --distance-m, or both --forward-distance-m and --reverse-distance-m"
+        )
+
+    forward_delta_left, forward_delta_right = run_straight_once(ser, args, "forward")
+
+    print()
+    print(f"[mega-cal] Waiting {args.between_runs_pause:.3f}s before reverse run")
+    time.sleep(max(0.0, args.between_runs_pause))
+
+    reverse_delta_left, reverse_delta_right = run_straight_once(ser, args, "reverse")
+
+    updates = print_straight_bidir_calibration(
+        forward_distance_m,
+        reverse_distance_m,
+        forward_delta_left,
+        forward_delta_right,
+        reverse_delta_left,
+        reverse_delta_right,
+    )
+    maybe_update_config(args, updates)
+    return 0
+
+
 def handle_spin(ser: serial.Serial, args: argparse.Namespace) -> int:
     verify_keyboard_firmware(ser, args.reply_timeout)
     reset_encoders(ser, args.reply_timeout)
@@ -675,6 +855,8 @@ def main() -> int:
                 return handle_snapshot(ser, args)
             if args.mode == "straight":
                 return handle_straight(ser, args)
+            if args.mode == "straight-bidir":
+                return handle_straight_bidir(ser, args)
             if args.mode == "straight-trim":
                 return handle_straight_trim(ser, args)
             if args.mode == "spin":

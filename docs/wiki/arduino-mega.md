@@ -126,9 +126,8 @@ M2-retningen er korrigert fysisk på roboten ved å bytte M2 `INA`/`INB` på
 driver-input. Firmware er derfor ikke invertert: positiv M2-kommando bruker
 `INA=11`, `INB=12`, `PWM=10`.
 
-Dette er ikke det samme som robotens venstre/høyre-side. Dagens ROS-kalibrering
-kan fortsatt bruke `swap_sides: true` hvis M1/ENC1 og M2/ENC2 er fysisk byttet
-relativt til robotens sider.
+Denne wiringstandarden er `M1/ENC1 = venstre` og `M2/ENC2 = høyre`.
+ROS-kalibreringen skal derfor bruke `swap_sides: false`.
 
 ### Motor-test prosedyre
 
@@ -232,7 +231,7 @@ Driveren:
 | `odom_poll_period_s` | `0.05` | Encoder poll |
 | `base_frame_id` | `chassis` via Pi launch | Odom child frame |
 | `publish_tf` | av/på etter EKF | Om driver publiserer odom TF |
-| `swap_sides` | `true` | Bytter venstre/høyre mapping |
+| `swap_sides` | `false` | Bytter venstre/høyre mapping hvis wiring er fysisk krysset |
 | `left_m_per_tick` | fra config | Venstre encoderkalibrering |
 | `right_m_per_tick` | fra config | Høyre encoderkalibrering |
 | `track_width_eff_m` | fra config | Effektiv beltebredde |

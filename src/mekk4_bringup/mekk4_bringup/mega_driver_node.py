@@ -39,6 +39,7 @@ class MegaDriverNode(Node):
         self.declare_parameter("min_nonzero_pwm", 55)
         self.declare_parameter("left_cmd_sign", 1)
         self.declare_parameter("right_cmd_sign", 1)
+        self.declare_parameter("angular_cmd_sign", 1)
         self.declare_parameter("left_cmd_scale", 1.0)
         self.declare_parameter("right_cmd_scale", 1.0)
         self.declare_parameter("left_tick_sign", 1)
@@ -77,6 +78,9 @@ class MegaDriverNode(Node):
         )
         self._left_cmd_sign = self.get_parameter("left_cmd_sign").get_parameter_value().integer_value
         self._right_cmd_sign = self.get_parameter("right_cmd_sign").get_parameter_value().integer_value
+        self._angular_cmd_sign = (
+            self.get_parameter("angular_cmd_sign").get_parameter_value().integer_value
+        )
         self._left_cmd_scale = (
             self.get_parameter("left_cmd_scale").get_parameter_value().double_value
         )
@@ -102,6 +106,12 @@ class MegaDriverNode(Node):
             raise ValueError("max_track_speed_mps must be greater than zero.")
         if self._left_cmd_scale <= 0.0 or self._right_cmd_scale <= 0.0:
             raise ValueError("left_cmd_scale and right_cmd_scale must be greater than zero.")
+        if (
+            self._left_cmd_sign not in (-1, 1)
+            or self._right_cmd_sign not in (-1, 1)
+            or self._angular_cmd_sign not in (-1, 1)
+        ):
+            raise ValueError("left_cmd_sign, right_cmd_sign, and angular_cmd_sign must be -1 or 1.")
         if self._track_width_eff_m <= 0.0:
             raise ValueError("track_width_eff_m must be greater than zero.")
         if self._send_period_s <= 0.0 or self._odom_poll_period_s <= 0.0:
@@ -276,8 +286,9 @@ class MegaDriverNode(Node):
             return "STOP"
 
         half_width = self._track_width_eff_m / 2.0
-        left_speed = self._desired_linear - (self._desired_angular * half_width)
-        right_speed = self._desired_linear + (self._desired_angular * half_width)
+        angular = self._desired_angular * self._angular_cmd_sign
+        left_speed = self._desired_linear - (angular * half_width)
+        right_speed = self._desired_linear + (angular * half_width)
         left_speed *= self._left_cmd_scale
         right_speed *= self._right_cmd_scale
 

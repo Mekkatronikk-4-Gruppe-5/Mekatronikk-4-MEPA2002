@@ -45,6 +45,7 @@ def generate_launch_description():
     swap_sides = LaunchConfiguration('swap_sides')
     left_cmd_sign = LaunchConfiguration('left_cmd_sign')
     right_cmd_sign = LaunchConfiguration('right_cmd_sign')
+    angular_cmd_sign = LaunchConfiguration('angular_cmd_sign')
     left_cmd_scale = LaunchConfiguration('left_cmd_scale')
     right_cmd_scale = LaunchConfiguration('right_cmd_scale')
     left_tick_sign = LaunchConfiguration('left_tick_sign')
@@ -145,6 +146,7 @@ def generate_launch_description():
                 'swap_sides': ParameterValue(swap_sides, value_type=bool),
                 'left_cmd_sign': ParameterValue(left_cmd_sign, value_type=int),
                 'right_cmd_sign': ParameterValue(right_cmd_sign, value_type=int),
+                'angular_cmd_sign': ParameterValue(angular_cmd_sign, value_type=int),
                 'left_cmd_scale': ParameterValue(left_cmd_scale, value_type=float),
                 'right_cmd_scale': ParameterValue(right_cmd_scale, value_type=float),
                 'left_tick_sign': ParameterValue(left_tick_sign, value_type=int),
@@ -199,6 +201,7 @@ def generate_launch_description():
         DeclareLaunchArgument('swap_sides', default_value='false'),
         DeclareLaunchArgument('left_cmd_sign', default_value='1'),
         DeclareLaunchArgument('right_cmd_sign', default_value='1'),
+        DeclareLaunchArgument('angular_cmd_sign', default_value='1'),
         DeclareLaunchArgument('left_cmd_scale', default_value='1.0'),
         DeclareLaunchArgument('right_cmd_scale', default_value='1.0'),
         DeclareLaunchArgument('left_tick_sign', default_value='1'),

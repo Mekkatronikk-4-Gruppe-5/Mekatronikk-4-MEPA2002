@@ -366,6 +366,8 @@ def maybe_update_config(args: argparse.Namespace, updates: dict[str, float] | No
         mega["left_cmd_sign"] = 1
     if "right_cmd_sign" not in mega:
         mega["right_cmd_sign"] = 1
+    if "angular_cmd_sign" not in mega:
+        mega["angular_cmd_sign"] = 1
     if "left_tick_sign" not in mega:
         mega["left_tick_sign"] = 1
     if "right_tick_sign" not in mega:

@@ -13,6 +13,7 @@ mega_driver:
   swap_sides: false
   left_cmd_sign: 1
   right_cmd_sign: 1
+  angular_cmd_sign: -1
   left_cmd_scale: 1.0
   right_cmd_scale: 0.95
   left_tick_sign: 1
@@ -53,6 +54,10 @@ mega_driver:
   right_m_per_tick: 0.0
   track_width_eff_m: 0.35
 ```
+
+Behold `angular_cmd_sign: -1` for dagens fysiske robot hvis ROS/Nav2
+`angular.z > 0` ellers får roboten til å svinge høyre. ROS-konvensjonen er at
+positiv `angular.z` betyr venstresving.
 
 ## Steg 1: Straight-trim
 

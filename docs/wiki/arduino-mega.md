@@ -232,6 +232,7 @@ Driveren:
 | `base_frame_id` | `chassis` via Pi launch | Odom child frame |
 | `publish_tf` | av/på etter EKF | Om driver publiserer odom TF |
 | `swap_sides` | `false` | Bytter venstre/høyre mapping hvis wiring er fysisk krysset |
+| `angular_cmd_sign` | fra config | Fortegn for ROS `cmd_vel.angular.z` før beltemiks |
 | `left_m_per_tick` | fra config | Venstre encoderkalibrering |
 | `right_m_per_tick` | fra config | Høyre encoderkalibrering |
 | `track_width_eff_m` | fra config | Effektiv beltebredde |

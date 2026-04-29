@@ -50,6 +50,7 @@ def main():
                 "SWAP_SIDES": pick("SWAP_SIDES", 1 if mega.get("swap_sides", False) else 0),
                 "LEFT_CMD_SIGN": pick("LEFT_CMD_SIGN", mega.get("left_cmd_sign", 1)),
                 "RIGHT_CMD_SIGN": pick("RIGHT_CMD_SIGN", mega.get("right_cmd_sign", 1)),
+                "ANGULAR_CMD_SIGN": pick("ANGULAR_CMD_SIGN", mega.get("angular_cmd_sign", 1)),
                 "LEFT_CMD_SCALE": pick("LEFT_CMD_SCALE", mega.get("left_cmd_scale", 1.0)),
                 "RIGHT_CMD_SCALE": pick("RIGHT_CMD_SCALE", mega.get("right_cmd_scale", 1.0)),
                 "LEFT_TICK_SIGN": pick("LEFT_TICK_SIGN", mega.get("left_tick_sign", 1)),

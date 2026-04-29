@@ -22,6 +22,13 @@ make mega-upload
 ```
 
 Default sketch i [`Makefile`](../../Makefile) er `mega_keyboard_drive`.
+Du kan også gi sketch-navnet direkte som ekstra argument:
+
+```bash
+make mega-upload mega_keyboard_drive
+make mega-upload mega_dfr0601_test
+make mega-upload mega_smoketest
+```
 
 Runtime firmware:
 
@@ -36,7 +43,15 @@ MEGA_PORT=/dev/ttyACM0 make mega-upload
 MEGA_FQBN=arduino:avr:mega make mega-upload
 ```
 
-Motor-/encoder-test:
+Oversikt over sketchene:
+
+| Sketch | Bruk | Kommando |
+|---|---|---|
+| `mega_smoketest` | Serial/LED-test | `make mega-upload mega_smoketest` |
+| `mega_dfr0601_test` | Motor-/encoder-test | `make mega-upload mega_dfr0601_test` |
+| `mega_keyboard_drive` | Runtime firmware | `make mega-upload mega_keyboard_drive` |
+
+Motor-/encoder-test kan også kjøres direkte via eget mål:
 
 ```bash
 make mega-motor-test

@@ -2,6 +2,9 @@ SHELL := /bin/bash
 
 .PHONY: build shell up down ws lidar-setup lidar-test mega-upload mega-test mega-motor-test mega-keyboard mega-calibrate pc-mega-keyboard pc-ros-keyboard sim-build sim-stop sim sim-headless sim-topics sim-nav2 plotjuggler pi-bringup pc-camera-rviz pc-teddy-rviz camera-stop camera-reload
 
+MEGA_UPLOAD_DEFAULT_SKETCH := mega_keyboard_drive
+MEGA_UPLOAD_SKETCH := $(firstword $(filter-out mega-upload,$(MAKECMDGOALS)))
+
 build:
 	docker compose build
 
@@ -24,7 +27,12 @@ lidar-test:
 	docker compose run --rm ros bash -lc '/ws/scripts/lidar_smoketest.sh'
 
 mega-upload:
-	bash ./scripts/mega_upload.sh "$(if $(MEGA_SKETCH),$(MEGA_SKETCH),mega_keyboard_drive)"
+	bash ./scripts/mega_upload.sh "$(if $(MEGA_UPLOAD_SKETCH),$(MEGA_UPLOAD_SKETCH),$(if $(MEGA_SKETCH),$(MEGA_SKETCH),$(MEGA_UPLOAD_DEFAULT_SKETCH)))"
+
+ifneq ($(filter mega-upload,$(MAKECMDGOALS)),)
+$(filter-out mega-upload,$(MAKECMDGOALS)):
+	@:
+endif
 
 mega-test:
 	bash ./scripts/mega_smoketest.sh

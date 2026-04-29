@@ -6,14 +6,15 @@ namespace {
 constexpr long kBaudrate = 115200;
 constexpr size_t kMaxCommandLength = 63;
 
-constexpr int kIna1Pin = 22;
-constexpr int kInb1Pin = 23;
-constexpr int kIna2Pin = 24;
-constexpr int kInb2Pin = 25;
-constexpr int kPwm1Pin = 5;
-constexpr int kPwm2Pin = 4;
+constexpr int kIna1Pin = 8;
+constexpr int kInb1Pin = 9;
+constexpr int kPwm1Pin = 10;
 constexpr int kHallA1Pin = 3;
 constexpr int kHallB1Pin = 2;
+
+constexpr int kIna2Pin = 30;
+constexpr int kInb2Pin = 31;
+constexpr int kPwm2Pin = 44;
 constexpr int kHallA2Pin = 18;
 constexpr int kHallB2Pin = 19;
 

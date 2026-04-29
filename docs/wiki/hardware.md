@@ -95,12 +95,12 @@ Fra [`mega_keyboard_drive.ino`](../../arduino/mega_keyboard_drive/mega_keyboard_
 
 | Signal | Pin |
 |---|---:|
-| `M1 INA` | `22` |
-| `M1 INB` | `23` |
-| `M1 PWM` | `5` |
-| `M2 INA` | `24` |
-| `M2 INB` | `25` |
-| `M2 PWM` | `4` |
+| `M1 INA` | `8` |
+| `M1 INB` | `9` |
+| `M1 PWM` | `10` |
+| `M2 INA` | `30` |
+| `M2 INB` | `31` |
+| `M2 PWM` | `44` |
 | `ENC1 Hall A` | `3` |
 | `ENC1 Hall B` | `2` |
 | `ENC2 Hall A` | `18` |

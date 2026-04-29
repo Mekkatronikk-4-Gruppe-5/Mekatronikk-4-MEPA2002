@@ -72,6 +72,47 @@ Denne testen sjekker elektrisk kanal-mapping i firmware:
 - `M1` skal bevege motoren som hører til `ENC1`
 - `M2` skal bevege motoren som hører til `ENC2`
 
+Hvis roboten er koblet som `M1 = venstre` og `M2 = høyre`, skal Mega-pinnene
+være:
+
+| Side | Motor | INA | INB | PWM | Hall A | Hall B |
+|---|---|---:|---:|---:|---:|---:|
+| Venstre | `M1` | `8` | `9` | `10` | `3` | `2` |
+| Høyre | `M2` | `30` | `31` | `44` | `18` | `19` |
+
+### Terminal Block Shield v1.1.0 kobling
+
+Shieldet matcher DFRobot `DFR0921` / `Terminal Block Shield for Arduino Mega`:
+[DFRobot wiki](https://wiki.dfrobot.com/Terminal_Block_Shield_for_Arduino_Mega_SKU_DFR0921).
+
+På terminal block shieldet skal terminalnummeret følge pin-merkingen på Arduino
+Mega/shield-silkscreen. Retningspinnene er lagt i ryddige blokker, mens PWM og
+encoder Hall A/B bruker Mega-pins med riktig hardware-støtte.
+
+Koble `M1 = venstre` slik:
+
+| Terminal | Signal | Side | Går til |
+|---:|---|---|---|
+| `8` | `M1 INA` | Venstre / `M1` | Venstre motor-driver INA |
+| `9` | `M1 INB` | Venstre / `M1` | Venstre motor-driver INB |
+| `10` | `M1 PWM` | Venstre / `M1` | Venstre motor-driver PWM |
+| `3` | `ENC1 Hall A` | Venstre / `M1` | Venstre encoder Hall A |
+| `2` | `ENC1 Hall B` | Venstre / `M1` | Venstre encoder Hall B |
+
+Koble `M2 = høyre` slik:
+
+| Terminal | Signal | Side | Går til |
+|---:|---|---|---|
+| `30` | `M2 INA` | Høyre / `M2` | Høyre motor-driver INA |
+| `31` | `M2 INB` | Høyre / `M2` | Høyre motor-driver INB |
+| `44` | `M2 PWM` | Høyre / `M2` | Høyre motor-driver PWM |
+| `18` | `ENC2 Hall A` | Høyre / `M2` | Høyre encoder Hall A |
+| `19` | `ENC2 Hall B` | Høyre / `M2` | Høyre encoder Hall B |
+
+Ikke bruk `11-13` eller `32-35` for motor/encoder i denne firmwareversjonen.
+Encoder 5V/GND skal tas fra shieldets `5V`/`GND` terminaler, ikke fra digitale
+pins. Motor-driverens power skal følge motor-driverens egen power-wiring.
+
 Dette er ikke det samme som robotens venstre/høyre-side. Dagens ROS-kalibrering
 kan fortsatt bruke `swap_sides: true` hvis M1/ENC1 og M2/ENC2 er fysisk byttet
 relativt til robotens sider.

@@ -24,7 +24,7 @@ lidar-test:
 	docker compose run --rm ros bash -lc '/ws/scripts/lidar_smoketest.sh'
 
 mega-upload:
-	bash ./scripts/mega_upload.sh "$(if $(MEGA_SKETCH),$(MEGA_SKETCH),mega_smoketest)"
+	bash ./scripts/mega_upload.sh "$(if $(MEGA_SKETCH),$(MEGA_SKETCH),mega_keyboard_drive)"
 
 mega-test:
 	bash ./scripts/mega_smoketest.sh

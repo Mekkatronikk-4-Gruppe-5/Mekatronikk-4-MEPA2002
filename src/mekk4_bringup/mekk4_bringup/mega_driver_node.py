@@ -30,7 +30,7 @@ class MegaDriverNode(Node):
         self.declare_parameter("odom_poll_period_s", 0.05)
         self.declare_parameter("cmd_vel_timeout_s", 0.5)
         self.declare_parameter("reply_timeout_s", 0.4)
-        self.declare_parameter("base_frame_id", "chassis")
+        self.declare_parameter("base_frame_id", "base_link")
         self.declare_parameter("odom_frame_id", "odom")
         self.declare_parameter("publish_tf", True)
         self.declare_parameter("swap_sides", True)

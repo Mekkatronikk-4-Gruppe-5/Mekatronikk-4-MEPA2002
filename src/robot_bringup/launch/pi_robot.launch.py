@@ -190,7 +190,7 @@ def generate_launch_description():
         DeclareLaunchArgument('port_name', default_value='/dev/ttyAMA0'),
         DeclareLaunchArgument('port_baudrate', default_value='230400'),
         DeclareLaunchArgument('frame_id', default_value='base_laser'),
-        DeclareLaunchArgument('base_frame', default_value='chassis'),
+        DeclareLaunchArgument('base_frame', default_value='base_link'),
         DeclareLaunchArgument('imu_frame', default_value='imu_link'),
         DeclareLaunchArgument('mega_port', default_value='/dev/ttyACM0'),
         DeclareLaunchArgument('mega_baudrate', default_value='115200'),

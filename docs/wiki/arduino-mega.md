@@ -77,8 +77,8 @@ være:
 
 | Side | Motor | INA | INB | PWM | Hall A | Hall B |
 |---|---|---:|---:|---:|---:|---:|
-| Venstre | `M1` | `8` | `9` | `10` | `3` | `2` |
-| Høyre | `M2` | `30` | `31` | `44` | `18` | `19` |
+| Venstre | `M1` | `4` | `5` | `6` | `3` | `2` |
+| Høyre | `M2` | `8` | `9` | `10` | `18` | `19` |
 
 ### Terminal Block Shield v1.1.0 på Arduino Mega
 
@@ -91,29 +91,33 @@ rekker, så skru inn ledningene innerst/fjernest fra skrutrekker-tilgangen førs
 Da slipper du å løsne en tidligere ledning for å komme til neste terminal.
 
 Retningspinnene er lagt i ryddige blokker, mens PWM og encoder Hall A/B bruker
-Mega-pins med riktig hardware-støtte.
+Mega-pins med riktig hardware-støtte. `M1 PWM` pin `6` og `M2 PWM` pin `10`
+er hardware PWM på Arduino Mega.
 
-Koble `M1 = venstre` i denne skru-rekkefølgen:
-
-| Steg | Terminal | Signal | Går til |
-|---:|---:|---|---|
-| 1 | `10` | `M1 PWM` | Venstre motor-driver PWM |
-| 2 | `9` | `M1 INB` | Venstre motor-driver INB |
-| 3 | `8` | `M1 INA` | Venstre motor-driver INA |
-| 4 | `3` | `ENC1 Hall A` | Venstre encoder Hall A |
-| 5 | `2` | `ENC1 Hall B` | Venstre encoder Hall B |
-
-Koble `M2 = høyre` i denne skru-rekkefølgen:
+Koble `M2 = høyre` i denne skru-rekkefølgen. Denne ligger nær terminalraden
+`8/9/10` for korte motor-driverledninger:
 
 | Steg | Terminal | Signal | Går til |
 |---:|---:|---|---|
-| 1 | `44` | `M2 PWM` | Høyre motor-driver PWM |
-| 2 | `31` | `M2 INB` | Høyre motor-driver INB |
-| 3 | `30` | `M2 INA` | Høyre motor-driver INA |
+| 1 | `10` | `M2 PWM` | Høyre motor-driver PWM |
+| 2 | `9` | `M2 INB` | Høyre motor-driver INB |
+| 3 | `8` | `M2 INA` | Høyre motor-driver INA |
 | 4 | `19` | `ENC2 Hall B` | Høyre encoder Hall B |
 | 5 | `18` | `ENC2 Hall A` | Høyre encoder Hall A |
 
-Ikke bruk `11-13` eller `32-35` for motor/encoder i denne firmwareversjonen.
+Koble `M1 = venstre` i denne skru-rekkefølgen. Denne følger terminalraden
+`2/3/4/5/6/7` nedover; `7` brukes ikke:
+
+| Steg | Terminal | Signal | Går til |
+|---:|---:|---|---|
+| 1 | `7` | ubrukt | ikke koble |
+| 2 | `6` | `M1 PWM` | Venstre motor-driver PWM |
+| 3 | `5` | `M1 INB` | Venstre motor-driver INB |
+| 4 | `4` | `M1 INA` | Venstre motor-driver INA |
+| 5 | `3` | `ENC1 Hall A` | Venstre encoder Hall A |
+| 6 | `2` | `ENC1 Hall B` | Venstre encoder Hall B |
+
+Ikke bruk `11-13`, `30-31`, `32-35` eller `44` for `M1` i denne firmwareversjonen.
 Encoder 5V/GND skal tas fra shieldets `5V`/`GND` terminaler, ikke fra digitale
 pins. Motor-driverens power skal følge motor-driverens egen power-wiring.
 

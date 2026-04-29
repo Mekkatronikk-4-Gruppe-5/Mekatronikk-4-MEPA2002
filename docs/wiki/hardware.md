@@ -99,18 +99,19 @@ firmware-pinnene. Skru-rekkefølge for shield-terminalene ligger i
 
 | Signal | Pin |
 |---|---:|
-| `M1 INA` | `8` |
-| `M1 INB` | `9` |
-| `M1 PWM` | `10` |
-| `M2 INA` | `30` |
-| `M2 INB` | `31` |
-| `M2 PWM` | `44` |
+| `M1 INA` | `4` |
+| `M1 INB` | `5` |
+| `M1 PWM` | `6` |
+| `M2 INA` | `8` |
+| `M2 INB` | `9` |
+| `M2 PWM` | `10` |
 | `ENC1 Hall A` | `3` |
 | `ENC1 Hall B` | `2` |
 | `ENC2 Hall A` | `18` |
 | `ENC2 Hall B` | `19` |
 
 Firmware bruker quadrature decoding med interrupts på encoder-pinnene.
+`M1 PWM` pin `6` og `M2 PWM` pin `10` er hardware PWM på Arduino Mega.
 
 ## Robotmodell
 

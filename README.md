@@ -69,8 +69,8 @@ Mega interrupt-pins og PWM ligger på ekte PWM-pins. Hvis roboten er koblet som
 
 | Side | Motor | INA | INB | PWM | Hall A | Hall B |
 |---|---|---:|---:|---:|---:|---:|
-| Venstre | `M1` | `8` | `9` | `10` | `3` | `2` |
-| Høyre | `M2` | `30` | `31` | `44` | `18` | `19` |
+| Venstre | `M1` | `4` | `5` | `6` | `3` | `2` |
+| Høyre | `M2` | `8` | `9` | `10` | `18` | `19` |
 
 Detaljert testprosedyre ligger i [Arduino Mega-wikien](docs/wiki/arduino-mega.md).
 

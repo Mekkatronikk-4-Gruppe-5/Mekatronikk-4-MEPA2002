@@ -39,6 +39,28 @@ Ikke kjør `make build` bare fordi du har endret:
 Hvis du er usikker: prøv `make ws` først. Bruk `make build` først når feilen
 handler om manglende pakker eller endret Docker-runtime.
 
+Buildx / BuildKit
+------------------
+
+Vi anbefaler å bruke Buildx (BuildKit) på Pi for lokale builds. Byggeprosessen
+er mer cache-vennlig og gir raskere iterative rebuilds. Repoet inneholder
+Makefile-mål for å sette opp og bruke en lokal `buildx`-builder:
+
+```bash
+# sett opp en lokal buildx-builder (kjør én gang)
+make docker-buildx-setup
+
+# bygg med lokal cache (gjenbruker cache og laster image inn i docker)
+make docker-buildx-build
+
+# fjern builder og cache hvis nødvendig
+make docker-buildx-clean
+```
+
+`docker/Dockerfile` bruker nå BuildKit cache-mounts for apt og pip slik at
+`make docker-buildx-build` kan gjenbruke nedlastede pakker og gjøre builds
+betydelig raskere og mindre I/O-intensive.
+
 ## Diskplass: Første Diagnose
 
 ### `df -h`

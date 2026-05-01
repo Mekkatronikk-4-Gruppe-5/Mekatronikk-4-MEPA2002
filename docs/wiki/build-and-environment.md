@@ -35,6 +35,29 @@ det Docker-imaget som allerede finnes.
 nytt bare fordi du har endret Python-kode, launch-filer, YAML-konfig eller
 Arduino-sketcher.
 
+Buildx / BuildKit (anbefalt for Pi)
+----------------------------------
+
+Pi-en bruker nå `docker buildx` og BuildKit for mer pålitelige, cache-drevne
+byggetrinn. Dette gir raskere iterative builds når du bygger lokalt på Pi.
+
+Bruk disse Makefile-målene for å sette opp og bygge med Buildx:
+
+```bash
+# opprett og bootstrap en lokal buildx-builder (kjør én gang)
+make docker-buildx-setup
+
+# bygg med lokal cache (gjenbruker tidligere cache, laster image inn i Docker)
+make docker-buildx-build
+
+# fjern builder og cache hvis du vil starte helt på nytt
+make docker-buildx-clean
+```
+
+`docker/Dockerfile` er også oppdatert med BuildKit `--mount=type=cache` for
+apt og pip slik at `make docker-buildx-build` gjenbruker nedlastede pakker og
+reduserer nettverks- og CPU-belastning ved rebuilds.
+
 | Kommando | Effekt |
 |---|---|
 | `make build` | Bygger Docker-imaget på nytt med `docker compose build`. Bruk sjelden. |

@@ -4,18 +4,21 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # --- Python venv for pip packages (PEP 668 safe) ---
 # Install venv first so pip layer can be cached independently from apt changes
-RUN apt-get update && apt-get install -y python3-venv && rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt \
+  apt-get update && apt-get install -y python3-venv && rm -rf /var/lib/apt/lists/*
 RUN python3 -m venv /opt/venv
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install --upgrade pip && \
-  pip install --no-cache-dir --prefer-binary numpy==1.26.4 catkin_pkg==1.0.0 pyserial==3.5 ultralytics==8.4.12 ncnn==1.0.20260114 \
+RUN --mount=type=cache,id=pip-cache,target=/root/.cache/pip \
+    pip install --upgrade pip && \
+    pip install --prefer-binary numpy==1.26.4 catkin_pkg==1.0.0 pyserial==3.5 ultralytics==8.4.12 ncnn==1.0.20260114 \
     lgpio==0.2.2.0 adafruit-blinka==9.0.2 adafruit-circuitpython-bno08x==1.3.1 \
     adafruit-extended-bus
 
 # Basic dev tooling for ROS 2 workspaces.
 # This image is intended for headless SSH use on the Pi, so no GUI tools are included.
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt \
+  apt-get update && apt-get install -y --no-install-recommends \
     git \
     gstreamer1.0-libav \
     gstreamer1.0-plugins-bad \

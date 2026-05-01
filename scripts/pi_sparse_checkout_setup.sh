@@ -21,7 +21,7 @@ git sparse-checkout init --cone
 
 # Define what gets checked out on Pi
 # Include only Pi-essential directories and files
-git sparse-checkout set \
+git sparse-checkout set --skip-checks \
   src/mekk4_bringup \
   src/mekk4_perception \
   src/robot_bringup \

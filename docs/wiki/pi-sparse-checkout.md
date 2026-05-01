@@ -28,7 +28,7 @@ git clone --no-checkout https://github.com/EmiliamBeke/Mekatronikk-4-MEPA2002.gi
 cd Mekatronikk-4-MEPA2002
 
 git sparse-checkout init --cone
-git sparse-checkout set \
+git sparse-checkout set --skip-checks \
   src/mekk4_bringup \
   src/mekk4_perception \
   src/robot_bringup \
@@ -131,7 +131,7 @@ Hvis sparse checkout blir rar (rare merge-konflikter eller ghost-filer):
 # Resett sparse checkout
 git sparse-checkout disable
 git sparse-checkout init --cone
-git sparse-checkout set <lista over mapper>
+git sparse-checkout set --skip-checks <lista over mapper og rotfiler>
 git checkout main
 ```
 
@@ -139,6 +139,8 @@ git checkout main
 
 - Sparse checkout bruker `.git/info/sparse-checkout`-fila for å definere hva som sjekkes ut.
 - `--cone` betyr at dere kan bruke hele mappepaths og git er smart nok til å håndtere strukturen.
+- `--skip-checks` trengs fordi lista også inneholder rotfiler som `compose.yml`,
+  `Makefile`, `.gitignore` og `.env.example`, ikke bare mapper.
 - Hvis du gjør `git status`, vil Git bare være seg bevisst mappene som er sjekket ut.
 - `git pull` henter alt fra remote, men skriver bare til de mappene som er i listen.
 
@@ -149,7 +151,7 @@ git checkout main
 **Svar:** Det kan skje hvis noen gjorde `git sparse-checkout disable` eller cloned uten sparse checkout. Resett:
 ```bash
 git sparse-checkout init --cone
-git sparse-checkout set src/mekk4_bringup src/mekk4_perception src/robot_bringup src/robot_description arduino config scripts docker models/yolo26n_ncnn_model compose.yml Makefile README.md AGENTS.md LICENSE .gitignore .env.example
+git sparse-checkout set --skip-checks src/mekk4_bringup src/mekk4_perception src/robot_bringup src/robot_description arduino config scripts docker models/yolo26n_ncnn_model compose.yml Makefile README.md AGENTS.md LICENSE .gitignore .env.example
 git checkout main
 ```
 

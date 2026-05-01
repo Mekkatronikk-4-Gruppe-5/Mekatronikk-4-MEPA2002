@@ -33,10 +33,8 @@ git sparse-checkout set --skip-checks \
   models/yolo26n_ncnn_model \
   compose.yml \
   Makefile \
-  README.md \
-  AGENTS.md \
-  LICENSE \
   .gitignore \
+  .dockerignore \
   .env.example
 
 # Checkout main branch

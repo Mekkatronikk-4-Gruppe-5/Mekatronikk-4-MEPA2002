@@ -55,10 +55,11 @@ Pi runs from `main` branch using **git sparse checkout** to exclude simulation-o
 1. Run: `bash scripts/pi_sparse_checkout_setup.sh`
 2. After clone completes, run: `bash scripts/setup_ldlidar_driver.sh` (fetches LiDAR driver from external repo)
 
-**Key fact:** Pi clones only these directories:
+**Key fact:** Pi clones only these directories and root files:
 - `src/mekk4_bringup`, `src/mekk4_perception`, `src/robot_bringup`, `src/robot_description`
 - `config`, `scripts`, `docker`, `arduino`
 - `models/yolo26n_ncnn_model`
+- `compose.yml`, `Makefile`, `.gitignore`, `.dockerignore`, `.env.example`
 
 **External dependencies (fetched by setup scripts):**
 - `src/ldlidar_stl_ros2` — LiDAR driver (git-ignored, cloned by `setup_ldlidar_driver.sh`)
@@ -68,6 +69,7 @@ Pi runs from `main` branch using **git sparse checkout** to exclude simulation-o
 - `src/robot_sim_control` (sim adapter)
 - `models/` (sim asset models except YOLO)
 - `docs/wiki/` (documentation accessed on PC)
+- Documentation/metadata root files such as `README.md`, `AGENTS.md`, and `LICENSE`
 
 When adding new files/directories:
 - Hardware and control code: will auto-appear on Pi via `git pull`.

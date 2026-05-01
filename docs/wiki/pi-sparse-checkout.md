@@ -40,10 +40,8 @@ git sparse-checkout set --skip-checks \
   models/yolo26n_ncnn_model \
   compose.yml \
   Makefile \
-  README.md \
-  AGENTS.md \
-  LICENSE \
   .gitignore \
+  .dockerignore \
   .env.example
 
 git checkout main
@@ -64,6 +62,7 @@ Siden sparse checkout er satt opp, får Pi kun:
 - Perception (camera bridge, teddy detector)
 - Launch-filer og config
 - Arduino-sketcher, scripts og YOLO/NCNN-modellen som brukes av teddy-detektor
+- Docker runtime-filer: `docker/`, `compose.yml`, `Makefile` og `.dockerignore`
 
 ## Hva som IKKE er på Pi
 
@@ -76,6 +75,7 @@ Med dette oppsettet inneholder Pi-disken **ikke**:
 | `models/` utenom `models/yolo26n_ncnn_model/` | Sim-assets og store modeller som ikke brukes av Pi-runtime |
 | `maps/` | Simulatorbaserte kart |
 | `docs/wiki/` | Wiki leses normalt på PC/GitHub, ikke fra Pi sparse checkout |
+| `README.md`, `AGENTS.md`, `LICENSE` | Dokumentasjon/metadata, ikke nødvendig for Pi-runtime |
 | `build/`, `install/`, `log/` | Build artifacts (regenereres per `make ws`) |
 
 ## Verifikasjon
@@ -100,10 +100,8 @@ docker
 models/yolo26n_ncnn_model
 compose.yml
 Makefile
-README.md
-AGENTS.md
-LICENSE
 .gitignore
+.dockerignore
 .env.example
 ```
 
@@ -140,7 +138,7 @@ git checkout main
 - Sparse checkout bruker `.git/info/sparse-checkout`-fila for å definere hva som sjekkes ut.
 - `--cone` betyr at dere kan bruke hele mappepaths og git er smart nok til å håndtere strukturen.
 - `--skip-checks` trengs fordi lista også inneholder rotfiler som `compose.yml`,
-  `Makefile`, `.gitignore` og `.env.example`, ikke bare mapper.
+  `Makefile`, `.gitignore`, `.dockerignore` og `.env.example`, ikke bare mapper.
 - Hvis du gjør `git status`, vil Git bare være seg bevisst mappene som er sjekket ut.
 - `git pull` henter alt fra remote, men skriver bare til de mappene som er i listen.
 
@@ -151,7 +149,7 @@ git checkout main
 **Svar:** Det kan skje hvis noen gjorde `git sparse-checkout disable` eller cloned uten sparse checkout. Resett:
 ```bash
 git sparse-checkout init --cone
-git sparse-checkout set --skip-checks src/mekk4_bringup src/mekk4_perception src/robot_bringup src/robot_description arduino config scripts docker models/yolo26n_ncnn_model compose.yml Makefile README.md AGENTS.md LICENSE .gitignore .env.example
+git sparse-checkout set --skip-checks src/mekk4_bringup src/mekk4_perception src/robot_bringup src/robot_description arduino config scripts docker models/yolo26n_ncnn_model compose.yml Makefile .gitignore .dockerignore .env.example
 git checkout main
 ```
 
@@ -163,4 +161,4 @@ git sparse-checkout add path/to/folder
 git pull origin main
 ```
 
-Se også [AGENTS.md](../../AGENTS.md) for info om arbeidsflyt og [README.md](../../README.md) for kommandoer.
+Se [README.md](../../README.md) fra PC/GitHub for operatørkommandoer og øvrig dokumentasjon.

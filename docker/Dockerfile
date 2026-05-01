@@ -26,8 +26,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
       requests \
       scipy \
       psutil \
-      polars \
-      ultralytics-thop && \
+      polars && \
+    pip install --no-cache-dir --no-deps ultralytics-thop && \
     pip install --no-cache-dir --no-deps ultralytics==8.4.12
 
 # Basic dev tooling for ROS 2 workspaces.

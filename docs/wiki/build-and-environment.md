@@ -35,43 +35,28 @@ det Docker-imaget som allerede finnes.
 nytt bare fordi du har endret Python-kode, launch-filer, YAML-konfig eller
 Arduino-sketcher.
 
-Buildx / BuildKit (anbefalt for Pi)
-----------------------------------
+Docker image-build
+------------------
 
-Pi-en bruker nå `docker buildx` og BuildKit for mer pålitelige builds med
-`docker/` som build-context. Buildx-builderen beholder intern layer-cache mellom
-builds, men Makefile eksporterer ikke lenger ekstra lokal cache til
-`~/.buildx-cache`.
-
-Bruk disse Makefile-målene for å sette opp og bygge med Buildx:
+`make build` bruker vanlig Compose-build:
 
 ```bash
-# opprett og bootstrap en lokal buildx-builder (kjør én gang)
-make docker-buildx-setup
-
-# bygg med Buildx og last image inn i Docker
-make docker-buildx-build
-
-# fjern builder/cache hvis du vil starte helt på nytt
-make docker-buildx-clean
+docker compose build
 ```
+
+[`compose.yml`](../../compose.yml) bruker repo-roten som build-context, men
+repoets [`.dockerignore`](../../.dockerignore) slipper bare gjennom `docker/`.
+Da sendes ikke `src/`, `build/`, `install/`, `log/`, `models/`, `docs/`,
+`.git/` eller andre workspace-filer inn i Docker-builden.
 
 `docker/Dockerfile` bruker ikke apt/pip cache-mounts. Pi-en har raskt nettverk,
 men tregt SD-kort, så default build prioriterer lavere disk-I/O og mindre
-cache-vekst over å cache nedlastede pakker. Buildx layer-cache beholdes.
-
-`make build` er en kort alias for `make docker-buildx-build`.
-
-Hvis gammel lokal Buildx-cache fra tidligere oppsett finnes i `~/.buildx-cache`,
-rydd den med:
-
-```bash
-make docker-buildx-clean
-```
+cache-vekst over å cache nedlastede pakker. Vanlig Docker layer-cache beholdes
+likevel mellom builds.
 
 | Kommando | Effekt |
 |---|---|
-| `make build` | Bygger Docker-imaget på nytt ved å bruke Buildx (`make docker-buildx-build`). Bruk sjelden. |
+| `make build` | Bygger Docker-imaget på nytt med `docker compose build`. Bruk sjelden. |
 | `make ws` | Kjører [`scripts/ws_build.sh`](../../scripts/ws_build.sh) i container |
 | `make shell` | Åpner shell i container |
 | `make up` | Starter compose service detached |

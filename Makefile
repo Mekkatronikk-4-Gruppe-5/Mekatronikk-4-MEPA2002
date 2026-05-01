@@ -6,8 +6,7 @@ MEGA_UPLOAD_DEFAULT_SKETCH := mega_keyboard_drive
 MEGA_UPLOAD_SKETCH := $(firstword $(filter-out mega-upload,$(MAKECMDGOALS)))
 
 build:
-	@echo "Building docker image with buildx."
-	$(MAKE) docker-buildx-build
+	docker compose build
 
 shell:
 	docker compose run --rm ros
@@ -18,40 +17,10 @@ up:
 down:
 	docker compose down
 
-# Docker Buildx helpers (use on Pi for faster cacheable builds)
-.PHONY: docker-buildx-setup docker-buildx-build docker-buildx-clean
-
-docker-buildx-setup:
-	@echo "Setting up buildx builder (idempotent)"
-	-docker buildx create --name mekk4-builder --use 2>/dev/null || true
-	-docker buildx inspect --bootstrap 2>/dev/null || true
-
-docker-buildx-build: docker-buildx-setup
-	@echo "Building image with buildx using docker/ as context"
-	DOCKER_BUILDKIT=1 docker buildx build \
-	  --builder mekk4-builder \
-	  --load \
-	  -t mekk4/ros2-jazzy-dev:local \
-	  docker/
-
-docker-buildx-clean:
-	@echo "Removing buildx builder and legacy local cache (safe to run)"
-	-docker buildx rm mekk4-builder 2>/dev/null || true
-	-rm -rf $(HOME)/.buildx-cache 2>/dev/null || true
-
 # Short aliases for convenience
-.PHONY: bd bxs bxb bxc pb
+.PHONY: bd pb
 
 bd: build
-	@:
-
-bxs: docker-buildx-setup
-	@:
-
-bxb: docker-buildx-build
-	@:
-
-bxc: docker-buildx-clean
 	@:
 
 pb: pi-bringup

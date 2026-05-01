@@ -90,7 +90,13 @@ __pycache__/
 *.pyc
 
 # Local model dumps at repo root. Gazebo runtime models under src/robot_gz/models are tracked.
-/models/
+# Keep the simulation YOLO/NCNN model versioned so main is reproducible for dev PCs.
+/models/*
+!/models/yolo26n_ncnn_model/
+!/models/yolo26n_ncnn_model/metadata.yaml
+!/models/yolo26n_ncnn_model/model.ncnn.bin
+!/models/yolo26n_ncnn_model/model.ncnn.param
+!/models/yolo26n_ncnn_model/model_ncnn.py
 
 # External ROS dependency fetched by setup script
 src/ldlidar_stl_ros2/

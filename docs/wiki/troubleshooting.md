@@ -56,7 +56,7 @@ make pc-teddy-rviz PI_HOST=<pi-ip>
 make lidar-setup
 make lidar-test
 ros2 topic hz /lidar
-ros2 run tf2_ros tf2_echo chassis base_laser
+ros2 run tf2_ros tf2_echo base_link base_laser
 ```
 
 Hvis device er feil:
@@ -133,7 +133,7 @@ Hvis EKF ikke publiserer:
 - Sjekk at `WITH_EKF=1`.
 - Sjekk at `/wheel/odom` finnes.
 - Sjekk at `/imu/data` finnes.
-- Sjekk frame mismatch mellom `base_link` og `chassis`.
+- Sjekk `odom -> base_link` med `ros2 run tf2_ros tf2_echo odom base_link`.
 
 ## Nav2
 

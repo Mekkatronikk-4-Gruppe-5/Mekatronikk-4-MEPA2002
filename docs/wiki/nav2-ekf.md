@@ -146,6 +146,6 @@ ros2 topic echo --once /cmd_vel_mux_active
 
 ## Viktig Risiko
 
-Frame-bruken mellom `base_link` og `chassis` må verifiseres før hard Nav2 på
-fysisk robot. Nav2 forventer `base_link`, mens Mega-driveren får `chassis` som
-default base frame fra Pi scriptet.
+Frame-bruken må verifiseres før hard Nav2 på fysisk robot. Nåværende kode setter
+`BASE_FRAME=base_link` i [`scripts/pi_bringup.sh`](../../scripts/pi_bringup.sh),
+og Nav2/EKF forventer også `base_link`.

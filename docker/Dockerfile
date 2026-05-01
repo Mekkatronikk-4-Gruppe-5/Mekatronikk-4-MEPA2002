@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM ros:jazzy-ros-base
 
 ENV DEBIAN_FRONTEND=noninteractive

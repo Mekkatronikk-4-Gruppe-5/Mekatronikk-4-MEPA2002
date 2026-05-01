@@ -58,6 +58,7 @@ Pi runs from `main` branch using **git sparse checkout** to exclude simulation-o
 **Key fact:** Pi clones only these directories:
 - `src/mekk4_bringup`, `src/mekk4_perception`, `src/robot_bringup`, `src/robot_description`
 - `config`, `scripts`, `docker`, `arduino`
+- `models/yolo26n_ncnn_model`
 
 **External dependencies (fetched by setup scripts):**
 - `src/ldlidar_stl_ros2` — LiDAR driver (git-ignored, cloned by `setup_ldlidar_driver.sh`)

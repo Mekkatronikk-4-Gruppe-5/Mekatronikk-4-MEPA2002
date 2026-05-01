@@ -229,7 +229,7 @@ Driveren:
 | `cmd_vel_timeout_s` | `0.5` | Stopper ved stale cmd_vel |
 | `send_period_s` | `0.2` | Repetisjon av motor command |
 | `odom_poll_period_s` | `0.05` | Encoder poll |
-| `base_frame_id` | `chassis` via Pi launch | Odom child frame |
+| `base_frame_id` | `base_link` via Pi launch | Odom child frame |
 | `publish_tf` | av/på etter EKF | Om driver publiserer odom TF |
 | `swap_sides` | `false` | Bytter venstre/høyre mapping hvis wiring er fysisk krysset |
 | `angular_cmd_sign` | fra config | Fortegn for ROS `cmd_vel.angular.z` ved ren pivot |

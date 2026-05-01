@@ -58,6 +58,15 @@ make docker-buildx-clean
 apt og pip slik at `make docker-buildx-build` gjenbruker nedlastede pakker og
 reduserer nettverks- og CPU-belastning ved rebuilds.
 
+`make build` er en kort alias for `make docker-buildx-build`.
+
+Den lokale Buildx-cachen ligger i `~/.buildx-cache`. Hvis Pi-en går tom for
+diskplass, rydd den med:
+
+```bash
+make docker-buildx-clean
+```
+
 | Kommando | Effekt |
 |---|---|
 | `make build` | Bygger Docker-imaget på nytt ved å bruke Buildx (`make docker-buildx-build`). Bruk sjelden. |

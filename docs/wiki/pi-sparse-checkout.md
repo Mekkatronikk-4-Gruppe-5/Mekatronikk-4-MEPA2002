@@ -2,7 +2,9 @@
 
 ## Oversikt
 
-Pi bruker **git sparse checkout** for å only klone de filene som er nødvendige for robotdrift. Dette holder Pi-disken ren og forhindrer at simuleringskode (Gazebo, robot_sim_control, etc.) havner på Pi ved uhell.
+Pi bruker **git sparse checkout** for å kun klone de filene som er nødvendige
+for robotdrift. Dette holder Pi-disken ren og forhindrer at simuleringskode
+(Gazebo, robot_sim_control, etc.) havner på Pi ved uhell.
 
 Sparse checkout betyr:
 - `main`-branch inneholder alt (sim + Pi-kode).
@@ -31,15 +33,18 @@ git sparse-checkout set \
   src/mekk4_perception \
   src/robot_bringup \
   src/robot_description \
+  arduino \
   config \
   scripts \
   docker \
+  models/yolo26n_ncnn_model \
   compose.yml \
   Makefile \
   README.md \
   AGENTS.md \
   LICENSE \
-  docs/wiki
+  .gitignore \
+  .env.example
 
 git checkout main
 ```
@@ -58,7 +63,7 @@ Siden sparse checkout er satt opp, får Pi kun:
 - Hardware driver nodes (`mekk4_bringup`)
 - Perception (camera bridge, teddy detector)
 - Launch-filer og config
-- Dokumentasjon og scripts
+- Arduino-sketcher, scripts og YOLO/NCNN-modellen som brukes av teddy-detektor
 
 ## Hva som IKKE er på Pi
 
@@ -68,10 +73,9 @@ Med dette oppsettet inneholder Pi-disken **ikke**:
 |---|---|
 | `src/robot_gz/` | Gazebo verden og SDF-modeller (bare sim) |
 | `src/robot_sim_control/` | Sim-only tracked-drive adapter |
-| `models/` | YOLO-modeller og andre sim-assets |
-| `arduino/` | Arduino sketcher (ikke nødvendig kjøretid) |
+| `models/` utenom `models/yolo26n_ncnn_model/` | Sim-assets og store modeller som ikke brukes av Pi-runtime |
 | `maps/` | Simulatorbaserte kart |
-| `yolo26n_ncnn_model/` | YOLO weights (hvis det ligger løst) |
+| `docs/wiki/` | Wiki leses normalt på PC/GitHub, ikke fra Pi sparse checkout |
 | `build/`, `install/`, `log/` | Build artifacts (regenereres per `make ws`) |
 
 ## Verifikasjon
@@ -89,10 +93,18 @@ src/mekk4_bringup
 src/mekk4_perception
 src/robot_bringup
 src/robot_description
+arduino
 config
 scripts
 docker
-docs/wiki
+models/yolo26n_ncnn_model
+compose.yml
+Makefile
+README.md
+AGENTS.md
+LICENSE
+.gitignore
+.env.example
 ```
 
 Sjekk at Gazebo-filene IKKE finnes:
@@ -137,7 +149,7 @@ git checkout main
 **Svar:** Det kan skje hvis noen gjorde `git sparse-checkout disable` eller cloned uten sparse checkout. Resett:
 ```bash
 git sparse-checkout init --cone
-git sparse-checkout set src/mekk4_bringup src/mekk4_perception src/robot_bringup src/robot_description config scripts docker compose.yml Makefile README.md AGENTS.md LICENSE docs/wiki
+git sparse-checkout set src/mekk4_bringup src/mekk4_perception src/robot_bringup src/robot_description arduino config scripts docker models/yolo26n_ncnn_model compose.yml Makefile README.md AGENTS.md LICENSE .gitignore .env.example
 git checkout main
 ```
 
@@ -149,4 +161,4 @@ git sparse-checkout add path/to/folder
 git pull origin main
 ```
 
-Se også [AGENTS.md](../AGENTS.md) for info om arbeidsflyt og [README.md](../README.md) for kommandoer.
+Se også [AGENTS.md](../../AGENTS.md) for info om arbeidsflyt og [README.md](../../README.md) for kommandoer.

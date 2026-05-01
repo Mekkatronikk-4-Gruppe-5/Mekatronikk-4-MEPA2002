@@ -61,6 +61,12 @@ make docker-buildx-clean
 `make docker-buildx-build` kan gjenbruke nedlastede pakker og gjøre builds
 betydelig raskere og mindre I/O-intensive.
 
+`make build` er en kort alias for `make docker-buildx-build`.
+
+Buildx-cachen ligger i `~/.buildx-cache`. Den vises ikke nødvendigvis som
+Docker `Build Cache` i `docker system df`, fordi Makefile bruker en eksplisitt
+lokal cache-katalog.
+
 ## Diskplass: Første Diagnose
 
 ### `df -h`
@@ -99,6 +105,7 @@ Tolkning:
 
 - Stor `Build Cache` ryddes med `docker builder prune -af`.
 - Mange gamle `Images` ryddes med `docker system prune -af`, men les advarselen under.
+- Lokal Buildx-cache fra dette repoet sjekkes separat med `du -sh ~/.buildx-cache`.
 
 ### `du -h --max-depth=1 ~/Mekatronikk-4-MEPA2002`
 
@@ -168,9 +175,11 @@ Risiko:
 
 ```bash
 docker builder prune -af
+make docker-buildx-clean
 ```
 
-Fjerner cache Docker bruker for å bygge images raskere.
+Fjerner cache Docker bruker for å bygge images raskere, pluss repoets lokale
+Buildx-cache i `~/.buildx-cache`.
 
 Bruk når:
 
@@ -180,6 +189,8 @@ Bruk når:
 Konsekvens:
 
 - Neste `make build` blir tregere fordi Docker må bygge lag på nytt.
+- `make docker-buildx-clean` fjerner også `mekk4-builder`; neste `make build`
+  oppretter builderen igjen automatisk.
 
 Risiko:
 

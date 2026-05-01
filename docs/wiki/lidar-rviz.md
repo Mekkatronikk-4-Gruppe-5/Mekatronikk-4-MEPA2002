@@ -130,7 +130,7 @@ Rå kamera bruker UDP-port `5601`. Annotert YOLO-debug bruker `5602`.
 | `empty topicname` i RViz | LaserScan-displayet har tom topic. Sett `/lidar`. |
 | Ingen `/lidar` på PC | Sjekk ROS discovery, Pi bringup og `PI_HOST`/`PC_HOST`. |
 | `/lidar` finnes, men vises ikke | Sett LaserScan QoS til `Best Effort`. |
-| TF-feil for scan | Sjekk `ros2 run tf2_ros tf2_echo chassis base_laser`. |
+| TF-feil for scan | Sjekk `ros2 run tf2_ros tf2_echo base_link base_laser`. |
 | RobotModel ser rar ut | Stol på LiDAR + TF først; joint states kan være statiske/null. |
 | YOLO-bilde mangler | Sjekk `make pc-teddy-rviz`, port `5602` og `stream_debug_video`. |
 | Råkamera mangler | Sjekk GStreamer på PC og port `5601`. |

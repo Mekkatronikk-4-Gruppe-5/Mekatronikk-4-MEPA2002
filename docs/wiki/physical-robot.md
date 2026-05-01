@@ -28,7 +28,7 @@ Fra [`scripts/pi_bringup.sh`](../../scripts/pi_bringup.sh):
 | `PORT_BAUDRATE` | `230400` | LiDAR baudrate |
 | `PRODUCT_NAME` | `LDLiDAR_LD06` | LiDAR driver type |
 | `LIDAR_FRAME` | `base_laser` | LaserScan frame |
-| `BASE_FRAME` | `chassis` | Mega odom child frame |
+| `BASE_FRAME` | `base_link` | Mega odom child frame |
 | `IMU_FRAME` | `imu_link` | IMU frame |
 | `MEGA_PORT` | `/dev/ttyACM0` | Arduino Mega serial |
 | `MEGA_BAUDRATE` | `115200` | Mega baudrate |

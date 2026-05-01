@@ -18,18 +18,18 @@ Dette er kontraktene resten av systemet forventer.
 | `camera_link` | Kamera frame | URDF og camera bridge |
 | `map` | Kartframe | SLAM/EKF config, ikke hovedframe i Nav2 default |
 
-Viktig mismatch å være klar over:
+Viktig frame-kontrakt:
 
 - [`config/nav2_params.yaml`](../../config/nav2_params.yaml) bruker `robot_base_frame: base_link`.
-- [`scripts/pi_bringup.sh`](../../scripts/pi_bringup.sh) setter `BASE_FRAME=chassis` som default til Mega-driver.
+- [`scripts/pi_bringup.sh`](../../scripts/pi_bringup.sh) setter `BASE_FRAME=base_link` som default til Mega-driver.
 - [`config/ekf.yaml`](../../config/ekf.yaml) bruker `base_link_frame: base_link`.
 
 Verifiser TF før fysisk Nav2-kjøring:
 
 ```bash
 ros2 run tf2_ros tf2_echo odom base_link
-ros2 run tf2_ros tf2_echo odom chassis
-ros2 run tf2_ros tf2_echo chassis base_laser
+ros2 run tf2_ros tf2_echo base_link chassis
+ros2 run tf2_ros tf2_echo base_link base_laser
 ```
 
 ## Topics

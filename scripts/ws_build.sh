@@ -13,7 +13,7 @@ while IFS= read -r pkg_dir; do
 done < <(find /ws/src -maxdepth 2 -name setup.py -printf '%h\n')
 
 # Also clear any lingering setuptools metadata just in case.
-find /ws/build -type d -name '*.egg-info' -prune -exec rm -rf {} +
+[[ -d /ws/build ]] && find /ws/build -type d -name '*.egg-info' -prune -exec rm -rf {} +
 
 colcon build --symlink-install
 

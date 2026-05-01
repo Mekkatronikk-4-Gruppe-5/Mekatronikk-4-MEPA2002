@@ -6,7 +6,7 @@ MEGA_UPLOAD_DEFAULT_SKETCH := mega_keyboard_drive
 MEGA_UPLOAD_SKETCH := $(firstword $(filter-out mega-upload,$(MAKECMDGOALS)))
 
 build:
-	@echo "Building docker image with buildx (uses local cache)."
+	@echo "Building docker image with buildx."
 	$(MAKE) docker-buildx-build
 
 shell:
@@ -25,20 +25,17 @@ docker-buildx-setup:
 	@echo "Setting up buildx builder (idempotent)"
 	-docker buildx create --name mekk4-builder --use 2>/dev/null || true
 	-docker buildx inspect --bootstrap 2>/dev/null || true
-	@mkdir -p $(HOME)/.buildx-cache
 
 docker-buildx-build: docker-buildx-setup
-	@echo "Building image with buildx and local cache at $(HOME)/.buildx-cache"
+	@echo "Building image with buildx using docker/ as context"
 	DOCKER_BUILDKIT=1 docker buildx build \
 	  --builder mekk4-builder \
-	  --cache-to=type=local,dest=$(HOME)/.buildx-cache \
-	  --cache-from=type=local,src=$(HOME)/.buildx-cache \
 	  --load \
 	  -t mekk4/ros2-jazzy-dev:local \
 	  docker/
 
 docker-buildx-clean:
-	@echo "Removing buildx builder and cache (safe to run)"
+	@echo "Removing buildx builder and legacy local cache (safe to run)"
 	-docker buildx rm mekk4-builder 2>/dev/null || true
 	-rm -rf $(HOME)/.buildx-cache 2>/dev/null || true
 

@@ -10,9 +10,8 @@ RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt \
 RUN python3 -m venv /opt/venv
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-RUN --mount=type=cache,id=pip-cache,target=/root/.cache/pip \
-    pip install --upgrade pip && \
-    pip install --prefer-binary numpy==1.26.4 catkin_pkg==1.0.0 pyserial==3.5 ultralytics==8.4.12 ncnn==1.0.20260114 \
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir --prefer-binary numpy==1.26.4 catkin_pkg==1.0.0 pyserial==3.5 ultralytics==8.4.12 ncnn==1.0.20260114 \
     lgpio==0.2.2.0 adafruit-blinka==9.0.2 adafruit-circuitpython-bno08x==1.3.1 \
     adafruit-extended-bus
 

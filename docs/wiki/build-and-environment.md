@@ -38,8 +38,10 @@ Arduino-sketcher.
 Buildx / BuildKit (anbefalt for Pi)
 ----------------------------------
 
-Pi-en bruker nå `docker buildx` og BuildKit for mer pålitelige, cache-drevne
-byggetrinn. Dette gir raskere iterative builds når du bygger lokalt på Pi.
+Pi-en bruker nå `docker buildx` og BuildKit for mer pålitelige builds med
+`docker/` som build-context. Buildx-builderen beholder intern layer-cache mellom
+builds, men Makefile eksporterer ikke lenger ekstra lokal cache til
+`~/.buildx-cache`.
 
 Bruk disse Makefile-målene for å sette opp og bygge med Buildx:
 
@@ -47,21 +49,21 @@ Bruk disse Makefile-målene for å sette opp og bygge med Buildx:
 # opprett og bootstrap en lokal buildx-builder (kjør én gang)
 make docker-buildx-setup
 
-# bygg med lokal cache (gjenbruker tidligere cache, laster image inn i Docker)
+# bygg med Buildx og last image inn i Docker
 make docker-buildx-build
 
-# fjern builder og cache hvis du vil starte helt på nytt
+# fjern builder/cache hvis du vil starte helt på nytt
 make docker-buildx-clean
 ```
 
-`docker/Dockerfile` er også oppdatert med BuildKit `--mount=type=cache` for
-apt og pip slik at `make docker-buildx-build` gjenbruker nedlastede pakker og
-reduserer nettverks- og CPU-belastning ved rebuilds.
+`docker/Dockerfile` bruker BuildKit cache-mount for apt. Pip kjøres med
+`--no-cache-dir` for å unngå at `ultralytics`/Python wheels fyller Pi-disken
+under build.
 
 `make build` er en kort alias for `make docker-buildx-build`.
 
-Den lokale Buildx-cachen ligger i `~/.buildx-cache`. Hvis Pi-en går tom for
-diskplass, rydd den med:
+Hvis gammel lokal Buildx-cache fra tidligere oppsett finnes i `~/.buildx-cache`,
+rydd den med:
 
 ```bash
 make docker-buildx-clean

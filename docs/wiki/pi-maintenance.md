@@ -42,30 +42,34 @@ handler om manglende pakker eller endret Docker-runtime.
 Buildx / BuildKit
 ------------------
 
-Vi anbefaler å bruke Buildx (BuildKit) på Pi for lokale builds. Byggeprosessen
-er mer cache-vennlig og gir raskere iterative rebuilds. Repoet inneholder
-Makefile-mål for å sette opp og bruke en lokal `buildx`-builder:
+Vi anbefaler å bruke Buildx (BuildKit) på Pi for lokale builds. `make build`
+bruker `docker/` som build-context og Buildx-builderens interne layer-cache.
+Makefile eksporterer ikke lenger ekstra cache til `~/.buildx-cache`, fordi det
+kan gi for høy diskbruk på Pi.
+
+Repoet inneholder Makefile-mål for å sette opp og bruke en lokal
+`buildx`-builder:
 
 ```bash
 # sett opp en lokal buildx-builder (kjør én gang)
 make docker-buildx-setup
 
-# bygg med lokal cache (gjenbruker cache og laster image inn i docker)
+# bygg med Buildx og last image inn i docker
 make docker-buildx-build
 
-# fjern builder og cache hvis nødvendig
+# fjern builder/cache hvis nødvendig
 make docker-buildx-clean
 ```
 
-`docker/Dockerfile` bruker nå BuildKit cache-mounts for apt og pip slik at
-`make docker-buildx-build` kan gjenbruke nedlastede pakker og gjøre builds
-betydelig raskere og mindre I/O-intensive.
+`docker/Dockerfile` bruker BuildKit cache-mount for apt. Pip kjøres med
+`--no-cache-dir` for å unngå at `ultralytics`/Python wheels fyller Pi-disken
+under build.
 
 `make build` er en kort alias for `make docker-buildx-build`.
 
-Buildx-cachen ligger i `~/.buildx-cache`. Den vises ikke nødvendigvis som
-Docker `Build Cache` i `docker system df`, fordi Makefile bruker en eksplisitt
-lokal cache-katalog.
+Tidligere Buildx-oppsett brukte en ekstra cache-katalog i `~/.buildx-cache`.
+Default build gjør ikke det lenger. Hvis katalogen finnes, er det gammel cache
+og kan slettes ved diskproblemer.
 
 ## Diskplass: Første Diagnose
 
@@ -105,7 +109,7 @@ Tolkning:
 
 - Stor `Build Cache` ryddes med `docker builder prune -af`.
 - Mange gamle `Images` ryddes med `docker system prune -af`, men les advarselen under.
-- Lokal Buildx-cache fra dette repoet sjekkes separat med `du -sh ~/.buildx-cache`.
+- Gammel lokal Buildx-cache fra dette repoet sjekkes separat med `du -sh ~/.buildx-cache`.
 
 ### `du -h --max-depth=1 ~/Mekatronikk-4-MEPA2002`
 
@@ -178,8 +182,8 @@ docker builder prune -af
 make docker-buildx-clean
 ```
 
-Fjerner cache Docker bruker for å bygge images raskere, pluss repoets lokale
-Buildx-cache i `~/.buildx-cache`.
+Fjerner cache Docker bruker for å bygge images raskere, pluss eventuell gammel
+lokal Buildx-cache i `~/.buildx-cache`.
 
 Bruk når:
 

@@ -6,12 +6,13 @@ import re
 import time
 
 import rclpy
-from geometry_msgs.msg import PoseStamped, Quaternion, Twist
+from geometry_msgs.msg import Point, PoseStamped, Quaternion, Twist
 from nav2_msgs.action import NavigateToPose
 from rclpy.action import ActionClient
 from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import String
+from visualization_msgs.msg import Marker, MarkerArray
 
 
 STATUS_RE = re.compile(r"(?P<key>[A-Za-z_]+)=(?P<value>[^ ]+)")
@@ -52,6 +53,8 @@ class TeddyApproachNode(Node):
         self.declare_parameter("stop_lidar_front_angle_rad", 0.20)
         self.declare_parameter("stop_lidar_min_points", 3)
         self.declare_parameter("stop_lidar_timeout_s", 0.5)
+        self.declare_parameter("visualize_lidar_stop", True)
+        self.declare_parameter("marker_topic", "/teddy_approach/lidar_stop_markers")
         self.declare_parameter("drive_when_not_centered", False)
         self.declare_parameter("use_nav_goal", False)
         self.declare_parameter("send_goal_on_start", False)
@@ -87,6 +90,10 @@ class TeddyApproachNode(Node):
         self._stop_lidar_timeout_s = (
             self.get_parameter("stop_lidar_timeout_s").get_parameter_value().double_value
         )
+        self._visualize_lidar_stop = (
+            self.get_parameter("visualize_lidar_stop").get_parameter_value().bool_value
+        )
+        marker_topic = self.get_parameter("marker_topic").get_parameter_value().string_value
         self._drive_when_not_centered = (
             self.get_parameter("drive_when_not_centered").get_parameter_value().bool_value
         )
@@ -109,6 +116,11 @@ class TeddyApproachNode(Node):
             raise ValueError("stop_lidar_timeout_s must be zero or greater")
 
         self._cmd_pub = self.create_publisher(Twist, cmd_vel_topic, 10)
+        self._marker_pub = (
+            self.create_publisher(MarkerArray, marker_topic, 10)
+            if self._visualize_lidar_stop
+            else None
+        )
         self._status_sub = self.create_subscription(String, status_topic, self._on_status, 10)
         self._scan_sub = self.create_subscription(LaserScan, scan_topic, self._on_scan, 10)
         self._timer = self.create_timer(publish_period_s, self._on_timer)
@@ -117,7 +129,9 @@ class TeddyApproachNode(Node):
         self._last_seen_at = -1.0
         self._last_dx = 0.0
         self._last_front_distance = math.inf
+        self._last_front_angle = 0.0
         self._last_front_points = 0
+        self._last_scan_frame = ""
         self._last_scan_at = -1.0
         self._last_count = 0
         self._nav_goal_sent = False
@@ -127,8 +141,15 @@ class TeddyApproachNode(Node):
             self._send_nav_goal()
 
         self.get_logger().info(
-            "teddy approach enabled=%s status=%s cmd=%s scan=%s nav_goal=%s"
-            % (self._enabled, status_topic, cmd_vel_topic, scan_topic, self._use_nav_goal)
+            "teddy approach enabled=%s status=%s cmd=%s scan=%s markers=%s nav_goal=%s"
+            % (
+                self._enabled,
+                status_topic,
+                cmd_vel_topic,
+                scan_topic,
+                marker_topic if self._visualize_lidar_stop else "off",
+                self._use_nav_goal,
+            )
         )
 
     def _on_status(self, msg: String) -> None:
@@ -145,6 +166,8 @@ class TeddyApproachNode(Node):
 
     def _on_scan(self, msg: LaserScan) -> None:
         front_ranges = []
+        closest_distance = math.inf
+        closest_angle = 0.0
         angle = msg.angle_min
         for distance in msg.ranges:
             if (
@@ -152,11 +175,17 @@ class TeddyApproachNode(Node):
                 and math.isfinite(distance)
                 and msg.range_min <= distance <= msg.range_max
             ):
-                front_ranges.append(float(distance))
+                valid_distance = float(distance)
+                front_ranges.append(valid_distance)
+                if valid_distance < closest_distance:
+                    closest_distance = valid_distance
+                    closest_angle = angle
             angle += msg.angle_increment
 
         self._last_front_points = len(front_ranges)
-        self._last_front_distance = min(front_ranges) if front_ranges else math.inf
+        self._last_front_distance = closest_distance
+        self._last_front_angle = closest_angle
+        self._last_scan_frame = msg.header.frame_id
         self._last_scan_at = time.monotonic()
 
     def _send_nav_goal(self) -> None:
@@ -210,6 +239,7 @@ class TeddyApproachNode(Node):
         if lidar_close:
             self._cmd_pub.publish(cmd)
             self._log_mode("close_enough_lidar")
+            self._publish_lidar_markers(lidar_close)
             return
 
         if not centered:
@@ -222,7 +252,84 @@ class TeddyApproachNode(Node):
         if centered or self._drive_when_not_centered:
             cmd.linear.x = self._linear_speed
         self._cmd_pub.publish(cmd)
+        self._publish_lidar_markers(lidar_close)
         self._log_mode("centering" if not centered else "approaching")
+
+    def _publish_lidar_markers(self, lidar_close: bool) -> None:
+        if self._marker_pub is None or not self._last_scan_frame:
+            return
+
+        markers = MarkerArray()
+        now = self.get_clock().now().to_msg()
+        frame = self._last_scan_frame
+        stop_distance = max(0.0, self._stop_lidar_distance_m)
+        front_angle = self._stop_lidar_front_angle_rad
+        color = (1.0, 0.1, 0.1, 0.95) if lidar_close else (0.1, 0.8, 0.2, 0.95)
+
+        sector = Marker()
+        sector.header.frame_id = frame
+        sector.header.stamp = now
+        sector.ns = "teddy_lidar_stop"
+        sector.id = 0
+        sector.type = Marker.LINE_LIST
+        sector.action = Marker.ADD
+        sector.scale.x = 0.025
+        sector.color.r, sector.color.g, sector.color.b, sector.color.a = color
+        sector.points.extend(
+            [
+                Point(x=0.0, y=0.0, z=0.03),
+                Point(x=stop_distance * math.cos(-front_angle), y=stop_distance * math.sin(-front_angle), z=0.03),
+                Point(x=0.0, y=0.0, z=0.03),
+                Point(x=stop_distance * math.cos(front_angle), y=stop_distance * math.sin(front_angle), z=0.03),
+            ]
+        )
+        markers.markers.append(sector)
+
+        arc = Marker()
+        arc.header.frame_id = frame
+        arc.header.stamp = now
+        arc.ns = "teddy_lidar_stop"
+        arc.id = 1
+        arc.type = Marker.LINE_STRIP
+        arc.action = Marker.ADD
+        arc.scale.x = 0.025
+        arc.color.r, arc.color.g, arc.color.b, arc.color.a = color
+        steps = 16
+        for idx in range(steps + 1):
+            angle = -front_angle + (2.0 * front_angle * idx / steps)
+            arc.points.append(
+                Point(
+                    x=stop_distance * math.cos(angle),
+                    y=stop_distance * math.sin(angle),
+                    z=0.03,
+                )
+            )
+        markers.markers.append(arc)
+
+        closest = Marker()
+        closest.header.frame_id = frame
+        closest.header.stamp = now
+        closest.ns = "teddy_lidar_stop"
+        closest.id = 2
+        closest.type = Marker.SPHERE
+        closest.action = Marker.ADD
+        closest.scale.x = 0.08
+        closest.scale.y = 0.08
+        closest.scale.z = 0.08
+        closest.color.r = 1.0
+        closest.color.g = 0.8
+        closest.color.b = 0.0
+        closest.color.a = 0.95
+        if math.isfinite(self._last_front_distance):
+            closest.pose.position.x = self._last_front_distance * math.cos(self._last_front_angle)
+            closest.pose.position.y = self._last_front_distance * math.sin(self._last_front_angle)
+            closest.pose.position.z = 0.06
+            closest.pose.orientation.w = 1.0
+        else:
+            closest.action = Marker.DELETE
+        markers.markers.append(closest)
+
+        self._marker_pub.publish(markers)
 
     def _log_mode(self, mode: str) -> None:
         if mode == self._last_mode:

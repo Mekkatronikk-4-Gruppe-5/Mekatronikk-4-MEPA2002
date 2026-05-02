@@ -8,7 +8,7 @@ teddy_approach:
 
     # Centering controller. dx > 0 means teddy is right of image center.
     angular_kp: 1.2
-    max_angular_speed: 0.3
+    max_angular_speed: 1.0
     center_tolerance: 0.10
 
     # Drive forward only after the teddy is centered unless this is true.

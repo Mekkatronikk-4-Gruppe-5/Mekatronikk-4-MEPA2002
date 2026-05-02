@@ -8,8 +8,6 @@ RUN apt-get update && apt-get install -y python3-venv && rm -rf /var/lib/apt/lis
 RUN python3 -m venv /opt/venv
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-# Let the venv see apt-installed ROS/Python packages, including CPU-only torch.
-ENV PYTHONPATH="/usr/lib/python3/dist-packages"
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --prefer-binary \
       numpy==1.26.4 \
@@ -30,6 +28,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
       polars && \
     pip install --no-cache-dir --no-deps ultralytics-thop && \
     pip install --no-cache-dir --no-deps ultralytics==8.4.12
+# Let the venv see apt-installed ROS/Python packages, including CPU-only torch.
+ENV PYTHONPATH="/usr/lib/python3/dist-packages"
 
 # Basic dev tooling for ROS 2 workspaces.
 # This image is intended for headless SSH use on the Pi, so no GUI tools are included.

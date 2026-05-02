@@ -26,6 +26,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
       scipy \
       psutil \
       polars && \
+    pip install --no-cache-dir --no-deps torch torchvision && \
     pip install --no-cache-dir --no-deps ultralytics-thop && \
     pip install --no-cache-dir --no-deps ultralytics==8.4.12
 # Let the venv see apt-installed ROS/Python packages, including CPU-only torch.
@@ -56,8 +57,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dev \
     python3-pip \
     python3-colcon-common-extensions \
-    python3-torch \
-    python3-torchvision \
     swig \
   && rm -rf /var/lib/apt/lists/*
 

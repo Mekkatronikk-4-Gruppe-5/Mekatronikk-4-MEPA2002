@@ -195,7 +195,7 @@ behavior_server:
     transform_tolerance: 0.2
     simulate_ahead_time: 1.5
     max_rotational_vel: 0.8
-    min_rotational_vel: 0.03
+    min_rotational_vel: 0.2
     rotational_acc_lim: 2.0
 
 velocity_smoother:
@@ -203,8 +203,8 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: false
     feedback: "OPEN_LOOP"
-    max_velocity: [0.5, 0.0, 2.2]
-    min_velocity: [-0.5, 0.0, -2.2]
+    max_velocity: [0.5, 0.0, 1.0]
+    min_velocity: [-0.5, 0.0, -1.0]
     max_accel: [0.12, 0.0, 2.0]
     max_decel: [-0.12, 0.0, -2.0]
     odom_topic: "odom"

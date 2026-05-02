@@ -12,8 +12,15 @@ teddy_approach:
     min_angular_speed: 0.9
     center_tolerance: 0.10
 
+    # Stop when YOLO is centered and LiDAR sees something close straight ahead.
+    scan_topic: /lidar
+    stop_lidar_distance_m: 0.35
+    stop_lidar_front_angle_rad: 0.20
+    stop_lidar_min_points: 3
+    stop_lidar_timeout_s: 0.5
+
     # Drive forward only after the teddy is centered unless this is true.
-    linear_speed: 0.08
+    linear_speed: 0.01
     drive_when_not_centered: false
 
     # Optional Nav2 goal used as a rough teddy search/approach position.

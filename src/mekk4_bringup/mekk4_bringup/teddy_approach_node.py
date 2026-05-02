@@ -10,12 +10,11 @@ from geometry_msgs.msg import PoseStamped, Quaternion, Twist
 from nav2_msgs.action import NavigateToPose
 from rclpy.action import ActionClient
 from rclpy.node import Node
+from sensor_msgs.msg import LaserScan
 from std_msgs.msg import String
 
 
-STATUS_RE = re.compile(
-    r"teddy_count=(?P<count>\d+)(?: dx=(?P<dx>-?\d+(?:\.\d+)?) dy=(?P<dy>-?\d+(?:\.\d+)?))?"
-)
+STATUS_RE = re.compile(r"(?P<key>[A-Za-z_]+)=(?P<value>[^ ]+)")
 
 
 def yaw_to_quaternion(yaw: float) -> Quaternion:
@@ -28,6 +27,10 @@ def yaw_to_quaternion(yaw: float) -> Quaternion:
 
 def clamp(value: float, low: float, high: float) -> float:
     return max(low, min(high, value))
+
+
+def parse_status(text: str) -> dict[str, str]:
+    return {match.group("key"): match.group("value") for match in STATUS_RE.finditer(text)}
 
 
 class TeddyApproachNode(Node):
@@ -44,6 +47,11 @@ class TeddyApproachNode(Node):
         self.declare_parameter("min_angular_speed", 0.0)
         self.declare_parameter("max_angular_speed", 0.8)
         self.declare_parameter("center_tolerance", 0.10)
+        self.declare_parameter("scan_topic", "/lidar")
+        self.declare_parameter("stop_lidar_distance_m", 0.0)
+        self.declare_parameter("stop_lidar_front_angle_rad", 0.20)
+        self.declare_parameter("stop_lidar_min_points", 3)
+        self.declare_parameter("stop_lidar_timeout_s", 0.5)
         self.declare_parameter("drive_when_not_centered", False)
         self.declare_parameter("use_nav_goal", False)
         self.declare_parameter("send_goal_on_start", False)
@@ -66,6 +74,19 @@ class TeddyApproachNode(Node):
             self.get_parameter("max_angular_speed").get_parameter_value().double_value
         )
         self._center_tolerance = self.get_parameter("center_tolerance").get_parameter_value().double_value
+        scan_topic = self.get_parameter("scan_topic").get_parameter_value().string_value
+        self._stop_lidar_distance_m = (
+            self.get_parameter("stop_lidar_distance_m").get_parameter_value().double_value
+        )
+        self._stop_lidar_front_angle_rad = (
+            self.get_parameter("stop_lidar_front_angle_rad").get_parameter_value().double_value
+        )
+        self._stop_lidar_min_points = (
+            self.get_parameter("stop_lidar_min_points").get_parameter_value().integer_value
+        )
+        self._stop_lidar_timeout_s = (
+            self.get_parameter("stop_lidar_timeout_s").get_parameter_value().double_value
+        )
         self._drive_when_not_centered = (
             self.get_parameter("drive_when_not_centered").get_parameter_value().bool_value
         )
@@ -78,14 +99,26 @@ class TeddyApproachNode(Node):
             raise ValueError("min_angular_speed must be zero or greater")
         if self._max_angular_speed < self._min_angular_speed:
             raise ValueError("max_angular_speed must be greater than or equal to min_angular_speed")
+        if self._stop_lidar_distance_m < 0.0:
+            raise ValueError("stop_lidar_distance_m must be zero or greater")
+        if self._stop_lidar_front_angle_rad < 0.0:
+            raise ValueError("stop_lidar_front_angle_rad must be zero or greater")
+        if self._stop_lidar_min_points < 1:
+            raise ValueError("stop_lidar_min_points must be at least 1")
+        if self._stop_lidar_timeout_s < 0.0:
+            raise ValueError("stop_lidar_timeout_s must be zero or greater")
 
         self._cmd_pub = self.create_publisher(Twist, cmd_vel_topic, 10)
         self._status_sub = self.create_subscription(String, status_topic, self._on_status, 10)
+        self._scan_sub = self.create_subscription(LaserScan, scan_topic, self._on_scan, 10)
         self._timer = self.create_timer(publish_period_s, self._on_timer)
         self._nav_client = ActionClient(self, NavigateToPose, "navigate_to_pose")
 
         self._last_seen_at = -1.0
         self._last_dx = 0.0
+        self._last_front_distance = math.inf
+        self._last_front_points = 0
+        self._last_scan_at = -1.0
         self._last_count = 0
         self._nav_goal_sent = False
         self._last_mode = ""
@@ -94,20 +127,37 @@ class TeddyApproachNode(Node):
             self._send_nav_goal()
 
         self.get_logger().info(
-            "teddy approach enabled=%s status=%s cmd=%s nav_goal=%s"
-            % (self._enabled, status_topic, cmd_vel_topic, self._use_nav_goal)
+            "teddy approach enabled=%s status=%s cmd=%s scan=%s nav_goal=%s"
+            % (self._enabled, status_topic, cmd_vel_topic, scan_topic, self._use_nav_goal)
         )
 
     def _on_status(self, msg: String) -> None:
-        match = STATUS_RE.search(msg.data)
-        if match is None:
+        fields = parse_status(msg.data)
+        count_text = fields.get("teddy_count")
+        if count_text is None:
             return
 
-        self._last_count = int(match.group("count"))
-        dx_text = match.group("dx")
+        self._last_count = int(count_text)
+        dx_text = fields.get("dx")
         if self._last_count > 0 and dx_text is not None:
             self._last_dx = float(dx_text)
             self._last_seen_at = time.monotonic()
+
+    def _on_scan(self, msg: LaserScan) -> None:
+        front_ranges = []
+        angle = msg.angle_min
+        for distance in msg.ranges:
+            if (
+                abs(angle) <= self._stop_lidar_front_angle_rad
+                and math.isfinite(distance)
+                and msg.range_min <= distance <= msg.range_max
+            ):
+                front_ranges.append(float(distance))
+            angle += msg.angle_increment
+
+        self._last_front_points = len(front_ranges)
+        self._last_front_distance = min(front_ranges) if front_ranges else math.inf
+        self._last_scan_at = time.monotonic()
 
     def _send_nav_goal(self) -> None:
         if self._nav_goal_sent:
@@ -147,6 +197,21 @@ class TeddyApproachNode(Node):
 
         cmd = Twist()
         centered = abs(self._last_dx) <= self._center_tolerance
+        lidar_fresh = (
+            self._last_scan_at >= 0.0 and (now - self._last_scan_at) <= self._stop_lidar_timeout_s
+        )
+        lidar_close = (
+            centered
+            and self._stop_lidar_distance_m > 0.0
+            and lidar_fresh
+            and self._last_front_points >= self._stop_lidar_min_points
+            and self._last_front_distance <= self._stop_lidar_distance_m
+        )
+        if lidar_close:
+            self._cmd_pub.publish(cmd)
+            self._log_mode("close_enough_lidar")
+            return
+
         if not centered:
             raw_angular = -self._angular_kp * self._last_dx
             angular = math.copysign(

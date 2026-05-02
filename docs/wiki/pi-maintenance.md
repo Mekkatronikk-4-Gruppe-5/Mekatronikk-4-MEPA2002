@@ -58,169 +58,92 @@ men tregt SD-kort, så default build prioriterer lavere disk-I/O og mindre
 cache-vekst over å cache nedlastede pakker. Vanlig Docker layer-cache beholdes
 likevel mellom builds.
 
-## Diskplass: Første Diagnose
+## Docker Diskplass
 
-### `df -h`
+### Først: se hva som tar plass
 
 ```bash
 df -h
-```
-
-Viser hvor fulle filsystemene er. Se spesielt på root-filsystemet `/`.
-
-Bruk når:
-
-- `make build` feiler med “no space left on device”.
-- Pi-en oppfører seg tregt.
-- Docker build stopper uventet.
-
-Tolkning:
-
-- Hvis `/` er over ca. 90 %, bør du rydde før ny Docker-build.
-- Hvis `/boot` er full, er det et annet problem enn Docker/workspace.
-
-### `docker system df`
-
-```bash
 docker system df
+docker system df -v
 ```
 
-Viser hvor mye plass Docker bruker på images, containers, volumes og build cache.
+`df -h` viser ledig plass på `/`. `docker system df` viser Docker-kategorier:
 
-Bruk når:
+| Kategori | Hva det er | Typisk rydding |
+|---|---|---|
+| `Images` | Ferdige Docker images, inkludert gamle/tag-løse images | `docker image prune -f` eller `docker image prune -af` |
+| `Build Cache` | Mellomlag Docker bruker for raskere neste build | `docker builder prune -af` |
+| `Containers` | Stoppede/kjørende containere | `docker container prune -f` |
+| `Local Volumes` | Docker-volumer med data | Sjekk først. Ikke slett blindt. |
 
-- `df -h` viser lite plass.
-- Du mistenker at gamle Docker images eller build cache tar plass.
+Viktig: `docker system prune -af` er bred rydding. Den kan slette ubrukte images
+og build-cache. Ikke bruk den hvis målet er å beholde build-cache.
 
-Tolkning:
+### Behold build-cache, fjern gamle images
 
-- Stor `Build Cache` ryddes med `docker builder prune -af`.
-- Mange gamle `Images` ryddes med `docker system prune -af`, men les advarselen under.
-
-### `du -h --max-depth=1 ~/Mekatronikk-4-MEPA2002`
-
-```bash
-du -h --max-depth=1 ~/Mekatronikk-4-MEPA2002
-```
-
-Viser hvilke mapper i repoet som bruker mest plass.
-
-Vanlige store mapper:
-
-- `build/`
-- `install/`
-- `log/`
-- `.ultralytics/`
-- eventuelle modellmapper under `models/`
-
-Dette endrer ingenting; det er bare inspeksjon.
-
-## Diskplass: Anbefalt Ryddesekvens
-
-Start alltid i repoet:
+Bruk dette når du skal bygge på nytt og vil beholde cache:
 
 ```bash
 cd ~/Mekatronikk-4-MEPA2002
-```
-
-### 1. Stopp prosjektcontainere
-
-```bash
 docker compose down --remove-orphans
+docker container prune -f
+docker image prune -f
+df -h
+docker system df
 ```
 
-Stopper containere fra dette Compose-prosjektet og fjerner orphan-containere som
-ikke lenger finnes i [`compose.yml`](../../compose.yml).
+`docker image prune -f` fjerner bare dangling/tag-løse images, ofte gamle
+`<none>` images etter ny build. Den skal ikke slette build-cache.
 
-Bruk før:
-
-- ny `make build`, hvis Docker-image faktisk må bygges på nytt
-- Docker prune
-- feilsøking av containere som henger
-
-Risiko:
-
-- Lav. Stopper kjørende prosjektcontainer, men sletter ikke image eller kildekode.
-
-### 2. Fjern stoppede containere
+Hvis du vil fjerne alle images som ikke er i bruk av en container, men fortsatt
+beholde build-cache:
 
 ```bash
-docker container prune -f
+docker image prune -af
 ```
 
-Fjerner containere som allerede er stoppet.
+Det kan fjerne `mekk4/ros2-jazzy-dev:local` hvis ingen container bruker imaget.
+Da må `make build` bygge/laste image igjen, men Docker build-cache beholdes.
 
-Bruk når:
+### Slett build-cache
 
-- `docker system df` viser mye container-bruk.
-- Du har kjørt mange `docker compose run --rm`-lignende kommandoer uten `--rm`.
-
-Risiko:
-
-- Lav til moderat. Sletter stoppede containere, men ikke images eller volumes.
-- Data som kun lå i en stoppet container forsvinner. Dette repoet mapper workspace
-  inn som volume, så vanlig kildekode påvirkes ikke.
-
-### 3. Fjern Docker build cache
+Bruk bare når cache tar for mye plass, eller når du vil tvinge en fresh build:
 
 ```bash
 docker builder prune -af
 ```
 
-Fjerner cache Docker bruker for å bygge images raskere.
+Konsekvens: neste `make build` blir tregere fordi Docker må bygge lag på nytt.
 
-Bruk når:
+### Slett både images og build-cache
 
-- `docker system df` viser stor `Build Cache`.
-- `make build` feiler på diskplass.
-
-Konsekvens:
-
-- Neste `make build` blir tregere fordi Docker må bygge lag på nytt.
-
-Risiko:
-
-- Lav. Sletter cache, ikke kildekode.
-
-### 4. Fjern ubrukte Docker images og nettverk
+Bruk bare når du faktisk vil rydde hardt:
 
 ```bash
 docker system prune -af
+docker builder prune -af
 ```
 
-Fjerner ubrukte Docker images, stoppede containere og ubrukte nettverk.
+`docker system prune -af` sletter ubrukte images, stoppede containere, ubrukte
+nettverk og kan slette build-cache. `docker builder prune -af` sletter
+build-cache eksplisitt.
 
-Bruk når:
-
-- build cache-prune ikke frigjør nok.
-- gamle Docker images tar mye plass.
-
-Konsekvens:
-
-- Images som ikke er i bruk må lastes/buildes på nytt senere.
-- Kan fjerne andre ubrukte Docker images på Pi-en, ikke bare dette prosjektet.
-
-Risiko:
-
-- Moderat. Ikke destruktivt for repoet, men kan gjøre andre Docker-prosjekter på
-  Pi-en tregere å starte neste gang fordi images må hentes/buildes på nytt.
-
-### 5. Rydd apt cache
+### Rydd apt cache på Pi-host
 
 ```bash
 sudo apt clean
 ```
 
-Fjerner nedlastede `.deb`-pakker fra apt cache.
+Fjerner nedlastede `.deb`-pakker fra Pi-host. Installerte pakker fjernes ikke.
 
-Bruk når:
+### Sjekk repo-mapper
 
-- Pi-en har lite diskplass.
-- Du nylig har installert mange pakker.
+```bash
+du -h --max-depth=1 ~/Mekatronikk-4-MEPA2002 | sort -h
+```
 
-Risiko:
-
-- Lav. Pakker som allerede er installert blir ikke avinstallert.
+Vanlige store repo-mapper er `build/`, `install/`, `log/` og `.ultralytics/`.
 
 ## Workspace-Rydding
 
@@ -275,30 +198,31 @@ Risiko:
 
 - Moderat. Ikke kildekode, men du må bygge workspace på nytt.
 
-## Trygg Ryddeoppskrift
+## Ryddeoppskrifter
 
-Kjør dette først ved diskplassproblemer:
+### Før ny Docker-build, behold cache
 
 ```bash
 cd ~/Mekatronikk-4-MEPA2002
 df -h
 docker system df
-du -h --max-depth=1 ~/Mekatronikk-4-MEPA2002
 docker compose down --remove-orphans
 docker container prune -f
-docker builder prune -af
-sudo apt clean
-rm -rf ~/Mekatronikk-4-MEPA2002/build ~/Mekatronikk-4-MEPA2002/log
+docker image prune -f
 df -h
 docker system df
 ```
 
-Hvis det fortsatt er for lite plass:
+### Lite diskplass, cache kan slettes
 
 ```bash
+cd ~/Mekatronikk-4-MEPA2002
+docker compose down --remove-orphans
 docker system prune -af
-rm -rf ~/Mekatronikk-4-MEPA2002/install
-make ws
+docker builder prune -af
+sudo apt clean
+df -h
+docker system df
 ```
 
 ## CPU Governor og Ytelse

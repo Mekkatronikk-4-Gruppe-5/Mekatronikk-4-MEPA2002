@@ -41,6 +41,7 @@ class TeddyApproachNode(Node):
         self.declare_parameter("lost_timeout_s", 0.5)
         self.declare_parameter("linear_speed", 0.08)
         self.declare_parameter("angular_kp", 1.2)
+        self.declare_parameter("min_angular_speed", 0.0)
         self.declare_parameter("max_angular_speed", 0.8)
         self.declare_parameter("center_tolerance", 0.10)
         self.declare_parameter("drive_when_not_centered", False)
@@ -58,6 +59,9 @@ class TeddyApproachNode(Node):
         self._lost_timeout_s = self.get_parameter("lost_timeout_s").get_parameter_value().double_value
         self._linear_speed = self.get_parameter("linear_speed").get_parameter_value().double_value
         self._angular_kp = self.get_parameter("angular_kp").get_parameter_value().double_value
+        self._min_angular_speed = (
+            self.get_parameter("min_angular_speed").get_parameter_value().double_value
+        )
         self._max_angular_speed = (
             self.get_parameter("max_angular_speed").get_parameter_value().double_value
         )
@@ -69,6 +73,11 @@ class TeddyApproachNode(Node):
         self._send_goal_on_start = (
             self.get_parameter("send_goal_on_start").get_parameter_value().bool_value
         )
+
+        if self._min_angular_speed < 0.0:
+            raise ValueError("min_angular_speed must be zero or greater")
+        if self._max_angular_speed < self._min_angular_speed:
+            raise ValueError("max_angular_speed must be greater than or equal to min_angular_speed")
 
         self._cmd_pub = self.create_publisher(Twist, cmd_vel_topic, 10)
         self._status_sub = self.create_subscription(String, status_topic, self._on_status, 10)
@@ -138,7 +147,13 @@ class TeddyApproachNode(Node):
 
         cmd = Twist()
         centered = abs(self._last_dx) <= self._center_tolerance
-        cmd.angular.z = clamp(-self._angular_kp * self._last_dx, -self._max_angular_speed, self._max_angular_speed)
+        if not centered:
+            raw_angular = -self._angular_kp * self._last_dx
+            angular = math.copysign(
+                max(abs(raw_angular), self._min_angular_speed),
+                raw_angular,
+            )
+            cmd.angular.z = clamp(angular, -self._max_angular_speed, self._max_angular_speed)
         if centered or self._drive_when_not_centered:
             cmd.linear.x = self._linear_speed
         self._cmd_pub.publish(cmd)

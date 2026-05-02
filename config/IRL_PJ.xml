@@ -12,7 +12,7 @@
        <curve name="/cmd_vel_nav/angular/z" color="#1ac938"/>
        <curve name="/cmd_vel_nav_auto/angular/z" color="#17becf"/>
        <curve name="/cmd_vel_nav_flipped/angular/z" color="#d62728"/>
-       <curve name="/cmd_vel_smoothed/angular/z" color="#bcbd22"/>
+       <curve name="/cmd_vel_collision/angular/z" color="#bcbd22"/>
       </plot>
      </DockArea>
      <DockArea name="Command Linear X">
@@ -23,7 +23,7 @@
        <curve name="/cmd_vel_nav/linear/x" color="#ff7f0e"/>
        <curve name="/cmd_vel_nav_auto/linear/x" color="#2ca02c"/>
        <curve name="/cmd_vel_nav_flipped/linear/x" color="#d62728"/>
-       <curve name="/cmd_vel_smoothed/linear/x" color="#bcbd22"/>
+       <curve name="/cmd_vel_collision/linear/x" color="#bcbd22"/>
       </plot>
      </DockArea>
     </DockSplitter>
@@ -123,7 +123,7 @@
    <max_array_size value="200"/>
    <boolean_strings_to_number value="true"/>
    <remove_suffix_from_strings value="true"/>
-   <selected_topics value="/cmd_vel;/cmd_vel_manual;/cmd_vel_mux_active;/cmd_vel_nav;/cmd_vel_nav_auto;/cmd_vel_nav_flipped;/cmd_vel_smoothed;/goal_pose;/imu/data;/odom;/wheel/odom"/>
+   <selected_topics value="/cmd_vel;/cmd_vel_collision;/cmd_vel_manual;/cmd_vel_mux_active;/cmd_vel_nav;/cmd_vel_nav_auto;/cmd_vel_nav_flipped;/goal_pose;/imu/data;/odom;/wheel/odom"/>
   </plugin>
   <plugin ID="UDP Server"/>
   <plugin ID="WebSocket Server"/>

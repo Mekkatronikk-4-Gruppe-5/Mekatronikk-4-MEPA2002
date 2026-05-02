@@ -217,7 +217,7 @@ collision_monitor:
     base_frame_id: "base_link"
     odom_frame_id: "odom"
     cmd_vel_in_topic: "cmd_vel_nav_flipped"
-    cmd_vel_out_topic: "cmd_vel"
+    cmd_vel_out_topic: "cmd_vel_collision"
     state_topic: "collision_monitor_state"
     transform_tolerance: 0.1
     source_timeout: 0.5

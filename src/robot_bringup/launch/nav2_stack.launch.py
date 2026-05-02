@@ -99,24 +99,13 @@ def generate_launch_description():
             ],
         ),
         Node(
-            package='nav2_velocity_smoother',
-            executable='velocity_smoother',
-            name='velocity_smoother',
-            output='screen',
-            respawn=use_respawn,
-            respawn_delay=2.0,
-            parameters=[params_file],
-            arguments=['--ros-args', '--log-level', log_level],
-            remappings=remappings + [('cmd_vel', 'cmd_vel_nav')],
-        ),
-        Node(
             package='mekk4_bringup',
             executable='nav_cmd_vel_flip_node',
             name='nav_cmd_vel_flip',
             output='screen',
             parameters=[
                 {
-                    'input_topic': 'cmd_vel_smoothed',
+                    'input_topic': 'cmd_vel_nav',
                     'output_topic': 'cmd_vel_nav_flipped',
                     'flip_angular_z': False,
                 }
@@ -132,6 +121,18 @@ def generate_launch_description():
             parameters=[params_file],
             arguments=['--ros-args', '--log-level', log_level],
             remappings=remappings,
+        ),
+        Node(
+            package='nav2_velocity_smoother',
+            executable='velocity_smoother',
+            name='velocity_smoother',
+            output='screen',
+            respawn=use_respawn,
+            respawn_delay=2.0,
+            parameters=[params_file],
+            arguments=['--ros-args', '--log-level', log_level],
+            remappings=remappings
+            + [('cmd_vel', 'cmd_vel_collision'), ('cmd_vel_smoothed', 'cmd_vel')],
         ),
         Node(
             package='nav2_lifecycle_manager',

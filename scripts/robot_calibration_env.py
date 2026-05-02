@@ -52,6 +52,10 @@ def main():
                 "RIGHT_CMD_SIGN": pick("RIGHT_CMD_SIGN", mega.get("right_cmd_sign", 1)),
                 "ANGULAR_CMD_SIGN": pick("ANGULAR_CMD_SIGN", mega.get("angular_cmd_sign", 1)),
                 "MIN_NONZERO_PWM": pick("MIN_NONZERO_PWM", mega.get("min_nonzero_pwm", 55)),
+                "PURE_ROTATION_LINEAR_DEADBAND_MPS": pick(
+                    "PURE_ROTATION_LINEAR_DEADBAND_MPS",
+                    mega.get("pure_rotation_linear_deadband_mps", 0.03),
+                ),
                 "LEFT_CMD_SCALE": pick("LEFT_CMD_SCALE", mega.get("left_cmd_scale", 1.0)),
                 "RIGHT_CMD_SCALE": pick("RIGHT_CMD_SCALE", mega.get("right_cmd_scale", 1.0)),
                 "LEFT_TICK_SIGN": pick("LEFT_TICK_SIGN", mega.get("left_tick_sign", 1)),

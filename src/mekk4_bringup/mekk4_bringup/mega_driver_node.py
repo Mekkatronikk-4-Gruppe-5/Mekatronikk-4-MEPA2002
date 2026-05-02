@@ -37,6 +37,7 @@ class MegaDriverNode(Node):
         self.declare_parameter("max_track_speed_mps", 0.45)
         self.declare_parameter("max_pwm", 255)
         self.declare_parameter("min_nonzero_pwm", 55)
+        self.declare_parameter("pure_rotation_linear_deadband_mps", 0.03)
         self.declare_parameter("left_cmd_sign", 1)
         self.declare_parameter("right_cmd_sign", 1)
         self.declare_parameter("angular_cmd_sign", 1)
@@ -76,6 +77,11 @@ class MegaDriverNode(Node):
         self._min_nonzero_pwm = (
             self.get_parameter("min_nonzero_pwm").get_parameter_value().integer_value
         )
+        self._pure_rotation_linear_deadband_mps = (
+            self.get_parameter("pure_rotation_linear_deadband_mps")
+            .get_parameter_value()
+            .double_value
+        )
         self._left_cmd_sign = self.get_parameter("left_cmd_sign").get_parameter_value().integer_value
         self._right_cmd_sign = self.get_parameter("right_cmd_sign").get_parameter_value().integer_value
         self._angular_cmd_sign = (
@@ -114,6 +120,8 @@ class MegaDriverNode(Node):
             raise ValueError("left_cmd_sign, right_cmd_sign, and angular_cmd_sign must be -1 or 1.")
         if self._track_width_eff_m <= 0.0:
             raise ValueError("track_width_eff_m must be greater than zero.")
+        if self._pure_rotation_linear_deadband_mps < 0.0:
+            raise ValueError("pure_rotation_linear_deadband_mps must be zero or greater.")
         if self._send_period_s <= 0.0 or self._odom_poll_period_s <= 0.0:
             raise ValueError("Timer periods must be greater than zero.")
 
@@ -286,10 +294,17 @@ class MegaDriverNode(Node):
             return "STOP"
 
         half_width = self._track_width_eff_m / 2.0
-        angular_sign = self._angular_cmd_sign if abs(self._desired_linear) < 1e-6 else 1
+        linear = self._desired_linear
+        if (
+            abs(linear) <= self._pure_rotation_linear_deadband_mps
+            and abs(self._desired_angular) > 1e-6
+        ):
+            linear = 0.0
+
+        angular_sign = self._angular_cmd_sign if abs(linear) < 1e-6 else 1
         angular = self._desired_angular * angular_sign
-        left_speed = self._desired_linear - (angular * half_width)
-        right_speed = self._desired_linear + (angular * half_width)
+        left_speed = linear - (angular * half_width)
+        right_speed = linear + (angular * half_width)
         left_speed *= self._left_cmd_scale
         right_speed *= self._right_cmd_scale
 

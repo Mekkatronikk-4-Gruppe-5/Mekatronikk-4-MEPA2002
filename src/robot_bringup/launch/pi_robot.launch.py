@@ -53,6 +53,7 @@ def generate_launch_description():
     right_cmd_sign = LaunchConfiguration('right_cmd_sign')
     angular_cmd_sign = LaunchConfiguration('angular_cmd_sign')
     min_nonzero_pwm = LaunchConfiguration('min_nonzero_pwm')
+    pure_rotation_linear_deadband_mps = LaunchConfiguration('pure_rotation_linear_deadband_mps')
     left_cmd_scale = LaunchConfiguration('left_cmd_scale')
     right_cmd_scale = LaunchConfiguration('right_cmd_scale')
     left_tick_sign = LaunchConfiguration('left_tick_sign')
@@ -168,6 +169,9 @@ def generate_launch_description():
                 'right_cmd_sign': ParameterValue(right_cmd_sign, value_type=int),
                 'angular_cmd_sign': ParameterValue(angular_cmd_sign, value_type=int),
                 'min_nonzero_pwm': ParameterValue(min_nonzero_pwm, value_type=int),
+                'pure_rotation_linear_deadband_mps': ParameterValue(
+                    pure_rotation_linear_deadband_mps, value_type=float
+                ),
                 'left_cmd_scale': ParameterValue(left_cmd_scale, value_type=float),
                 'right_cmd_scale': ParameterValue(right_cmd_scale, value_type=float),
                 'left_tick_sign': ParameterValue(left_tick_sign, value_type=int),
@@ -225,6 +229,7 @@ def generate_launch_description():
         DeclareLaunchArgument('right_cmd_sign', default_value='1'),
         DeclareLaunchArgument('angular_cmd_sign', default_value='1'),
         DeclareLaunchArgument('min_nonzero_pwm', default_value='55'),
+        DeclareLaunchArgument('pure_rotation_linear_deadband_mps', default_value='0.03'),
         DeclareLaunchArgument('left_cmd_scale', default_value='1.0'),
         DeclareLaunchArgument('right_cmd_scale', default_value='1.0'),
         DeclareLaunchArgument('left_tick_sign', default_value='1'),

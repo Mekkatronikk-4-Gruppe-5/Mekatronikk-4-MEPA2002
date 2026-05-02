@@ -4,11 +4,12 @@ FROM ros:jazzy-ros-base
 ENV DEBIAN_FRONTEND=noninteractive
 
 # --- Python venv for pip packages (PEP 668 safe) ---
-# Install venv first so pip layer can be cached independently from apt changes
 RUN apt-get update && apt-get install -y python3-venv && rm -rf /var/lib/apt/lists/*
 RUN python3 -m venv /opt/venv
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
+# Let the venv see apt-installed ROS/Python packages, including CPU-only torch.
+ENV PYTHONPATH="/usr/lib/python3/dist-packages"
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --prefer-binary \
       numpy==1.26.4 \
@@ -55,6 +56,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dev \
     python3-pip \
     python3-colcon-common-extensions \
+    python3-torch \
+    python3-torchvision \
     swig \
   && rm -rf /var/lib/apt/lists/*
 

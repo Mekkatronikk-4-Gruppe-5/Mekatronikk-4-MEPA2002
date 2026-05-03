@@ -29,6 +29,7 @@ class TeddyDetector(Node):
         self.imgsz = int(os.environ.get("MEKK4_IMGSZ", "640"))
         self.show_gui = os.environ.get("MEKK4_SHOW", "0").strip() == "1"
         self.center_tol = float(os.environ.get("MEKK4_CENTER_TOL", "0.1"))
+        self.status_log_period_sec = float(os.environ.get("MEKK4_STATUS_LOG_PERIOD_SEC", "10.0"))
         self.stream_debug_video = os.environ.get("MEKK4_DEBUG_STREAM", "0").strip() == "1"
         self.debug_stream_host = os.environ.get("MEKK4_DEBUG_STREAM_HOST", "").strip()
         self.debug_stream_port = int(os.environ.get("MEKK4_DEBUG_STREAM_PORT", "5602"))
@@ -38,7 +39,6 @@ class TeddyDetector(Node):
 
         self.model = YOLO(self.model_path, task="detect")
         self.pub = self.create_publisher(String, "/teddy_detector/status", 10)
-        self.last = None
         self.proc = None
         self.debug_stream_proc = None
         self.frame_bytes = self.width * self.height * 3
@@ -48,6 +48,7 @@ class TeddyDetector(Node):
         self._latest_seq = 0
         self._last_warn = 0.0
         self._last_debug_stream = 0.0
+        self._last_status_log = 0.0
         self._last_infer_end = None
         self._infer_fps = 0.0
         self._stop = False
@@ -221,10 +222,9 @@ class TeddyDetector(Node):
             self.pub.publish(msg)
         except _rclpy.RCLError:
             return
-        if log_data != self.last:
+        if self._should_log_status(log_data):
             if not self._stop and rclpy.ok():
                 self.get_logger().info(f"{log_data} fps={fps_text}")
-            self.last = log_data
 
         annotated = None
         if self.show_gui or self.stream_debug_video:
@@ -277,6 +277,16 @@ class TeddyDetector(Node):
         else:
             self._infer_fps = (0.8 * self._infer_fps) + (0.2 * inst_fps)
         return f"{self._infer_fps:.1f}"
+
+    def _should_log_status(self, log_data):
+        if self.status_log_period_sec <= 0.0:
+            return False
+
+        now = time.monotonic()
+        if now - self._last_status_log >= self.status_log_period_sec:
+            self._last_status_log = now
+            return True
+        return False
 
     @staticmethod
     def _draw_overlay_label(image, text, origin):

@@ -91,6 +91,9 @@ teddy_detector:
   # Allowed center error before reporting centered=true.
   center_tol: 0.10
 
+  # Seconds between detector status log lines. Set 0 to disable these logs.
+  status_log_period_sec: 10.0
+
   # Debug GUI on the Pi host. Keep false for headless SSH use.
   show_gui: false
 

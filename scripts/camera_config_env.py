@@ -94,6 +94,7 @@ def main():
         "MEKK4_CONF": pick("MEKK4_CONF", detector.get("conf", 0.25)),
         "MEKK4_IMGSZ": pick("MEKK4_IMGSZ", detector.get("imgsz", 640)),
         "MEKK4_CENTER_TOL": pick("MEKK4_CENTER_TOL", detector.get("center_tol", 0.10)),
+        "MEKK4_STATUS_LOG_PERIOD_SEC": pick("MEKK4_STATUS_LOG_PERIOD_SEC", detector.get("status_log_period_sec", 10.0)),
         "MEKK4_SHOW": pick("MEKK4_SHOW", to_shell(detector.get("show_gui", False))),
         "MEKK4_DEBUG_STREAM": pick("MEKK4_DEBUG_STREAM", to_shell(detector.get("stream_debug_video", True))),
         "MEKK4_DEBUG_STREAM_PORT": pick("MEKK4_DEBUG_STREAM_PORT", detector.get("debug_stream_port", 5602)),

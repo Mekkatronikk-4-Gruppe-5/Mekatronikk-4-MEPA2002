@@ -25,6 +25,7 @@ def generate_launch_description():
     use_teddy = LaunchConfiguration('use_teddy')
     use_teddy_approach = LaunchConfiguration('use_teddy_approach')
     use_overhead_apriltag = LaunchConfiguration('use_overhead_apriltag')
+    gui_config = LaunchConfiguration('gui_config')
     params_file = LaunchConfiguration('params_file')
     ekf_params_file = LaunchConfiguration('ekf_params_file')
     apriltag_params_file = LaunchConfiguration('apriltag_params_file')
@@ -39,6 +40,11 @@ def generate_launch_description():
         get_package_share_directory('robot_gz'),
         'worlds',
         'tracked_robot_world.sdf'
+    )
+    default_gui_config = os.path.join(
+        get_package_share_directory('robot_gz'),
+        'config',
+        'GazeboGUI.config'
     )
     gz_models_path = os.path.join(
         get_package_share_directory('robot_gz'),
@@ -66,7 +72,21 @@ def generate_launch_description():
     gz_gui = ExecuteProcess(
         cmd=['gz', 'sim', '-v', gz_verbosity, world],
         output='screen',
-        condition=UnlessCondition(headless),
+        condition=IfCondition(
+            PythonExpression([
+                "'", headless, "' != 'true' and '", gui_config, "' == ''"
+            ])
+        ),
+    )
+
+    gz_gui_with_config = ExecuteProcess(
+        cmd=['gz', 'sim', '--gui-config', gui_config, '-v', gz_verbosity, world],
+        output='screen',
+        condition=IfCondition(
+            PythonExpression([
+                "'", headless, "' != 'true' and '", gui_config, "' != ''"
+            ])
+        ),
     )
 
     gz_headless = ExecuteProcess(
@@ -383,6 +403,11 @@ def generate_launch_description():
             description='Gazebo verbosity level (0-4).'
         ),
         DeclareLaunchArgument(
+            'gui_config',
+            default_value=default_gui_config,
+            description='Optional path to Gazebo GUI config file. Empty uses GUI from world/default.'
+        ),
+        DeclareLaunchArgument(
             'use_nav2',
             default_value='true',
             description='Run Nav2 from the shared pi_robot core stack.'
@@ -469,6 +494,7 @@ def generate_launch_description():
         SetEnvironmentVariable('MEKK4_DEBUG_STREAM_BITRATE', '1400000'),
         SetEnvironmentVariable('MEKK4_DEBUG_STREAM_ENCODER', 'openh264'),
         gz_gui,
+        gz_gui_with_config,
         gz_headless,
         start_sim_io,
         start_core_stack,

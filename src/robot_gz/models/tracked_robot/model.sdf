@@ -39,6 +39,11 @@
             <uri>meshes/Midsection.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
       <visual name='chassis_fixed_joint_lump__MR_visual_visual_1'>
         <pose>-0.060000000000000241 0.073500000000000038 0.038249999925494008 -6.2176217361230648e-31 2.2401343147145719e-14 -5.551115123126256e-17</pose>
@@ -48,6 +53,11 @@
             <uri>meshes/MR.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
       <visual name='chassis_fixed_joint_lump__ML_visual_visual_2'>
         <pose>-0.060000000000000241 0.1095 0.038249999925494022 3.1415926535897931 2.2401343147145719e-14 5.5511151231254431e-17</pose>
@@ -57,6 +67,11 @@
             <uri>meshes/ML.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
       <visual name='chassis_fixed_joint_lump__Stepper-1_visual_visual_3'>
         <pose>0.078643216205906238 0.091500000000000026 -0.008740318536083716 -2.4492935982947059e-16 -2.775557561562891e-17 3.3990776836172283e-33</pose>
@@ -66,6 +81,11 @@
             <uri>meshes/Stepper-1.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
       <visual name='chassis_fixed_joint_lump__Camera_visual_visual_4'>
         <pose>0.21899999999999989 0.091500000000000026 0.044999999999999853 2.2204460492503131e-16 -2.2204460492503131e-16 -2.4651903288156619e-32</pose>
@@ -75,6 +95,11 @@
             <uri>meshes/Camera.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
       <visual name='chassis_fixed_joint_lump__IMU_visual_visual_5'>
         <pose>-0.002250000000000002 4.4331385784524002e-11 -0.001000000000000334 0 0 0</pose>
@@ -84,6 +109,11 @@
             <uri>meshes/IMU.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
       <visual name='chassis_fixed_joint_lump__Lidar_visual_visual_6'>
         <pose>-0.002199999999999952 1.52655665885959e-16 -3.7470027081099028e-16 0 0 0</pose>
@@ -93,6 +123,11 @@
             <uri>meshes/Lidar.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
       <visual name='chassis_fixed_joint_lump__Unyaktig-batteri-mockup-v1_visual_visual_7'>
         <pose>-0.14549999999999941 0.094500000000000389 0.04824999992549215 -1.712031933413185e-14 1.5707963267948966 0</pose>
@@ -102,6 +137,11 @@
             <uri>meshes/Unyaktig-batteri-mockup-v1.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
       <visual name='overhead_apriltag_20_visual'>
         <pose>0.06325 0.0915 0.240 0 0 0</pose>
@@ -138,6 +178,11 @@
           <image>
             <width>640</width>
             <height>480</height>
+          <material>
+            <ambient>0.35 0.35 0.37 1</ambient>
+            <diffuse>0.58 0.58 0.60 1</diffuse>
+            <specular>0.08 0.08 0.08 1</specular>
+          </material>
             <format>R8G8B8</format>
           </image>
           <clip>
@@ -147,6 +192,11 @@
         </camera>
       </sensor>
       <sensor name='imu' type='imu'>
+          <material>
+            <ambient>0.35 0.35 0.37 1</ambient>
+            <diffuse>0.58 0.58 0.60 1</diffuse>
+            <specular>0.08 0.08 0.08 1</specular>
+          </material>
         <pose relative_to='imu_link'>0 0 0 0 0 0</pose>
         <always_on>true</always_on>
         <update_rate>100</update_rate>
@@ -156,6 +206,11 @@
       <sensor name='lidar' type='gpu_lidar'>
         <pose relative_to='lidar_link'>0 0 0 0 0 0</pose>
         <always_on>true</always_on>
+          <material>
+            <ambient>0.35 0.35 0.37 1</ambient>
+            <diffuse>0.58 0.58 0.60 1</diffuse>
+            <specular>0.08 0.08 0.08 1</specular>
+          </material>
         <update_rate>10</update_rate>
         <visualize>false</visualize>
         <topic>/lidar</topic>
@@ -165,6 +220,11 @@
             <horizontal>
               <samples>360</samples>
               <resolution>1</resolution>
+          <material>
+            <ambient>0.35 0.35 0.37 1</ambient>
+            <diffuse>0.58 0.58 0.60 1</diffuse>
+            <specular>0.08 0.08 0.08 1</specular>
+          </material>
               <min_angle>-3.14159</min_angle>
               <max_angle>3.14159</max_angle>
             </horizontal>
@@ -174,6 +234,11 @@
               <min_angle>0</min_angle>
               <max_angle>0</max_angle>
             </vertical>
+          <material>
+            <ambient>0.35 0.35 0.37 1</ambient>
+            <diffuse>0.58 0.58 0.60 1</diffuse>
+            <specular>0.08 0.08 0.08 1</specular>
+          </material>
           </scan>
           <range>
             <min>0.08</min>
@@ -183,6 +248,11 @@
           <noise>
             <type>gaussian</type>
             <mean>0</mean>
+          <material>
+            <ambient>0.35 0.35 0.37 1</ambient>
+            <diffuse>0.58 0.58 0.60 1</diffuse>
+            <specular>0.08 0.08 0.08 1</specular>
+          </material>
             <stddev>0.01</stddev>
           </noise>
         </lidar>
@@ -192,6 +262,11 @@
       <pose relative_to='chassis'>0.22 0.015800000000000002 0.044999999999999998 -1.5707963267948959 0 0</pose>
       <parent>chassis</parent>
       <child>WheelRT</child>
+          <material>
+            <ambient>0.35 0.35 0.37 1</ambient>
+            <diffuse>0.58 0.58 0.60 1</diffuse>
+            <specular>0.08 0.08 0.08 1</specular>
+          </material>
       <axis>
         <xyz>0 0 1</xyz>
         <limit>
@@ -226,6 +301,11 @@
             <uri>meshes/WheelRT.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
     </link>
     <joint name='Midsection_Revolute-56' type='fixed'>
@@ -255,6 +335,11 @@
             <uri>meshes/SLOTRBI.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
     </link>
     <joint name='SLOTRBI_Revolute-58' type='revolute'>
@@ -295,6 +380,11 @@
             <uri>meshes/WheelRB.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
     </link>
     <joint name='Midsection_Revolute-57' type='fixed'>
@@ -324,6 +414,11 @@
             <uri>meshes/SLOTRFI.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
     </link>
     <joint name='SLOTRFI_Revolute-59' type='revolute'>
@@ -364,6 +459,11 @@
             <uri>meshes/WheelRF.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
     </link>
     <joint name='Midsection_Revolute-61' type='revolute'>
@@ -404,6 +504,11 @@
             <uri>meshes/WheelLT.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
     </link>
     <joint name='Midsection_Revolute-62' type='fixed'>
@@ -433,6 +538,11 @@
             <uri>meshes/SLOTLFI.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
     </link>
     <joint name='SLOTLFI_Revolute-64' type='revolute'>
@@ -473,6 +583,11 @@
             <uri>meshes/WheelLF.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
     </link>
     <joint name='Midsection_Revolute-63' type='fixed'>
@@ -502,6 +617,11 @@
             <uri>meshes/SLOTLBI.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
     </link>
     <joint name='SLOTLBI_Revolute-65' type='revolute'>
@@ -542,6 +662,11 @@
             <uri>meshes/WheelLB.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
     </link>
     <joint name='left_wheel_joint' type='revolute'>
@@ -582,6 +707,11 @@
             <uri>meshes/Drive-L.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
     </link>
     <joint name='right_wheel_joint' type='revolute'>
@@ -622,6 +752,11 @@
             <uri>meshes/Drive-R.stl</uri>
           </mesh>
         </geometry>
+        <material>
+          <ambient>0.35 0.35 0.37 1</ambient>
+          <diffuse>0.58 0.58 0.60 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
       </visual>
     </link>
     <link name='left_track'>

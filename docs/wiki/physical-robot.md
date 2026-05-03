@@ -57,6 +57,9 @@ WITH_EKF=0 make pi-bringup
 # Bare bringup uten teddy
 WITH_TEDDY=0 make pi-bringup
 
+# Kjør teddy-deteksjon med automatisk teddy-approach
+WITH_TEDDY_APPROACH=1 make pi-bringup
+
 # Overstyr PC-IP
 PC_HOST=192.168.10.42 make pi-bringup
 

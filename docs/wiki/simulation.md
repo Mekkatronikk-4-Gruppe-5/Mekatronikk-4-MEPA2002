@@ -51,7 +51,8 @@ Den starter:
 - Separat bridge for `/wheel/odom`.
 - `tracked_cmd_vel_adapter`.
 - Delt `pi_robot.launch.py` core stack med `use_sim_time:=true`, `use_nav2:=true` og `use_ekf:=true` som default.
-- Sim-kamera via UDP til `teddy_detector`, og `teddy_approach_node` som publiserer `/cmd_vel_teddy`.
+- Rå sim-kamera på `/sim_camera_raw`, via UDP til `teddy_detector`, og annotert YOLO-video tilbake på `/camera`.
+- `teddy_approach_node` som publiserer `/cmd_vel_teddy`.
 - RViz.
 - Keyboard teleop hvis ikke headless.
 
@@ -64,7 +65,8 @@ Den starter:
 | `/lidar` | `sensor_msgs/msg/LaserScan` |
 | `/lidar/points` | `sensor_msgs/msg/PointCloud2` |
 | `/imu/data` | `sensor_msgs/msg/Imu` |
-| `/camera` | `sensor_msgs/msg/Image` |
+| `/sim_camera_raw` | `sensor_msgs/msg/Image`, rå Gazebo-kamera |
+| `/camera` | `sensor_msgs/msg/Image`, annotert YOLO-video |
 | `/wheel/odom` | `nav_msgs/msg/Odometry` |
 
 ## Sim Sensors
@@ -73,7 +75,7 @@ Fra [`model.sdf`](../../src/robot_gz/models/tracked_robot/model.sdf):
 
 | Sensor | Topic | Frame | Data |
 |---|---|---|---|
-| `camera` | `/camera` | `camera_link` | 640x480, 15 Hz |
+| `camera` | `/sim_camera_raw` | `camera_link` | 640x480, 15 Hz |
 | `imu` | `/imu/data` | `imu_link` | 100 Hz |
 | `lidar` | `/lidar` | `base_laser` | 360 samples, 10 Hz, 0.08-10.0 m |
 

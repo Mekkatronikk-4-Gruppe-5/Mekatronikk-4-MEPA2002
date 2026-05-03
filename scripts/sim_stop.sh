@@ -21,6 +21,8 @@ patterns=(
   "lifecycle_manager_navigation"
   "tracked_cmd_vel_adapter"
   "sim_camera_udp_stream"
+  "sim_annotated_camera_bridge"
+  "udp_camera_bridge"
   "teddy_detector"
   "teddy_approach_node"
   "cmd_vel_mux_node"

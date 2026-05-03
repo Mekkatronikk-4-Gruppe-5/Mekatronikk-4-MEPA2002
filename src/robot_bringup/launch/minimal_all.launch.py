@@ -86,6 +86,8 @@ def generate_launch_description():
             '/imu/data@sensor_msgs/msg/Imu[gz.msgs.IMU',
             '/camera@sensor_msgs/msg/Image[gz.msgs.Image',
             '/overhead_camera@sensor_msgs/msg/Image[gz.msgs.Image',
+            '--ros-args',
+            '-r', '/camera:=/sim_camera_raw',
         ],
         output='screen'
     )
@@ -283,11 +285,33 @@ def generate_launch_description():
         parameters=[
             {'use_sim_time': True},
             {
-                'image_topic': '/camera',
+                'image_topic': '/sim_camera_raw',
                 'host': '127.0.0.1',
                 'port': 5600,
                 'fps': 15,
                 'bitrate_kbps': 1400,
+            },
+        ],
+    )
+    annotated_camera_bridge = Node(
+        package='mekk4_perception',
+        executable='udp_camera_bridge',
+        name='sim_annotated_camera_bridge',
+        output='screen',
+        condition=IfCondition(use_teddy),
+        parameters=[
+            {'use_sim_time': True},
+            {
+                'gst_source': (
+                    'udpsrc port=5602 '
+                    'caps=application/x-rtp,media=video,encoding-name=H264,payload=96,clock-rate=90000 ! '
+                    'rtpjitterbuffer latency=20 drop-on-latency=true ! rtph264depay ! h264parse ! '
+                    'avdec_h264 ! videoconvert ! appsink drop=true max-buffers=1 sync=false'
+                ),
+                'width': 640,
+                'height': 480,
+                'topic_name': '/camera',
+                'frame_id': 'camera_link',
             },
         ],
     )
@@ -308,6 +332,7 @@ def generate_launch_description():
             overhead_apriltag_detector,
             overhead_apriltag_odom,
             sim_camera_udp_stream,
+            annotated_camera_bridge,
             keyboard_teleop,
         ]
     )
@@ -437,7 +462,11 @@ def generate_launch_description():
         SetEnvironmentVariable('MEKK4_CONF', '0.3'),
         SetEnvironmentVariable('MEKK4_IMGSZ', '640'),
         SetEnvironmentVariable('MEKK4_CENTER_TOL', '0.10'),
-        SetEnvironmentVariable('MEKK4_DEBUG_STREAM', '0'),
+        SetEnvironmentVariable('MEKK4_DEBUG_STREAM', '1'),
+        SetEnvironmentVariable('MEKK4_DEBUG_STREAM_HOST', '127.0.0.1'),
+        SetEnvironmentVariable('MEKK4_DEBUG_STREAM_PORT', '5602'),
+        SetEnvironmentVariable('MEKK4_DEBUG_STREAM_FPS', '0'),
+        SetEnvironmentVariable('MEKK4_DEBUG_STREAM_BITRATE', '1400000'),
         gz_gui,
         gz_headless,
         start_sim_io,

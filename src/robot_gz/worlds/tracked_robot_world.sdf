@@ -1,72 +1,113 @@
-<?xml version="1.0" ?>
-<sdf version="1.9" xmlns:gz="https://gazebosim.org/schemas">
-  <world name="robot_world">
-
-    <!-- ========================= -->
-    <!--        Physics             -->
-    <!-- ========================= -->
-    <physics name="5ms" type="ignored">
-      <max_step_size>0.005</max_step_size>
-      <real_time_factor>1.0</real_time_factor>
+<sdf version='1.10'>
+  <world name='robot_world'>
+    <physics name='5ms' type='ignored'>
+      <max_step_size>0.0050000000000000001</max_step_size>
+      <real_time_factor>1</real_time_factor>
       <real_time_update_rate>200</real_time_update_rate>
     </physics>
-
-    <!-- ========================= -->
-    <!--        Plugins             -->
-    <!-- ========================= -->
-
-    <!-- Physics plugin -->
-    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
-
-    <!-- User commands (spawn/delete models via GUI) -->
-    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
-
-    <!-- Scene broadcaster (renders the scene) -->
-    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
-
-    <!-- Sensors plugin (camera, lidar, etc.) -->
-    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+    <plugin name='gz::sim::systems::Physics' filename='gz-sim-physics-system'/>
+    <plugin name='gz::sim::systems::UserCommands' filename='gz-sim-user-commands-system'/>
+    <plugin name='gz::sim::systems::SceneBroadcaster' filename='gz-sim-scene-broadcaster-system'/>
+    <plugin name='gz::sim::systems::Sensors' filename='gz-sim-sensors-system'>
       <render_engine>ogre2</render_engine>
     </plugin>
-
-    <!-- IMU system plugin (required for imu sensor data publishing) -->
-    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
-
-    <!-- Contact plugin -->
-    <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/>
-
-    <!-- ========================= -->
-    <!--        Lighting            -->
-    <!-- ========================= -->
-    <light type="directional" name="sun">
-      <cast_shadows>true</cast_shadows>
-      <pose>0 0 10 0 0 0</pose>
-      <diffuse>0.8 0.8 0.8 1</diffuse>
-      <specular>0.2 0.2 0.2 1</specular>
-      <attenuation>
-        <range>1000</range>
-        <constant>0.9</constant>
-        <linear>0.01</linear>
-        <quadratic>0.001</quadratic>
-      </attenuation>
-      <direction>-0.5 0.1 -0.9</direction>
-    </light>
-
-    <!-- ========================= -->
-    <!--      Ground Plane          -->
-    <!-- ========================= -->
-    <model name="ground_plane">
+    <plugin name='gz::sim::systems::Imu' filename='gz-sim-imu-system'/>
+    <plugin name='gz::sim::systems::Contact' filename='gz-sim-contact-system'/>
+    <gui fullscreen='false'>
+      <plugin name='3D View' filename='MinimalScene'>
+        <gz-gui>
+          <title>3D View</title>
+          <property type='bool' key='showTitleBar'>false</property>
+          <property type='string' key='state'>docked</property>
+        </gz-gui>
+        <engine>ogre2</engine>
+        <scene>scene</scene>
+        <ambient_light>0.4 0.4 0.4</ambient_light>
+        <background_color>0.8 0.8 0.8</background_color>
+        <camera_pose>-3 0 2 0 0.5 0</camera_pose>
+        <camera_clip>
+          <near>0.25</near>
+          <far>25000</far>
+        </camera_clip>
+      </plugin>
+      <plugin name='Scene Manager' filename='GzSceneManager'>
+        <gz-gui>
+          <property type='bool' key='showTitleBar'>false</property>
+          <property type='string' key='state'>docked</property>
+        </gz-gui>
+      </plugin>
+      <plugin name='Interactive View Control' filename='InteractiveViewControl'>
+        <gz-gui>
+          <property type='bool' key='showTitleBar'>false</property>
+          <property type='string' key='state'>docked</property>
+        </gz-gui>
+      </plugin>
+      <plugin name='World control' filename='WorldControl'>
+        <gz-gui>
+          <title>World control</title>
+          <property type='bool' key='showTitleBar'>false</property>
+          <property type='bool' key='resizable'>false</property>
+          <property type='double' key='height'>72</property>
+          <property type='double' key='width'>121</property>
+          <property type='double' key='z'>1</property>
+          <property type='string' key='state'>floating</property>
+          <anchors target='3D View'>
+            <line own='left' target='left'/>
+            <line own='bottom' target='bottom'/>
+          </anchors>
+        </gz-gui>
+        <play_pause>true</play_pause>
+        <step>true</step>
+      </plugin>
+      <plugin name='World stats' filename='WorldStats'>
+        <gz-gui>
+          <title>World stats</title>
+          <property type='bool' key='showTitleBar'>false</property>
+          <property type='bool' key='resizable'>false</property>
+          <property type='double' key='height'>110</property>
+          <property type='double' key='width'>290</property>
+          <property type='double' key='z'>1</property>
+          <property type='string' key='state'>floating</property>
+          <anchors target='3D View'>
+            <line own='right' target='right'/>
+            <line own='bottom' target='bottom'/>
+          </anchors>
+        </gz-gui>
+        <sim_time>true</sim_time>
+        <real_time>true</real_time>
+        <real_time_factor>true</real_time_factor>
+        <iterations>true</iterations>
+      </plugin>
+      <plugin name='Entity tree' filename='EntityTree'/>
+      <plugin name='Key Publisher' filename='KeyPublisher'/>
+    </gui>
+    <gravity>0 0 -9.8000000000000007</gravity>
+    <magnetic_field>5.5644999999999998e-06 2.2875799999999999e-05 -4.2388400000000002e-05</magnetic_field>
+    <atmosphere type='adiabatic'/>
+    <scene>
+      <ambient>0.400000006 0.400000006 0.400000006 1</ambient>
+      <background>0.699999988 0.699999988 0.699999988 1</background>
+      <shadows>true</shadows>
+    </scene>
+    <model name='ground_plane'>
       <static>true</static>
-      <link name="link">
-        <collision name="collision">
+      <link name='link'>
+        <collision name='collision'>
           <geometry>
             <plane>
               <normal>0 0 1</normal>
               <size>100 100</size>
             </plane>
           </geometry>
+          <surface>
+            <friction>
+              <ode/>
+            </friction>
+            <bounce/>
+            <contact/>
+          </surface>
         </collision>
-        <visual name="visual">
+        <visual name='visual'>
           <geometry>
             <plane>
               <normal>0 0 1</normal>
@@ -74,168 +115,384 @@
             </plane>
           </geometry>
           <material>
-            <ambient>0.8 0.8 0.8 1</ambient>
-            <diffuse>0.8 0.8 0.8 1</diffuse>
-            <specular>0.8 0.8 0.8 1</specular>
+            <ambient>0.800000012 0.800000012 0.800000012 1</ambient>
+            <diffuse>0.800000012 0.800000012 0.800000012 1</diffuse>
+            <specular>0.800000012 0.800000012 0.800000012 1</specular>
           </material>
         </visual>
+        <pose>0 0 0 0 0 0</pose>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
       </link>
+      <pose>0 0 0 0 0 0</pose>
+      <self_collide>false</self_collide>
     </model>
-
-    
-    <model name="lidar_obstacle_box1">
+    <model name='lidar_obstacle_box1'>
       <static>true</static>
-      <pose>1 0.5 0.05 0 0 0</pose> <!-- x y z roll pitch yaw -->
-      <link name="link">
-        <collision name="collision">
+      <pose>1 0.5 0.050000000000000003 0 0 0</pose>
+      <link name='link'>
+        <collision name='collision'>
           <geometry>
             <box>
-              <size>0.1 0.1 0.2</size>
+              <size>0.10000000000000001 0.10000000000000001 0.20000000000000001</size>
             </box>
           </geometry>
+          <surface>
+            <friction>
+              <ode/>
+            </friction>
+            <bounce/>
+            <contact/>
+          </surface>
         </collision>
-        <visual name="visual">
+        <visual name='visual'>
           <geometry>
             <box>
-              <size>0.1 0.1 0.2</size>
+              <size>0.10000000000000001 0.10000000000000001 0.20000000000000001</size>
             </box>
           </geometry>
           <material>
-            <ambient>0.9 0.2 0.2 1</ambient>
-            <diffuse>0.9 0.2 0.2 1</diffuse>
+            <ambient>0.899999976 0.200000003 0.200000003 1</ambient>
+            <diffuse>0.899999976 0.200000003 0.200000003 1</diffuse>
           </material>
         </visual>
+        <pose>0 0 0 0 0 0</pose>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
       </link>
+      <self_collide>false</self_collide>
     </model>
-
-
-    <model name="lidar_obstacle_box3">
+    <model name='lidar_obstacle_box3'>
       <static>true</static>
-      <pose>1 -0.5 0.05 0 0 0</pose> <!-- x y z roll pitch yaw -->
-      <link name="link">
-        <collision name="collision">
+      <pose>1 -0.5 0.050000000000000003 0 0 0</pose>
+      <link name='link'>
+        <collision name='collision'>
           <geometry>
             <box>
-              <size>0.1 0.1 0.2</size>
+              <size>0.10000000000000001 0.10000000000000001 0.20000000000000001</size>
             </box>
           </geometry>
+          <surface>
+            <friction>
+              <ode/>
+            </friction>
+            <bounce/>
+            <contact/>
+          </surface>
         </collision>
-        <visual name="visual">
+        <visual name='visual'>
           <geometry>
             <box>
-              <size>0.1 0.1 0.2</size>
+              <size>0.10000000000000001 0.10000000000000001 0.20000000000000001</size>
             </box>
           </geometry>
           <material>
-            <ambient>0.9 0.2 0.2 1</ambient>
-            <diffuse>0.9 0.2 0.2 1</diffuse>
+            <ambient>0.899999976 0.200000003 0.200000003 1</ambient>
+            <diffuse>0.899999976 0.200000003 0.200000003 1</diffuse>
           </material>
         </visual>
+        <pose>0 0 0 0 0 0</pose>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
       </link>
+      <self_collide>false</self_collide>
     </model>
-
-    <model name="sim_teddy_bear">
+    <model name='sim_teddy_bear'>
       <static>false</static>
-      <!-- position (x y z roll pitch yaw) - z raised so it falls into scene -->
-      <pose>1.15 0 0.5 0 0 0</pose>
-      <link name="box">
-        <!-- Use the GLB mesh both for visual and collision for accurate physics -->
-        <collision name="collision">
+      <pose>1.1284448933912674 -0.056910550170631402 -0.0003408612621626614 1.5833008794618968 -0.0066090329093012211 1.663768487385846</pose>
+      <link name='box'>
+        <collision name='collision'>
           <pose>0 0 0 0 0 0</pose>
           <geometry>
             <mesh>
-              <uri>model://sim_teddy_bear/meshes/Teddy.glb</uri>
-              <scale>0.285 0.285 0.285</scale>
+              <uri>file:///home/emiliam/Mekatronikk-4-MEPA2002/install/robot_gz/share/robot_gz/models/sim_teddy_bear/meshes/Teddy.glb</uri>
+              <scale>0.28499999999999998 0.28499999999999998 0.28499999999999998</scale>
             </mesh>
           </geometry>
         </collision>
-
-        <visual name="teddy_mesh">
+        <visual name='teddy_mesh'>
           <pose>0 0 0 0 0 0</pose>
           <geometry>
             <mesh>
-              <uri>model://sim_teddy_bear/meshes/Teddy.glb</uri>
-              <scale>0.285 0.285 0.285</scale>
+              <uri>file:///home/emiliam/Mekatronikk-4-MEPA2002/install/robot_gz/share/robot_gz/models/sim_teddy_bear/meshes/Teddy.glb</uri>
+              <scale>0.28499999999999998 0.28499999999999998 0.28499999999999998</scale>
             </mesh>
           </geometry>
         </visual>
+        <pose>0 0 0 0 0 0</pose>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
       </link>
+      <self_collide>false</self_collide>
     </model>
-
-
-    <model name="lidar_obstacle_box2">
+    <model name='lidar_obstacle_box2'>
       <static>true</static>
-      <pose>-1 0 0.05 0 0 0</pose> <!-- x y z roll pitch yaw -->
-      <link name="link">
-        <collision name="collision">
+      <pose>-1 0 0.050000000000000003 0 0 0</pose>
+      <link name='link'>
+        <collision name='collision'>
           <geometry>
             <box>
-              <size>0.1 0.1 0.2</size>
+              <size>0.10000000000000001 0.10000000000000001 0.20000000000000001</size>
             </box>
           </geometry>
+          <surface>
+            <friction>
+              <ode/>
+            </friction>
+            <bounce/>
+            <contact/>
+          </surface>
         </collision>
-        <visual name="visual">
+        <visual name='visual'>
           <geometry>
             <box>
-              <size>0.1 0.1 0.2</size>
+              <size>0.10000000000000001 0.10000000000000001 0.20000000000000001</size>
             </box>
           </geometry>
           <material>
-            <ambient>0.9 0.2 0.2 1</ambient>
-            <diffuse>0.9 0.2 0.2 1</diffuse>
+            <ambient>0.899999976 0.200000003 0.200000003 1</ambient>
+            <diffuse>0.899999976 0.200000003 0.200000003 1</diffuse>
           </material>
         </visual>
+        <pose>0 0 0 0 0 0</pose>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
       </link>
+      <self_collide>false</self_collide>
     </model>
-
-
-    <model name="arena_wall_north">
+    <model name='arena_wall_north'>
       <static>true</static>
-      <pose>0 1.25 0.15 0 0 0</pose>
-      <link name="link">
-        <collision name="collision"><geometry><box><size>5.0 0.05 0.30</size></box></geometry></collision>
-        <visual name="visual"><geometry><box><size>5.0 0.05 0.30</size></box></geometry></visual>
+      <pose>0 1.25 0.14999999999999999 0 0 0</pose>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>5 0.050000000000000003 0.29999999999999999</size>
+            </box>
+          </geometry>
+          <surface>
+            <friction>
+              <ode/>
+            </friction>
+            <bounce/>
+            <contact/>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>5 0.050000000000000003 0.29999999999999999</size>
+            </box>
+          </geometry>
+        </visual>
+        <pose>0 0 0 0 0 0</pose>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
       </link>
+      <self_collide>false</self_collide>
     </model>
-
-    <model name="arena_wall_south">
+    <model name='arena_wall_south'>
       <static>true</static>
-      <pose>0 -1.25 0.15 0 0 0</pose>
-      <link name="link">
-        <collision name="collision"><geometry><box><size>5.0 0.05 0.30</size></box></geometry></collision>
-        <visual name="visual"><geometry><box><size>5.0 0.05 0.30</size></box></geometry></visual>
+      <pose>0 -1.25 0.14999999999999999 0 0 0</pose>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>5 0.050000000000000003 0.29999999999999999</size>
+            </box>
+          </geometry>
+          <surface>
+            <friction>
+              <ode/>
+            </friction>
+            <bounce/>
+            <contact/>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>5 0.050000000000000003 0.29999999999999999</size>
+            </box>
+          </geometry>
+        </visual>
+        <pose>0 0 0 0 0 0</pose>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
       </link>
+      <self_collide>false</self_collide>
     </model>
-
-    <model name="arena_wall_east">
+    <model name='arena_wall_east'>
       <static>true</static>
-      <pose>2.5 0 0.15 0 0 0</pose>
-      <link name="link">
-        <collision name="collision"><geometry><box><size>0.05 2.5 0.30</size></box></geometry></collision>
-        <visual name="visual"><geometry><box><size>0.05 2.5 0.30</size></box></geometry></visual>
+      <pose>2.5 0 0.14999999999999999 0 0 0</pose>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>0.050000000000000003 2.5 0.29999999999999999</size>
+            </box>
+          </geometry>
+          <surface>
+            <friction>
+              <ode/>
+            </friction>
+            <bounce/>
+            <contact/>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>0.050000000000000003 2.5 0.29999999999999999</size>
+            </box>
+          </geometry>
+        </visual>
+        <pose>0 0 0 0 0 0</pose>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
       </link>
+      <self_collide>false</self_collide>
     </model>
-
-    <model name="arena_wall_west">
+    <model name='arena_wall_west'>
       <static>true</static>
-      <pose>-2.5 0 0.15 0 0 0</pose>
-      <link name="link">
-        <collision name="collision"><geometry><box><size>0.05 2.5 0.30</size></box></geometry></collision>
-        <visual name="visual"><geometry><box><size>0.05 2.5 0.30</size></box></geometry></visual>
-        </link>
+      <pose>-2.5 0 0.14999999999999999 0 0 0</pose>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>0.050000000000000003 2.5 0.29999999999999999</size>
+            </box>
+          </geometry>
+          <surface>
+            <friction>
+              <ode/>
+            </friction>
+            <bounce/>
+            <contact/>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>0.050000000000000003 2.5 0.29999999999999999</size>
+            </box>
+          </geometry>
+        </visual>
+        <pose>0 0 0 0 0 0</pose>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
+      </link>
+      <self_collide>false</self_collide>
     </model>
-
-    <!-- AprilTag field references for overhead camera localization. -->
-    <model name="field_apriltag_10">
+    <model name='field_apriltag_10'>
       <static>true</static>
-      <pose>-2.35 -1.10 0.306 0 0 0</pose>
-      <link name="link">
-        <visual name="tag_visual">
+      <pose>-2.3500000000000001 -1.1000000000000001 0.30599999999999999 0 0 0</pose>
+      <link name='link'>
+        <visual name='tag_visual'>
           <cast_shadows>false</cast_shadows>
           <geometry>
             <plane>
               <normal>0 0 1</normal>
-              <size>0.40 0.40</size>
+              <size>0.40000000000000002 0.40000000000000002</size>
             </plane>
           </geometry>
           <material>
@@ -250,19 +507,33 @@
             </pbr>
           </material>
         </visual>
+        <pose>0 0 0 0 0 0</pose>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
       </link>
+      <self_collide>false</self_collide>
     </model>
-
-    <model name="field_apriltag_11">
+    <model name='field_apriltag_11'>
       <static>true</static>
-      <pose>2.35 -1.10 0.306 0 0 0</pose>
-      <link name="link">
-        <visual name="tag_visual">
+      <pose>2.3500000000000001 -1.1000000000000001 0.30599999999999999 0 0 0</pose>
+      <link name='link'>
+        <visual name='tag_visual'>
           <cast_shadows>false</cast_shadows>
           <geometry>
             <plane>
               <normal>0 0 1</normal>
-              <size>0.40 0.40</size>
+              <size>0.40000000000000002 0.40000000000000002</size>
             </plane>
           </geometry>
           <material>
@@ -277,19 +548,33 @@
             </pbr>
           </material>
         </visual>
+        <pose>0 0 0 0 0 0</pose>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
       </link>
+      <self_collide>false</self_collide>
     </model>
-
-    <model name="field_apriltag_12">
+    <model name='field_apriltag_12'>
       <static>true</static>
-      <pose>2.35 1.10 0.306 0 0 0</pose>
-      <link name="link">
-        <visual name="tag_visual">
+      <pose>2.3500000000000001 1.1000000000000001 0.30599999999999999 0 0 0</pose>
+      <link name='link'>
+        <visual name='tag_visual'>
           <cast_shadows>false</cast_shadows>
           <geometry>
             <plane>
               <normal>0 0 1</normal>
-              <size>0.40 0.40</size>
+              <size>0.40000000000000002 0.40000000000000002</size>
             </plane>
           </geometry>
           <material>
@@ -304,19 +589,33 @@
             </pbr>
           </material>
         </visual>
+        <pose>0 0 0 0 0 0</pose>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
       </link>
+      <self_collide>false</self_collide>
     </model>
-
-    <model name="field_apriltag_13">
+    <model name='field_apriltag_13'>
       <static>true</static>
-      <pose>-2.35 1.10 0.306 0 0 0</pose>
-      <link name="link">
-        <visual name="tag_visual">
+      <pose>-2.3500000000000001 1.1000000000000001 0.30599999999999999 0 0 0</pose>
+      <link name='link'>
+        <visual name='tag_visual'>
           <cast_shadows>false</cast_shadows>
           <geometry>
             <plane>
               <normal>0 0 1</normal>
-              <size>0.40 0.40</size>
+              <size>0.40000000000000002 0.40000000000000002</size>
             </plane>
           </geometry>
           <material>
@@ -331,146 +630,126 @@
             </pbr>
           </material>
         </visual>
+        <pose>0 0 0 0 0 0</pose>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
       </link>
+      <self_collide>false</self_collide>
     </model>
-
-
-    <!-- ========================= -->
-    <!--   Tracked Robot            -->
-    <!-- ========================= -->
     <include>
-      <uri>model://tracked_robot</uri>
+      <uri>file:///home/emiliam/Mekatronikk-4-MEPA2002/install/robot_gz/share/robot_gz/models/tracked_robot</uri>
       <name>tracked_robot</name>
-      <pose>0 0 0.031 0 0 0</pose>
+      <pose>0.18796194231847951 -0.023975478827547966 0.029999866333444782 -4.1729446613349768e-09 -2.859200043708581e-07 0.39791515165779029</pose>
     </include>
-
-    <!-- ========================= -->
-    <!--   Overhead Camera         -->
-    <!-- ========================= -->
-    <model name="overhead_camera">
+    <model name='overhead_camera'>
       <static>true</static>
-      <link name="overhead_camera_link">
-        <pose>0 0 6.2 0 0 0</pose>
-        <visual name="camera_body_visual">
+      <link name='overhead_camera_link'>
+        <pose>0 0 6.2000000000000002 0 0 0</pose>
+        <visual name='camera_body_visual'>
           <geometry>
             <box>
-              <size>0.1 0.1 0.06</size>
+              <size>0.10000000000000001 0.10000000000000001 0.059999999999999998</size>
             </box>
           </geometry>
           <material>
-            <ambient>0.15 0.15 0.15 1</ambient>
-            <diffuse>0.2 0.2 0.2 1</diffuse>
-            <specular>0.05 0.05 0.05 1</specular>
+            <ambient>0.150000006 0.150000006 0.150000006 1</ambient>
+            <diffuse>0.200000003 0.200000003 0.200000003 1</diffuse>
+            <specular>0.0500000007 0.0500000007 0.0500000007 1</specular>
           </material>
         </visual>
-        <sensor name="overhead_camera_sensor" type="camera">
-          <pose>0 0 0 1.5707963267948966 1.5707963267948966 1.5707963267948966</pose>
-          <always_on>true</always_on>
-          <update_rate>30</update_rate>
-          <visualize>false</visualize>
+        <sensor name='overhead_camera_sensor' type='camera'>
+          <pose>0 0 0 0 1.5707963267948966 0</pose>
           <topic>/overhead_camera</topic>
-          <gz:frame_id>overhead_camera_link</gz:frame_id>
-          <camera>
-            <horizontal_fov>0.4997595236619115</horizontal_fov>
+          <update_rate>30</update_rate>
+          <enable_metrics>false</enable_metrics>
+          <camera name='__default__'>
+            <pose>0 0 0 0 0 0</pose>
+            <horizontal_fov>0.49975952366191151</horizontal_fov>
             <image>
               <width>720</width>
               <height>1280</height>
-              <format>R8G8B8</format>
+              <format>RGB_INT8</format>
+              <anti_aliasing>4</anti_aliasing>
             </image>
+            <camera_info_topic>__default__</camera_info_topic>
+            <trigger_topic></trigger_topic>
+            <triggered>false</triggered>
             <clip>
-              <near>0.05</near>
-              <far>20.0</far>
+              <near>0.050000000000000003</near>
+              <far>20</far>
             </clip>
+            <save enabled='false'>
+              <path>__default__</path>
+            </save>
+            <visibility_mask>4294967295</visibility_mask>
+            <noise>
+              <type>none</type>
+              <mean>0</mean>
+              <stddev>0</stddev>
+            </noise>
+            <distortion>
+              <k1>0</k1>
+              <k2>0</k2>
+              <k3>0</k3>
+              <p1>0</p1>
+              <p2>0</p2>
+              <center>0.5 0.5</center>
+            </distortion>
+            <lens>
+              <type>stereographic</type>
+              <scale_to_hfov>true</scale_to_hfov>
+              <cutoff_angle>1.5707963267948966</cutoff_angle>
+              <env_texture_size>256</env_texture_size>
+            </lens>
+            <optical_frame_id></optical_frame_id>
           </camera>
         </sensor>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
       </link>
+      <pose>0 0 0 0 0 0</pose>
+      <self_collide>false</self_collide>
     </model>
-
-    <!-- ========================= -->
-    <!--     GUI Configuration      -->
-    <!-- ========================= -->
-    <gui fullscreen="0">
-
-      <!-- 3D Scene -->
-      <plugin filename="MinimalScene" name="3D View">
-        <gz-gui>
-          <title>3D View</title>
-          <property type="bool" key="showTitleBar">false</property>
-          <property type="string" key="state">docked</property>
-        </gz-gui>
-        <engine>ogre2</engine>
-        <scene>scene</scene>
-        <ambient_light>0.4 0.4 0.4</ambient_light>
-        <background_color>0.8 0.8 0.8</background_color>
-        <camera_pose>-3 0 2 0 0.5 0</camera_pose>
-        <camera_clip>
-          <near>0.25</near>
-          <far>25000</far>
-        </camera_clip>
-      </plugin>
-
-      <!-- Provides mouse and keyboard interaction -->
-      <plugin filename="GzSceneManager" name="Scene Manager">
-        <gz-gui>
-          <property type="bool" key="showTitleBar">false</property>
-          <property type="string" key="state">docked</property>
-        </gz-gui>
-      </plugin>
-
-      <plugin filename="InteractiveViewControl" name="Interactive View Control">
-        <gz-gui>
-          <property type="bool" key="showTitleBar">false</property>
-          <property type="string" key="state">docked</property>
-        </gz-gui>
-      </plugin>
-
-      <!-- World control (play/pause/step) -->
-      <plugin filename="WorldControl" name="World control">
-        <gz-gui>
-          <title>World control</title>
-          <property type="bool" key="showTitleBar">false</property>
-          <property type="bool" key="resizable">false</property>
-          <property type="double" key="height">72</property>
-          <property type="double" key="width">121</property>
-          <property type="double" key="z">1</property>
-          <property type="string" key="state">floating</property>
-          <anchors target="3D View">
-            <line own="left" target="left"/>
-            <line own="bottom" target="bottom"/>
-          </anchors>
-        </gz-gui>
-        <play_pause>true</play_pause>
-        <step>true</step>
-      </plugin>
-
-      <!-- World stats (sim time, real time) -->
-      <plugin filename="WorldStats" name="World stats">
-        <gz-gui>
-          <title>World stats</title>
-          <property type="bool" key="showTitleBar">false</property>
-          <property type="bool" key="resizable">false</property>
-          <property type="double" key="height">110</property>
-          <property type="double" key="width">290</property>
-          <property type="double" key="z">1</property>
-          <property type="string" key="state">floating</property>
-          <anchors target="3D View">
-            <line own="right" target="right"/>
-            <line own="bottom" target="bottom"/>
-          </anchors>
-        </gz-gui>
-        <sim_time>true</sim_time>
-        <real_time>true</real_time>
-        <real_time_factor>true</real_time_factor>
-        <iterations>true</iterations>
-      </plugin>
-
-      <!-- Entity tree -->
-      <plugin filename="EntityTree" name="Entity tree"/>
-
-      <!-- KeyPublisher: captures keyboard input and publishes to /keyboard/keypress -->
-      <plugin filename="KeyPublisher" name="Key Publisher"/>
-
-    </gui>
-
+    <light name='sun' type='directional'>
+      <pose>0 0 10 0 0 0</pose>
+      <cast_shadows>true</cast_shadows>
+      <intensity>1</intensity>
+      <direction>-0.5 0.10000000000000001 -0.90000000000000002</direction>
+      <diffuse>0.800000012 0.800000012 0.800000012 1</diffuse>
+      <specular>0.200000003 0.200000003 0.200000003 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <linear>0.01</linear>
+        <constant>0.90000000000000002</constant>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <spot>
+        <inner_angle>0</inner_angle>
+        <outer_angle>0</outer_angle>
+        <falloff>0</falloff>
+      </spot>
+    </light>
   </world>
 </sdf>

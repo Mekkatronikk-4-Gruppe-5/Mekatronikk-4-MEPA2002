@@ -30,7 +30,6 @@ def generate_launch_description():
 
     use_nav2 = LaunchConfiguration('use_nav2')
     use_lidar = LaunchConfiguration('use_lidar')
-    use_lidar_scan_matcher = LaunchConfiguration('use_lidar_scan_matcher')
     use_teddy = LaunchConfiguration('use_teddy')
     use_teddy_approach = LaunchConfiguration('use_teddy_approach')
     use_imu = LaunchConfiguration('use_imu')
@@ -237,15 +236,6 @@ def generate_launch_description():
         remappings=[('odometry/filtered', 'odom')],
     )
 
-    lidar_scan_matcher_node = Node(
-        package='mekk4_bringup',
-        executable='lidar_scan_matcher',
-        name='lidar_scan_matcher',
-        output='screen',
-        condition=IfCondition(use_lidar_scan_matcher),
-        parameters=[{'use_sim_time': use_sim_time}],
-    )
-
     rviz_node = Node(
         package='rviz2',
         executable='rviz2',
@@ -258,7 +248,6 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('use_nav2', default_value='true'),
         DeclareLaunchArgument('use_lidar', default_value='true'),
-        DeclareLaunchArgument('use_lidar_scan_matcher', default_value='false'),
         DeclareLaunchArgument('use_teddy', default_value='false'),
         DeclareLaunchArgument('use_teddy_approach', default_value='false'),
         DeclareLaunchArgument('use_imu', default_value='false'),
@@ -313,7 +302,6 @@ def generate_launch_description():
         imu_node,
         mega_driver_node,
         ekf_node,
-        lidar_scan_matcher_node,
         lidar_launch,
         delayed_nav2_launch,
         teddy_detector,

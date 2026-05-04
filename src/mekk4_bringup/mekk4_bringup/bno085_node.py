@@ -31,7 +31,7 @@ class BNO085Node(Node):
         self.declare_parameter("use_game_rotation_vector", True)
         self.declare_parameter("orientation_covariance_diagonal", [0.05, 0.05, 0.08])
         self.declare_parameter("angular_velocity_covariance_diagonal", [0.02, 0.02, 0.04])
-        self.declare_parameter("linear_acceleration_covariance_diagonal", [0.2, 0.2, 0.3])
+        self.declare_parameter("linear_acceleration_covariance_diagonal", [1.0, 1.0, 1.5])
 
         self._frame_id = self.get_parameter("frame_id").get_parameter_value().string_value
         self._i2c_bus = self.get_parameter("i2c_bus").get_parameter_value().integer_value

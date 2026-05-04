@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Iterable
 
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
-import yaml
 
 
 def _diagonal_covariance(values: Iterable[float]) -> list[float]:
@@ -34,8 +32,6 @@ class BNO085Node(Node):
         self.declare_parameter("orientation_covariance_diagonal", [0.05, 0.05, 0.08])
         self.declare_parameter("angular_velocity_covariance_diagonal", [0.02, 0.02, 0.04])
         self.declare_parameter("linear_acceleration_covariance_diagonal", [0.2, 0.2, 0.3])
-        self.declare_parameter("static_calibration_file", "")
-        self.declare_parameter("apply_static_calibration", True)
 
         self._frame_id = self.get_parameter("frame_id").get_parameter_value().string_value
         self._i2c_bus = self.get_parameter("i2c_bus").get_parameter_value().integer_value
@@ -54,11 +50,6 @@ class BNO085Node(Node):
         self._linear_acceleration_covariance = _diagonal_covariance(
             self.get_parameter("linear_acceleration_covariance_diagonal").value
         )
-        self._static_calibration_file = self.get_parameter("static_calibration_file").value
-        self._apply_static_calibration = self.get_parameter("apply_static_calibration").value
-
-        self._linear_acceleration_bias = (0.0, 0.0, 0.0)
-        self._angular_velocity_bias = (0.0, 0.0, 0.0)
 
         if publish_rate_hz <= 0.0:
             raise ValueError("publish_rate_hz must be greater than zero.")
@@ -77,7 +68,6 @@ class BNO085Node(Node):
         self._quat_attr = "game_quaternion" if self._use_game_rotation_vector else "quaternion"
 
         self._load_driver()
-        self._load_static_calibration()
         self._pub = self.create_publisher(Imu, "imu/data", 10)
         self._timer = self.create_timer(self._publish_period_s, self._on_timer)
 
@@ -132,51 +122,6 @@ class BNO085Node(Node):
                 "BNO08x library does not expose linear_acceleration, falling back to acceleration."
             )
 
-    def _load_static_calibration(self) -> None:
-        if not self._apply_static_calibration:
-            self.get_logger().info("Static IMU calibration is disabled.")
-            return
-
-        calibration_path = str(self._static_calibration_file).strip()
-        if not calibration_path:
-            self.get_logger().info("No static IMU calibration file configured.")
-            return
-
-        path = Path(calibration_path).expanduser()
-        if not path.exists():
-            self.get_logger().warning(f"Static IMU calibration file not found: {path}")
-            return
-
-        try:
-            with path.open("r", encoding="utf-8") as handle:
-                data = yaml.safe_load(handle) or {}
-        except Exception as exc:  # pragma: no cover - hardware/runtime dependent
-            self.get_logger().warning(f"Failed to read static IMU calibration file {path}: {exc}")
-            return
-
-        def _extract_vector(keys: tuple[str, ...]) -> tuple[float, float, float] | None:
-            for key in keys:
-                value = data.get(key)
-                if isinstance(value, dict):
-                    try:
-                        return (float(value["x"]), float(value["y"]), float(value["z"]))
-                    except (KeyError, TypeError, ValueError):
-                        continue
-            return None
-
-        linear_bias = _extract_vector(("linear_acceleration_bias", "linear_accel_bias"))
-        angular_bias = _extract_vector(("angular_velocity_bias", "angular_vel_bias"))
-
-        if linear_bias is not None:
-            self._linear_acceleration_bias = linear_bias
-        if angular_bias is not None:
-            self._angular_velocity_bias = angular_bias
-
-        self.get_logger().info(
-            "Loaded IMU static calibration from %s: linear_bias=%s angular_bias=%s"
-            % (path, self._linear_acceleration_bias, self._angular_velocity_bias)
-        )
-
     def _on_timer(self) -> None:
         try:
             quaternion = getattr(self._bno, self._quat_attr)
@@ -199,14 +144,14 @@ class BNO085Node(Node):
         msg.orientation.w = float(quaternion[3])
         msg.orientation_covariance = self._orientation_covariance
 
-        msg.angular_velocity.x = float(angular_velocity[0]) - self._angular_velocity_bias[0]
-        msg.angular_velocity.y = float(angular_velocity[1]) - self._angular_velocity_bias[1]
-        msg.angular_velocity.z = float(angular_velocity[2]) - self._angular_velocity_bias[2]
+        msg.angular_velocity.x = float(angular_velocity[0])
+        msg.angular_velocity.y = float(angular_velocity[1])
+        msg.angular_velocity.z = float(angular_velocity[2])
         msg.angular_velocity_covariance = self._angular_velocity_covariance
 
-        msg.linear_acceleration.x = float(linear_acceleration[0]) - self._linear_acceleration_bias[0]
-        msg.linear_acceleration.y = float(linear_acceleration[1]) - self._linear_acceleration_bias[1]
-        msg.linear_acceleration.z = float(linear_acceleration[2]) - self._linear_acceleration_bias[2]
+        msg.linear_acceleration.x = float(linear_acceleration[0])
+        msg.linear_acceleration.y = float(linear_acceleration[1])
+        msg.linear_acceleration.z = float(linear_acceleration[2])
         msg.linear_acceleration_covariance = self._linear_acceleration_covariance
 
         self._pub.publish(msg)

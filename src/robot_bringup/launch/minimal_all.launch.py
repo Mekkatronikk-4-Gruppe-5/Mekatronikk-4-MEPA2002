@@ -26,6 +26,7 @@ def generate_launch_description():
     use_teddy = LaunchConfiguration('use_teddy')
     use_teddy_approach = LaunchConfiguration('use_teddy_approach')
     use_overhead_apriltag = LaunchConfiguration('use_overhead_apriltag')
+    nav2_start_delay_s = LaunchConfiguration('nav2_start_delay_s')
     gui_config = LaunchConfiguration('gui_config')
     params_file = LaunchConfiguration('params_file')
     ekf_params_file = LaunchConfiguration('ekf_params_file')
@@ -172,6 +173,7 @@ def generate_launch_description():
             'rviz': rviz_enabled,
             'params_file': params_file,
             'ekf_params_file': ekf_params_file,
+            'nav2_start_delay_s': nav2_start_delay_s,
             'rviz_config': rviz_config,
         }.items(),
     )
@@ -449,6 +451,11 @@ def generate_launch_description():
             'use_overhead_apriltag',
             default_value='false',
             description='Run simulated overhead AprilTag detection and /overhead/odom publisher.'
+        ),
+        DeclareLaunchArgument(
+            'nav2_start_delay_s',
+            default_value='4.0',
+            description='Delay before Nav2 starts after shared sim core launch.'
         ),
         DeclareLaunchArgument(
             'params_file',

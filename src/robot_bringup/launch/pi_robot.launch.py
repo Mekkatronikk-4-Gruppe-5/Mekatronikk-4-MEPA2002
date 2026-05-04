@@ -128,6 +128,7 @@ def generate_launch_description():
     delayed_nav2_launch = TimerAction(
         period=nav2_start_delay_s,
         actions=[nav2_launch],
+        condition=IfCondition(use_nav2),
     )
 
     teddy_detector = Node(

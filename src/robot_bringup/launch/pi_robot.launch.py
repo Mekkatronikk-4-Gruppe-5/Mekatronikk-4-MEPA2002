@@ -1,5 +1,5 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable, TimerAction
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
@@ -70,6 +70,7 @@ def generate_launch_description():
     tf_yaw = LaunchConfiguration('tf_yaw')
     params_file = LaunchConfiguration('params_file')
     teddy_approach_params_file = LaunchConfiguration('teddy_approach_params_file')
+    nav2_start_delay_s = LaunchConfiguration('nav2_start_delay_s')
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
     rviz_config = LaunchConfiguration('rviz_config')
@@ -123,6 +124,10 @@ def generate_launch_description():
             'use_respawn': use_respawn,
             'log_level': log_level,
         }.items(),
+    )
+    delayed_nav2_launch = TimerAction(
+        period=nav2_start_delay_s,
+        actions=[nav2_launch],
     )
 
     teddy_detector = Node(
@@ -282,6 +287,7 @@ def generate_launch_description():
         DeclareLaunchArgument('tf_pitch', default_value='0.0'),
         DeclareLaunchArgument('tf_yaw', default_value='0.0'),
         DeclareLaunchArgument('params_file', default_value=default_nav2_params_path),
+        DeclareLaunchArgument('nav2_start_delay_s', default_value='4.0'),
         DeclareLaunchArgument(
             'teddy_approach_params_file',
             default_value=default_teddy_approach_params_path,
@@ -297,7 +303,7 @@ def generate_launch_description():
         mega_driver_node,
         ekf_node,
         lidar_launch,
-        nav2_launch,
+        delayed_nav2_launch,
         teddy_detector,
         teddy_approach_node,
         teddy_lidar_markers_node,

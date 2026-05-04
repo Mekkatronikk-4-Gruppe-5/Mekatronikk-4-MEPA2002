@@ -20,6 +20,7 @@ def generate_launch_description():
     rviz_enabled = LaunchConfiguration('rviz')
     gz_verbosity = LaunchConfiguration('gz_verbosity')
     keyboard_teleop_enabled = LaunchConfiguration('keyboard_teleop')
+    robotarm_gui_enabled = LaunchConfiguration('robotarm_gui')
     use_nav2 = LaunchConfiguration('use_nav2')
     use_ekf = LaunchConfiguration('use_ekf')
     use_teddy = LaunchConfiguration('use_teddy')
@@ -99,6 +100,10 @@ def generate_launch_description():
         cmd=[
             'ros2', 'run', 'ros_gz_bridge', 'parameter_bridge',
             '/model/tracked_robot/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
+            '/robotarm/x_position_cmd@std_msgs/msg/Float64]gz.msgs.Double',
+            '/robotarm/z_position_cmd@std_msgs/msg/Float64]gz.msgs.Double',
+            '/gripper/left_position_cmd@std_msgs/msg/Float64]gz.msgs.Double',
+            '/gripper/right_position_cmd@std_msgs/msg/Float64]gz.msgs.Double',
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
             '/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',
             '/lidar@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
@@ -135,6 +140,18 @@ def generate_launch_description():
             {'right_cmd_scale': 1.0},
             {'input_topic': '/cmd_vel'},
             {'output_topic': '/model/tracked_robot/cmd_vel'},
+        ],
+    )
+    robotarm_gui = Node(
+        package='robot_sim_control',
+        executable='robotarm_gui',
+        output='screen',
+        condition=IfCondition(robotarm_gui_enabled),
+        arguments=[
+            '--x-topic', '/robotarm/x_position_cmd',
+            '--z-topic', '/robotarm/z_position_cmd',
+            '--left-gripper-topic', '/gripper/left_position_cmd',
+            '--right-gripper-topic', '/gripper/right_position_cmd',
         ],
     )
 
@@ -355,6 +372,7 @@ def generate_launch_description():
             sim_camera_udp_stream,
             annotated_camera_bridge,
             keyboard_teleop,
+            robotarm_gui,
         ]
     )
 
@@ -471,6 +489,11 @@ def generate_launch_description():
             'keyboard_teleop',
             default_value='true',
             description='Run local keyboard teleop window for sim.'
+        ),
+        DeclareLaunchArgument(
+            'robotarm_gui',
+            default_value='true',
+            description='Run local robotarm position GUI for sim.'
         ),
         SetEnvironmentVariable('ROS_USE_SIM_TIME', 'true'),
         SetEnvironmentVariable('GZ_SIM_RESOURCE_PATH', gz_resource_path),

@@ -258,6 +258,249 @@
         </lidar>
       </sensor>
     </link>
+    <joint name='robotarm_x_joint' type='prismatic'>
+      <pose relative_to='chassis'>0.11325 0.0915 0.22693307495117174 0 0 0</pose>
+      <parent>chassis</parent>
+      <child>x_carriage</child>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-0.2</lower>
+          <upper>0.2</upper>
+          <effort>100</effort>
+          <velocity>0.2</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <link name='x_carriage'>
+      <pose relative_to='robotarm_x_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>0.00001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00001</iyy>
+          <iyz>0</iyz>
+          <izz>0.00001</izz>
+        </inertia>
+      </inertial>
+      <visual name='x_carriage_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.04 0.04 0.04</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.8 0.0 0.0 1</ambient>
+          <diffuse>0.8 0.0 0.0 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
+      </visual>
+      <collision name='x_carriage_collision'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.04 0.04 0.04</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <joint name='robotarm_z_joint' type='prismatic'>
+      <pose relative_to='x_carriage'>0 0 0 0 0 0</pose>
+      <parent>x_carriage</parent>
+      <child>Robotarm</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-1.0</lower>
+          <upper>1.0</upper>
+          <effort>100</effort>
+          <velocity>0.2</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <link name='Robotarm'>
+      <pose relative_to='robotarm_z_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.05</mass>
+        <inertia>
+          <ixx>0.0000022440872644762314</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.000002244087254398789</iyy>
+          <iyz>0</iyz>
+          <izz>0.0000017244102341688861</izz>
+        </inertia>
+      </inertial>
+      <visual name='Robotarm_visual'>
+        <pose>0.1 0 0 0 1.5707963267948966 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.01</radius>
+            <length>0.2</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.8 0.0 0.0 1</ambient>
+          <diffuse>0.8 0.0 0.0 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
+      </visual>
+      <collision name='Robotarm_collision'>
+        <pose>0.1 0 0 0 1.5707963267948966 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.01</radius>
+            <length>0.2</length>
+          </cylinder>
+        </geometry>
+      </collision>
+    </link>
+    <joint name='plate_arm_link' type='fixed'>
+      <pose relative_to='Robotarm'>0.1 0 -0.03 0 0 0</pose>
+      <parent>Robotarm</parent>
+      <child>gripper_plate</child>
+    </joint>
+    <link name='gripper_plate'>
+      <pose relative_to='plate_arm_link'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.0001</mass>
+        <inertia>
+          <ixx>0.00001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00001</iyy>
+          <iyz>0</iyz>
+          <izz>0.00001</izz>
+        </inertia>
+      </inertial>
+      <visual name='gripper_plate_visual'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.14 0.06</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.8 0.0 0.0 1</ambient>
+          <diffuse>0.8 0.0 0.0 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
+      </visual>
+      <collision name='gripper_plate_collision'>
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.14 0.06</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <joint name='left_gripper_finger_joint' type='revolute'>
+      <pose relative_to='gripper_plate'>0 0.0625 0 0 0 0</pose>
+      <parent>gripper_plate</parent>
+      <child>left_gripper_finger</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-0.785</lower>
+          <upper>0.785</upper>
+          <effort>10</effort>
+          <velocity>1.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <link name='left_gripper_finger'>
+      <pose relative_to='left_gripper_finger_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0.06 0 0 0 0 0</pose>
+        <mass>0.02</mass>
+        <inertia>
+          <ixx>0.000001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00002</iyy>
+          <iyz>0</iyz>
+          <izz>0.00002</izz>
+        </inertia>
+      </inertial>
+      <visual name='left_gripper_finger_visual'>
+        <pose>0.06 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.12 0.015 0.04</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.8 0.0 0.0 1</ambient>
+          <diffuse>0.8 0.0 0.0 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
+      </visual>
+      <collision name='left_gripper_finger_collision'>
+        <pose>0.06 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.12 0.015 0.04</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <joint name='right_gripper_finger_joint' type='revolute'>
+      <pose relative_to='gripper_plate'>0 -0.0625 0 0 0 0</pose>
+      <parent>gripper_plate</parent>
+      <child>right_gripper_finger</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-0.785</lower>
+          <upper>0.785</upper>
+          <effort>10</effort>
+          <velocity>1.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <link name='right_gripper_finger'>
+      <pose relative_to='right_gripper_finger_joint'>0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>0.06 0 0 0 0 0</pose>
+        <mass>0.02</mass>
+        <inertia>
+          <ixx>0.000001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00002</iyy>
+          <iyz>0</iyz>
+          <izz>0.00002</izz>
+        </inertia>
+      </inertial>
+      <visual name='right_gripper_finger_visual'>
+        <pose>0.06 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.12 0.015 0.04</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.8 0.0 0.0 1</ambient>
+          <diffuse>0.8 0.0 0.0 1</diffuse>
+          <specular>0.08 0.08 0.08 1</specular>
+        </material>
+      </visual>
+      <collision name='right_gripper_finger_collision'>
+        <pose>0.06 0 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.12 0.015 0.04</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
     <joint name='Midsection_Revolute-55' type='revolute'>
       <pose relative_to='chassis'>0.22 0.015800000000000002 0.044999999999999998 -1.5707963267948959 0 0</pose>
       <parent>chassis</parent>
@@ -908,6 +1151,42 @@
       <min_velocity>-0.5555555555555556</min_velocity>
       <max_velocity>0.5555555555555556</max_velocity>
     </plugin>
+    <plugin filename='gz-sim-joint-position-controller-system' name='gz::sim::systems::JointPositionController'>
+      <joint_name>robotarm_x_joint</joint_name>
+      <topic>/robotarm/x_position_cmd</topic>
+      <p_gain>80</p_gain>
+      <i_gain>0</i_gain>
+      <d_gain>8</d_gain>
+      <cmd_min>-0.2</cmd_min>
+      <cmd_max>0.2</cmd_max>
+    </plugin>
+    <plugin filename='gz-sim-joint-position-controller-system' name='gz::sim::systems::JointPositionController'>
+      <joint_name>robotarm_z_joint</joint_name>
+      <topic>/robotarm/z_position_cmd</topic>
+      <p_gain>80</p_gain>
+      <i_gain>0</i_gain>
+      <d_gain>8</d_gain>
+      <cmd_min>-1.0</cmd_min>
+      <cmd_max>1.0</cmd_max>
+    </plugin>
+    <plugin filename='gz-sim-joint-position-controller-system' name='gz::sim::systems::JointPositionController'>
+      <joint_name>left_gripper_finger_joint</joint_name>
+      <topic>/gripper/left_position_cmd</topic>
+      <p_gain>20</p_gain>
+      <i_gain>0</i_gain>
+      <d_gain>2</d_gain>
+      <cmd_min>-0.785</cmd_min>
+      <cmd_max>0.785</cmd_max>
+    </plugin>
+    <plugin filename='gz-sim-joint-position-controller-system' name='gz::sim::systems::JointPositionController'>
+      <joint_name>right_gripper_finger_joint</joint_name>
+      <topic>/gripper/right_position_cmd</topic>
+      <p_gain>20</p_gain>
+      <i_gain>0</i_gain>
+      <d_gain>2</d_gain>
+      <cmd_min>-0.785</cmd_min>
+      <cmd_max>0.785</cmd_max>
+    </plugin>
     <plugin filename='gz-sim-joint-state-publisher-system' name='gz::sim::systems::JointStatePublisher'>
       <joint_name>left_wheel_joint</joint_name>
       <joint_name>right_wheel_joint</joint_name>
@@ -917,6 +1196,10 @@
       <joint_name>Midsection_Revolute-55</joint_name>
       <joint_name>SLOTRFI_Revolute-59</joint_name>
       <joint_name>SLOTRBI_Revolute-58</joint_name>
+      <joint_name>robotarm_x_joint</joint_name>
+      <joint_name>robotarm_z_joint</joint_name>
+      <joint_name>left_gripper_finger_joint</joint_name>
+      <joint_name>right_gripper_finger_joint</joint_name>
       <topic>/joint_states</topic>
       <update_rate>30</update_rate>
     </plugin>

@@ -109,6 +109,45 @@
     </DockSplitter>
    </Container>
   </Tab>
+    <Tab tab_name="imu" containers="1">
+     <Container>
+        <DockSplitter count="2" orientation="-" sizes="0.500000;0.500000">
+         <DockArea name="IMU Orientation RPY">
+            <plot flip_y="false" flip_x="false" mode="TimeSeries" line_width="1.0">
+             <limitY/>
+             <curve name="/imu/data/orientation/roll" color="#1f77b4"/>
+             <curve name="/imu/data/orientation/pitch" color="#ff7f0e"/>
+             <curve name="/imu/data/orientation/yaw" color="#2ca02c"/>
+            </plot>
+         </DockArea>
+         <DockArea name="IMU Angular Velocity">
+            <plot flip_y="false" flip_x="false" mode="TimeSeries" line_width="1.0">
+             <limitY/>
+             <curve name="/imu/data/angular_velocity/x" color="#1f77b4"/>
+             <curve name="/imu/data/angular_velocity/y" color="#ff7f0e"/>
+             <curve name="/imu/data/angular_velocity/z" color="#d62728"/>
+            </plot>
+         </DockArea>
+        </DockSplitter>
+        <DockSplitter count="2" orientation="-" sizes="0.500000;0.500000">
+         <DockArea name="IMU Linear Acceleration XYZ">
+            <plot flip_y="false" flip_x="false" mode="TimeSeries" line_width="1.0">
+             <limitY/>
+             <curve name="/imu/data/linear_acceleration/x" color="#1f77b4"/>
+             <curve name="/imu/data/linear_acceleration/y" color="#ff7f0e"/>
+             <curve name="/imu/data/linear_acceleration/z" color="#2ca02c"/>
+            </plot>
+         </DockArea>
+         <DockArea name="IMU Accel Bias View">
+            <plot flip_y="false" flip_x="false" mode="TimeSeries" line_width="1.0">
+             <limitY/>
+             <curve name="/imu/data/linear_acceleration/x" color="#1f77b4"/>
+             <curve name="/imu/data/linear_acceleration/y" color="#ff7f0e"/>
+            </plot>
+         </DockArea>
+        </DockSplitter>
+     </Container>
+    </Tab>
   <currentTabIndex index="0"/>
  </tabbed_widget>
  <use_relative_time_offset enabled="0"/>

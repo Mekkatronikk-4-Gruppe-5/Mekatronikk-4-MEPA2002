@@ -27,6 +27,8 @@ def generate_launch_description():
         'teddy_approach.yaml',
     )
     default_rviz_config_path = os.path.join(robot_bringup_share, 'rviz', 'rviz.rviz')
+    workspace_root = os.path.abspath(os.path.join(robot_bringup_share, '..', '..', '..', '..'))
+    default_imu_calibration_path = os.path.join(workspace_root, 'config', 'imu_static_bias.yaml')
 
     use_nav2 = LaunchConfiguration('use_nav2')
     use_lidar = LaunchConfiguration('use_lidar')
@@ -70,6 +72,7 @@ def generate_launch_description():
     tf_yaw = LaunchConfiguration('tf_yaw')
     params_file = LaunchConfiguration('params_file')
     teddy_approach_params_file = LaunchConfiguration('teddy_approach_params_file')
+    imu_calibration_file = LaunchConfiguration('imu_calibration_file')
     nav2_start_delay_s = LaunchConfiguration('nav2_start_delay_s')
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
@@ -187,6 +190,7 @@ def generate_launch_description():
         parameters=[
             {'use_sim_time': use_sim_time},
             {'frame_id': imu_frame},
+            {'static_calibration_file': imu_calibration_file},
         ],
     )
 
@@ -292,6 +296,7 @@ def generate_launch_description():
             'teddy_approach_params_file',
             default_value=default_teddy_approach_params_path,
         ),
+        DeclareLaunchArgument('imu_calibration_file', default_value=default_imu_calibration_path),
         DeclareLaunchArgument('rviz_config', default_value=default_rviz_config_path),
         DeclareLaunchArgument('use_respawn', default_value='false'),
         DeclareLaunchArgument('log_level', default_value='info'),

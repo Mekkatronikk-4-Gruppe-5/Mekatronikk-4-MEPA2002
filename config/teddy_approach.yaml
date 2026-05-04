@@ -8,7 +8,7 @@ teddy_approach:
 
     # Centering controller. dx > 0 means teddy is right of image center.
     angular_kp: 1.2
-    max_angular_speed: 1.8
+    max_angular_speed: 1.6
     min_angular_speed: 1.0
     center_tolerance: 0.10
 
@@ -27,7 +27,7 @@ teddy_approach:
     marker_use_latest_tf: true
 
     # Drive forward only after the teddy is centered unless this is true.
-    linear_speed: 0.01
+    linear_speed: 0.02
     drive_when_not_centered: false
 
     # Optional Nav2 goal used as a rough teddy search/approach position.

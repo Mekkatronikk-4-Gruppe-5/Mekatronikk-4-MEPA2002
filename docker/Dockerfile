@@ -11,6 +11,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --prefer-binary \
       numpy==1.26.4 \
+      scipy \
       catkin_pkg==1.0.0 \
       pyserial==3.5 \
       ultralytics==8.4.12 \
@@ -18,7 +19,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
       lgpio==0.2.2.0 \
       adafruit-blinka==9.0.2 \
       adafruit-circuitpython-bno08x==1.3.1 \
-      adafruit-extended-bus
+      adafruit-extended-bus \
+      tf-transformations
 
 # Basic dev tooling for ROS 2 workspaces.
 # This image is intended for headless SSH use on the Pi, so no GUI tools are included.

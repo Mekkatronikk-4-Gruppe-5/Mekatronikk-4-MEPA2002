@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import time
-
 import rclpy
 from geometry_msgs.msg import Twist
 from rclpy.node import Node
@@ -82,20 +80,23 @@ class CmdVelMuxNode(Node):
             % (manual_input_topic, assist_input_topic, nav_input_topic, output_topic)
         )
 
+    def _now_seconds(self) -> float:
+        return self.get_clock().now().nanoseconds * 1e-9
+
     def _on_nav_cmd(self, msg: Twist) -> None:
         self._last_nav_cmd = copy_twist(msg)
-        self._last_nav_at = time.monotonic()
+        self._last_nav_at = self._now_seconds()
 
     def _on_manual_cmd(self, msg: Twist) -> None:
         self._last_manual_cmd = copy_twist(msg)
-        self._last_manual_at = time.monotonic()
+        self._last_manual_at = self._now_seconds()
 
     def _on_assist_cmd(self, msg: Twist) -> None:
         self._last_assist_cmd = copy_twist(msg)
-        self._last_assist_at = time.monotonic()
+        self._last_assist_at = self._now_seconds()
 
     def _select_command(self) -> tuple[str, Twist]:
-        now = time.monotonic()
+        now = self._now_seconds()
 
         manual_active = (
             self._last_manual_at >= 0.0 and (now - self._last_manual_at) <= self._manual_timeout_s

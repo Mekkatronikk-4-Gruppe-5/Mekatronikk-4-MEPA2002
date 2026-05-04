@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import math
 import re
-import time
 
 import rclpy
 from builtin_interfaces.msg import Time
@@ -149,6 +148,9 @@ class TeddyApproachNode(Node):
     def _param(self, name: str):
         return self.get_parameter(name).value
 
+    def _now_seconds(self) -> float:
+        return self.get_clock().now().nanoseconds * 1e-9
+
     def _validate_params(self) -> None:
         checks = [
             (self._min_angular_speed >= 0.0, "min_angular_speed must be zero or greater"),
@@ -175,7 +177,7 @@ class TeddyApproachNode(Node):
         dx_text = fields.get("dx")
         if self._last_count > 0 and dx_text is not None:
             self._last_dx = float(dx_text)
-            self._last_seen_at = time.monotonic()
+            self._last_seen_at = self._now_seconds()
 
     def _on_scan(self, msg: LaserScan) -> None:
         front_ranges = []
@@ -202,7 +204,7 @@ class TeddyApproachNode(Node):
         if scan_frame:
             self._last_scan_frame = scan_frame
         self._last_scan_stamp = msg.header.stamp
-        self._last_scan_at = time.monotonic()
+        self._last_scan_at = self._now_seconds()
 
     def _send_nav_goal(self) -> None:
         if self._nav_goal_sent:
@@ -234,7 +236,7 @@ class TeddyApproachNode(Node):
         if self._use_nav_goal and self._send_goal_on_start and not self._nav_goal_sent:
             self._send_nav_goal()
 
-        now = time.monotonic()
+        now = self._now_seconds()
         self._publish_lidar_markers()
         if not self._teddy_recent(now):
             self._log_mode("waiting_for_teddy")

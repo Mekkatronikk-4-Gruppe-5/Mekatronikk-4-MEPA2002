@@ -249,7 +249,7 @@ collision_monitor:
       simulation_time_step: 0.1
       min_points: 6
       visualize: false
-      enabled: false
+      enabled: true
     observation_sources: ["scan"]
     scan:
       type: "scan"

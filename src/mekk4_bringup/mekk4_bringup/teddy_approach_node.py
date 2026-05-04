@@ -28,6 +28,7 @@ PARAM_DEFAULTS = {
     "lost_timeout_s": 0.5,
     "linear_speed": 0.08,
     "angular_kp": 1.2,
+    "angular_kd": 0.0,
     "min_angular_speed": 0.0,
     "max_angular_speed": 0.8,
     "center_tolerance": 0.10,
@@ -74,6 +75,46 @@ def point_at(distance: float, angle: float, z: float = MARKER_Z) -> Point:
     return Point(x=distance * math.cos(angle), y=distance * math.sin(angle), z=z)
 
 
+class ImageErrorController:
+    """Small P/PD controller for keeping the teddy centered in the image."""
+
+    def __init__(self, kp: float, kd: float, min_output: float, max_output: float) -> None:
+        self.kp = kp
+        self.kd = kd
+        self.min_output = min_output
+        self.max_output = max_output
+        self._last_error: float | None = None
+        self._last_time: float | None = None
+
+    def reset(self) -> None:
+        self._last_error = None
+        self._last_time = None
+
+    def __call__(self, measurement: float, now: float) -> float:
+        error = -measurement  # dx > 0 means teddy is right; turn right with angular.z < 0.
+        derivative = self._derivative(error, now)
+
+        output = self.kp * error + self.kd * derivative
+        self._last_error = error
+        self._last_time = now
+
+        if output == 0.0:
+            return 0.0
+
+        output = math.copysign(max(abs(output), self.min_output), output)
+        return clamp(output, -self.max_output, self.max_output)
+
+    def _derivative(self, error: float, now: float) -> float:
+        if self._last_error is None or self._last_time is None:
+            return 0.0
+
+        dt = now - self._last_time
+        if dt <= 0.0:
+            return 0.0
+
+        return (error - self._last_error) / dt
+
+
 class TeddyApproachNode(Node):
     def __init__(self) -> None:
         super().__init__("teddy_approach")
@@ -89,6 +130,7 @@ class TeddyApproachNode(Node):
         self._lost_timeout_s = self._param("lost_timeout_s")
         self._linear_speed = self._param("linear_speed")
         self._angular_kp = self._param("angular_kp")
+        self._angular_kd = self._param("angular_kd")
         self._min_angular_speed = self._param("min_angular_speed")
         self._max_angular_speed = self._param("max_angular_speed")
         self._center_tolerance = self._param("center_tolerance")
@@ -106,6 +148,12 @@ class TeddyApproachNode(Node):
         self._send_goal_on_start = self._param("send_goal_on_start")
 
         self._validate_params()
+        self._angular_controller = ImageErrorController(
+            kp=self._angular_kp,
+            kd=self._angular_kd,
+            min_output=self._min_angular_speed,
+            max_output=self._max_angular_speed,
+        )
 
         self._cmd_pub = self.create_publisher(Twist, cmd_vel_topic, 10)
         self._marker_pub = (
@@ -154,6 +202,7 @@ class TeddyApproachNode(Node):
     def _validate_params(self) -> None:
         checks = [
             (self._min_angular_speed >= 0.0, "min_angular_speed must be zero or greater"),
+            (self._angular_kd >= 0.0, "angular_kd must be zero or greater"),
             (
                 self._max_angular_speed >= self._min_angular_speed,
                 "max_angular_speed must be greater than or equal to min_angular_speed",
@@ -239,6 +288,7 @@ class TeddyApproachNode(Node):
         now = self._now_seconds()
         self._publish_lidar_markers()
         if not self._teddy_recent(now):
+            self._angular_controller.reset()
             self._log_mode("waiting_for_teddy")
             return
 
@@ -246,14 +296,15 @@ class TeddyApproachNode(Node):
         centered = abs(self._last_dx) <= self._center_tolerance
         close_enough = centered and self._lidar_stop_active(now)
         if close_enough:
+            self._angular_controller.reset()
             self._cmd_pub.publish(cmd)
             self._log_mode("close_enough_lidar")
             return
 
-        # P-controller on horizontal image error:
-        # dx > 0 means teddy is right of center, so angular.z must turn right.
         if not centered:
-            cmd.angular.z = self._turn_rate_from_dx(self._last_dx)
+            cmd.angular.z = self._angular_controller(self._last_dx, now)
+        else:
+            self._angular_controller.reset()
 
         # Forward motion is gated by centering unless explicitly disabled.
         if centered or self._drive_when_not_centered:
@@ -273,13 +324,6 @@ class TeddyApproachNode(Node):
             and self._last_front_points >= self._stop_lidar_min_points
             and self._last_front_distance <= self._stop_lidar_distance_m
         )
-
-    def _turn_rate_from_dx(self, dx: float) -> float:
-        raw = -self._angular_kp * dx
-        if raw == 0.0:
-            return 0.0
-        with_minimum = math.copysign(max(abs(raw), self._min_angular_speed), raw)
-        return clamp(with_minimum, -self._max_angular_speed, self._max_angular_speed)
 
     def _publish_lidar_markers(self) -> None:
         if self._marker_pub is None or not self._last_scan_frame:

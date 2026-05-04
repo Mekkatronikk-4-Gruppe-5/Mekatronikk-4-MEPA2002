@@ -6,6 +6,7 @@ import re
 import time
 
 import rclpy
+from builtin_interfaces.msg import Time
 from geometry_msgs.msg import Point, PoseStamped, Quaternion, Twist
 from nav2_msgs.action import NavigateToPose
 from rclpy.action import ActionClient
@@ -38,6 +39,8 @@ PARAM_DEFAULTS = {
     "stop_lidar_timeout_s": 0.5,
     "visualize_lidar_stop": True,
     "marker_topic": "/teddy_approach/lidar_stop_markers",
+    "marker_frame_id": "",
+    "marker_use_latest_tf": True,
     "drive_when_not_centered": False,
     "use_nav_goal": False,
     "send_goal_on_start": False,
@@ -97,6 +100,8 @@ class TeddyApproachNode(Node):
         self._stop_lidar_timeout_s = self._param("stop_lidar_timeout_s")
         self._visualize_lidar_stop = self._param("visualize_lidar_stop")
         marker_topic = self._param("marker_topic")
+        self._marker_frame_id = str(self._param("marker_frame_id")).strip()
+        self._marker_use_latest_tf = bool(self._param("marker_use_latest_tf"))
         self._drive_when_not_centered = self._param("drive_when_not_centered")
         self._use_nav_goal = self._param("use_nav_goal")
         self._send_goal_on_start = self._param("send_goal_on_start")
@@ -120,6 +125,7 @@ class TeddyApproachNode(Node):
         self._last_front_angle = 0.0
         self._last_front_points = 0
         self._last_scan_frame = ""
+        self._last_scan_stamp = Time()
         self._last_scan_at = -1.0
         self._last_count = 0
         self._nav_goal_sent = False
@@ -192,7 +198,10 @@ class TeddyApproachNode(Node):
         self._last_front_points = len(front_ranges)
         self._last_front_distance = closest_distance
         self._last_front_angle = closest_angle
-        self._last_scan_frame = msg.header.frame_id
+        scan_frame = msg.header.frame_id.strip()
+        if scan_frame:
+            self._last_scan_frame = scan_frame
+        self._last_scan_stamp = msg.header.stamp
         self._last_scan_at = time.monotonic()
 
     def _send_nav_goal(self) -> None:
@@ -274,16 +283,16 @@ class TeddyApproachNode(Node):
         if self._marker_pub is None or not self._last_scan_frame:
             return
 
-        now = self.get_clock().now().to_msg()
+        stamp = Time() if self._marker_use_latest_tf else self._last_scan_stamp
         markers = MarkerArray()
-        markers.markers.append(self._sector_marker(now))
-        markers.markers.append(self._arc_marker(now))
-        markers.markers.append(self._closest_marker(now))
+        markers.markers.append(self._sector_marker(stamp))
+        markers.markers.append(self._arc_marker(stamp))
+        markers.markers.append(self._closest_marker(stamp))
         self._marker_pub.publish(markers)
 
     def _base_marker(self, stamp, marker_id: int, marker_type: int, color: tuple[float, float, float, float]) -> Marker:
         marker = Marker()
-        marker.header.frame_id = self._last_scan_frame
+        marker.header.frame_id = self._marker_frame_id or self._last_scan_frame
         marker.header.stamp = stamp
         marker.ns = "teddy_lidar_stop"
         marker.id = marker_id

@@ -21,6 +21,10 @@ teddy_approach:
     # Always draw the green LiDAR target sector in RViz.
     visualize_lidar_stop: true
     marker_topic: /teddy_approach/lidar_stop_markers
+    # Publish markers in a stable frame with TF to odom.
+    marker_frame_id: base_laser
+    # Use latest TF in RViz for markers to avoid future-extrapolation warnings.
+    marker_use_latest_tf: true
 
     # Drive forward only after the teddy is centered unless this is true.
     linear_speed: 0.01

@@ -28,6 +28,8 @@ setup(
             'nav_cmd_vel_flip_node = mekk4_bringup.nav_cmd_vel_flip_node:main',
             'ros_keyboard_teleop = mekk4_bringup.ros_keyboard_teleop:main',
             'teddy_approach_node = mekk4_bringup.teddy_approach_node:main',
+            'teddy_lidar_markers_node = mekk4_bringup.teddy_lidar_markers_node:main',
+            'teddy_nav_goal_node = mekk4_bringup.teddy_nav_goal_node:main',
             'zero_joint_state_publisher = mekk4_bringup.zero_joint_state_publisher:main',
         ],
     },

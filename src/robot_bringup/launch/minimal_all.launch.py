@@ -341,6 +341,7 @@ def generate_launch_description():
         period=1.0,
         actions=[
             bridge,
+            odom_bridge,
             tracked_cmd_vel_adapter,
             lidar_static_tf,
             lidar_scoped_frame_alias_tf,
@@ -361,7 +362,6 @@ def generate_launch_description():
     start_core_stack = TimerAction(
         period=3.0,
         actions=[
-            odom_bridge,
             shared_core_stack,
         ]
     )

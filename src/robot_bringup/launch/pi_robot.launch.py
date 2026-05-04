@@ -87,6 +87,7 @@ def generate_launch_description():
         name='zero_joint_state_publisher',
         output='screen',
         condition=IfCondition(use_joint_states),
+        parameters=[{'use_sim_time': use_sim_time}],
     )
 
     lidar_launch = IncludeLaunchDescription(
@@ -107,6 +108,7 @@ def generate_launch_description():
             'tf_roll': tf_roll,
             'tf_pitch': tf_pitch,
             'tf_yaw': tf_yaw,
+            'use_sim_time': use_sim_time,
         }.items(),
     )
 
@@ -129,6 +131,7 @@ def generate_launch_description():
         name='teddy_detector',
         output='screen',
         condition=IfCondition(use_teddy),
+        parameters=[{'use_sim_time': use_sim_time}],
     )
 
     teddy_approach_node = Node(
@@ -138,6 +141,33 @@ def generate_launch_description():
         output='screen',
         condition=IfCondition(use_teddy_approach),
         parameters=[
+            {'use_sim_time': use_sim_time},
+            teddy_approach_params_file,
+            {'enabled': ParameterValue(use_teddy_approach, value_type=bool)},
+        ],
+    )
+
+    teddy_lidar_markers_node = Node(
+        package='mekk4_bringup',
+        executable='teddy_lidar_markers_node',
+        name='teddy_lidar_markers',
+        output='screen',
+        condition=IfCondition(use_teddy_approach),
+        parameters=[
+            {'use_sim_time': use_sim_time},
+            teddy_approach_params_file,
+            {'enabled': ParameterValue(use_teddy_approach, value_type=bool)},
+        ],
+    )
+
+    teddy_nav_goal_node = Node(
+        package='mekk4_bringup',
+        executable='teddy_nav_goal_node',
+        name='teddy_nav_goal',
+        output='screen',
+        condition=IfCondition(use_teddy_approach),
+        parameters=[
+            {'use_sim_time': use_sim_time},
             teddy_approach_params_file,
             {'enabled': ParameterValue(use_teddy_approach, value_type=bool)},
         ],
@@ -149,7 +179,10 @@ def generate_launch_description():
         name='bno085',
         output='screen',
         condition=IfCondition(use_imu),
-        parameters=[{'frame_id': imu_frame}],
+        parameters=[
+            {'use_sim_time': use_sim_time},
+            {'frame_id': imu_frame},
+        ],
     )
 
     mega_driver_node = Node(
@@ -159,6 +192,7 @@ def generate_launch_description():
         output='screen',
         condition=IfCondition(use_mega_driver),
         parameters=[
+            {'use_sim_time': use_sim_time},
             {
                 'port': ParameterValue(mega_port, value_type=str),
                 'baudrate': ParameterValue(mega_baudrate, value_type=int),
@@ -190,7 +224,10 @@ def generate_launch_description():
         name='ekf_filter_node',
         output='screen',
         condition=IfCondition(use_ekf),
-        parameters=[ekf_params_file],
+        parameters=[
+            {'use_sim_time': use_sim_time},
+            ekf_params_file,
+        ],
         remappings=[('odometry/filtered', 'odom')],
     )
 
@@ -263,5 +300,7 @@ def generate_launch_description():
         nav2_launch,
         teddy_detector,
         teddy_approach_node,
+        teddy_lidar_markers_node,
+        teddy_nav_goal_node,
         rviz_node,
     ])

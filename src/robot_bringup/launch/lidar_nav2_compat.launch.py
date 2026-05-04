@@ -18,6 +18,7 @@ def generate_launch_description():
     tf_roll = LaunchConfiguration('tf_roll')
     tf_pitch = LaunchConfiguration('tf_pitch')
     tf_yaw = LaunchConfiguration('tf_yaw')
+    use_sim_time = LaunchConfiguration('use_sim_time')
 
     ldlidar_node = Node(
         package='ldlidar_stl_ros2',
@@ -25,6 +26,7 @@ def generate_launch_description():
         name='ldlidar',
         output='screen',
         parameters=[
+            {'use_sim_time': use_sim_time},
             {'product_name': product_name},
             {'topic_name': topic_name},
             {'frame_id': frame_id},
@@ -41,6 +43,7 @@ def generate_launch_description():
         package='tf2_ros',
         executable='static_transform_publisher',
         name='lidar_static_tf',
+        parameters=[{'use_sim_time': use_sim_time}],
         arguments=[
             '--x', tf_x,
             '--y', tf_y,
@@ -66,6 +69,7 @@ def generate_launch_description():
         DeclareLaunchArgument('tf_roll', default_value='0.0'),
         DeclareLaunchArgument('tf_pitch', default_value='0.0'),
         DeclareLaunchArgument('tf_yaw', default_value='0.0'),
+        DeclareLaunchArgument('use_sim_time', default_value='false'),
         ldlidar_node,
         lidar_static_tf,
     ])

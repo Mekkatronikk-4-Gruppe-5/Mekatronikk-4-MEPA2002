@@ -89,6 +89,7 @@ def generate_launch_description():
             name='cmd_vel_mux',
             output='screen',
             parameters=[
+                {'use_sim_time': use_sim_time},
                 {
                     'nav_input_topic': 'cmd_vel_nav_auto',
                     'assist_input_topic': 'cmd_vel_teddy',
@@ -104,6 +105,7 @@ def generate_launch_description():
             name='nav_cmd_vel_flip',
             output='screen',
             parameters=[
+                {'use_sim_time': use_sim_time},
                 {
                     'input_topic': 'cmd_vel_nav',
                     'output_topic': 'cmd_vel_nav_flipped',
@@ -141,6 +143,7 @@ def generate_launch_description():
             output='screen',
             arguments=['--ros-args', '--log-level', log_level],
             parameters=[
+                {'use_sim_time': use_sim_time},
                 {'autostart': autostart},
                 {'node_names': navigation_nodes},
                 {'bond_timeout': bond_timeout},

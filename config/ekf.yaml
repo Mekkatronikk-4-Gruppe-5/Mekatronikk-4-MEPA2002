@@ -4,7 +4,7 @@ ekf_filter_node:
     sensor_timeout: 0.1
     two_d_mode: true
     publish_tf: true
-    publish_acceleration: true
+    publish_acceleration: false
     transform_time_offset: 0.0
     transform_timeout: 0.0
     print_diagnostics: true
@@ -42,11 +42,11 @@ ekf_filter_node:
     imu0_pose_rejection_threshold: 0.8
     imu0_twist_rejection_threshold: 2.5
     imu0_linear_acceleration_rejection_threshold: 2.5
-    # Use the IMU for yaw orientation and linear acceleration (ax, ay) for better prediction.
+    # Use the IMU only for yaw orientation for now; skip gyro z until it is verified stable.
     imu0_config: [
       false, false, false,
       false, false, true,
       false, false, false,
       false, false, false,
-      true,  true,  false
+      false, false, false
     ]

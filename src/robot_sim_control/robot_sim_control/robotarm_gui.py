@@ -29,7 +29,11 @@ class RobotarmGui:
         self.z_max = args.z_max
         self.gripper_min = args.gripper_min
         self.gripper_max = args.gripper_max
-        self.publish_period_ms = max(20, int(args.publish_period * 1000.0))
+        self.x_initial = clamp(args.x_initial, self.x_min, self.x_max)
+        self.z_initial = clamp(args.z_initial, self.z_min, self.z_max)
+        self.gripper_initial = clamp(
+            args.gripper_initial, self.gripper_min, self.gripper_max
+        )
         self.closed = False
 
         self.root = tk.Tk()
@@ -38,16 +42,14 @@ class RobotarmGui:
         self.root.configure(bg="#111111")
         self.root.protocol("WM_DELETE_WINDOW", self.close)
 
-        self.x_var = tk.DoubleVar(value=clamp(args.x_initial, self.x_min, self.x_max))
-        self.z_var = tk.DoubleVar(value=clamp(args.z_initial, self.z_min, self.z_max))
-        self.gripper_var = tk.DoubleVar(
-            value=clamp(args.gripper_initial, self.gripper_min, self.gripper_max)
-        )
+        self.x_var = tk.DoubleVar(value=self.x_initial)
+        self.z_var = tk.DoubleVar(value=self.z_initial)
+        self.gripper_var = tk.DoubleVar(value=self.gripper_initial)
         self.status_var = tk.StringVar(value=self._status_text())
 
         self._build_ui()
         self.root.after(20, self._spin_ros)
-        self.root.after(20, self._publish_targets)
+        self.root.after(100, self._publish_once)
 
     def _build_ui(self) -> None:
         style = ttk.Style()
@@ -100,7 +102,7 @@ class RobotarmGui:
             resolution=0.001,
             orient="horizontal",
             variable=variable,
-            command=lambda _value: self.status_var.set(self._status_text()),
+            command=lambda _value: self._on_slider_changed(),
             length=320,
             fg="#f5f5f5",
             bg="#111111",
@@ -116,10 +118,14 @@ class RobotarmGui:
             f"g={self.gripper_var.get():.3f} rad"
         )
 
+    def _on_slider_changed(self) -> None:
+        self.status_var.set(self._status_text())
+        self._publish_once()
+
     def _reset(self) -> None:
-        self.x_var.set(0.0)
-        self.z_var.set(0.0)
-        self.gripper_var.set(0.0)
+        self.x_var.set(self.x_initial)
+        self.z_var.set(self.z_initial)
+        self.gripper_var.set(self.gripper_initial)
         self.status_var.set(self._status_text())
         self._publish_once()
 
@@ -143,12 +149,6 @@ class RobotarmGui:
         right_msg.data = -gripper_position
         self.right_gripper_pub.publish(right_msg)
 
-    def _publish_targets(self) -> None:
-        if self.closed:
-            return
-        self._publish_once()
-        self.root.after(self.publish_period_ms, self._publish_targets)
-
     def _spin_ros(self) -> None:
         if self.closed:
             return
@@ -171,10 +171,10 @@ class RobotarmGui:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Small GUI for simulated robotarm joint targets.")
-    parser.add_argument("--x-topic", default="/robotarm/x_position_cmd")
-    parser.add_argument("--z-topic", default="/robotarm/z_position_cmd")
-    parser.add_argument("--left-gripper-topic", default="/gripper/left_position_cmd")
-    parser.add_argument("--right-gripper-topic", default="/gripper/right_position_cmd")
+    parser.add_argument("--x-topic", default="/robotarm/request/x_position")
+    parser.add_argument("--z-topic", default="/robotarm/request/z_position")
+    parser.add_argument("--left-gripper-topic", default="/gripper/request/left_position")
+    parser.add_argument("--right-gripper-topic", default="/gripper/request/right_position")
     parser.add_argument("--x-min", type=float, default=-0.2)
     parser.add_argument("--x-max", type=float, default=0.2)
     parser.add_argument("--z-min", type=float, default=0.0)
@@ -182,9 +182,8 @@ def main() -> int:
     parser.add_argument("--gripper-min", type=float, default=-0.785)
     parser.add_argument("--gripper-max", type=float, default=0.785)
     parser.add_argument("--x-initial", type=float, default=0.0)
-    parser.add_argument("--z-initial", type=float, default=0.0)
+    parser.add_argument("--z-initial", type=float, default=0.227)
     parser.add_argument("--gripper-initial", type=float, default=0.0)
-    parser.add_argument("--publish-period", type=float, default=0.05)
     args = parser.parse_args(remove_ros_args(args=sys.argv)[1:])
 
     rclpy.init()

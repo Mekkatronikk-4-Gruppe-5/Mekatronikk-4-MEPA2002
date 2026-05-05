@@ -149,10 +149,10 @@ def generate_launch_description():
         output='screen',
         condition=IfCondition(robotarm_gui_enabled),
         arguments=[
-            '--x-topic', '/robotarm/x_position_cmd',
-            '--z-topic', '/robotarm/z_position_cmd',
-            '--left-gripper-topic', '/gripper/left_position_cmd',
-            '--right-gripper-topic', '/gripper/right_position_cmd',
+            '--x-topic', '/robotarm/request/x_position',
+            '--z-topic', '/robotarm/request/z_position',
+            '--left-gripper-topic', '/gripper/request/left_position',
+            '--right-gripper-topic', '/gripper/request/right_position',
         ],
     )
 
@@ -169,6 +169,7 @@ def generate_launch_description():
             'use_mega_driver': 'false',
             'use_ekf': use_ekf,
             'use_joint_states': 'false',
+            'use_robotarm_safety': 'true',
             'use_sim_time': 'true',
             'rviz': rviz_enabled,
             'params_file': params_file,

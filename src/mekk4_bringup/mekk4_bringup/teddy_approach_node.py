@@ -31,6 +31,7 @@ PARAM_DEFAULTS = {
     "stop_lidar_front_angle_rad": 0.20,
     "stop_lidar_min_points": 3,
     "stop_lidar_timeout_s": 0.5,
+    "mode_topic": "/teddy_approach/mode",
 }
 
 
@@ -124,8 +125,10 @@ class TeddyApproachNode(Node):
         status_topic = self.param("status_topic")
         cmd_vel_topic = self.param("cmd_vel_topic")
         scan_topic = self.param("scan_topic")
+        mode_topic = self.param("mode_topic")
 
         self.cmd_pub = self.create_publisher(Twist, cmd_vel_topic, 10)
+        self.mode_pub = self.create_publisher(String, mode_topic, 10)
         self.create_subscription(String, status_topic, self.on_status, 10)
         self.create_subscription(LaserScan, scan_topic, self.on_scan, 10)
         self.create_timer(self.param("publish_period_s"), self.on_timer)
@@ -240,6 +243,9 @@ class TeddyApproachNode(Node):
     def log_mode(self, mode):
         if mode == self.last_mode:
             return
+        msg = String()
+        msg.data = mode
+        self.mode_pub.publish(msg)
         self.get_logger().info(f"mode={mode}")
         self.last_mode = mode
 

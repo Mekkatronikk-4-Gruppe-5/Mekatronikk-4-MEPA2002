@@ -1156,7 +1156,7 @@
       <topic>/robotarm/x_position_cmd</topic>
       <p_gain>80</p_gain>
       <i_gain>0</i_gain>
-      <d_gain>8</d_gain>
+      <d_gain>20</d_gain>
       <cmd_min>-0.2</cmd_min>
       <cmd_max>0.2</cmd_max>
     </plugin>
@@ -1164,8 +1164,8 @@
       <joint_name>robotarm_z_joint</joint_name>
       <topic>/robotarm/z_position_cmd</topic>
       <p_gain>80</p_gain>
-      <i_gain>0</i_gain>
-      <d_gain>8</d_gain>
+      <i_gain>10</i_gain>
+      <d_gain>20</d_gain>
       <cmd_min>-1.0</cmd_min>
       <cmd_max>1.0</cmd_max>
     </plugin>

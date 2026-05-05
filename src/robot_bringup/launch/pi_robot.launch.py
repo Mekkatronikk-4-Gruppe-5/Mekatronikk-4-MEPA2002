@@ -36,6 +36,7 @@ def generate_launch_description():
     use_mega_driver = LaunchConfiguration('use_mega_driver')
     use_ekf = LaunchConfiguration('use_ekf')
     use_joint_states = LaunchConfiguration('use_joint_states')
+    use_robotarm_safety = LaunchConfiguration('use_robotarm_safety')
     use_sim_time = LaunchConfiguration('use_sim_time')
     rviz_enabled = LaunchConfiguration('rviz')
     product_name = LaunchConfiguration('product_name')
@@ -153,6 +154,29 @@ def generate_launch_description():
         ],
     )
 
+    teddy_grab_node = Node(
+        package='mekk4_bringup',
+        executable='teddy_grab_node',
+        name='teddy_grab',
+        output='screen',
+        condition=IfCondition(use_teddy_approach),
+        parameters=[
+            {'use_sim_time': use_sim_time},
+            {'enabled': ParameterValue(use_teddy_approach, value_type=bool)},
+        ],
+    )
+
+    robotarm_safety_node = Node(
+        package='mekk4_bringup',
+        executable='robotarm_safety_node',
+        name='robotarm_safety',
+        output='screen',
+        condition=IfCondition(use_robotarm_safety),
+        parameters=[
+            {'use_sim_time': use_sim_time},
+        ],
+    )
+
     teddy_lidar_markers_node = Node(
         package='mekk4_bringup',
         executable='teddy_lidar_markers_node',
@@ -255,6 +279,7 @@ def generate_launch_description():
         DeclareLaunchArgument('use_mega_driver', default_value='false'),
         DeclareLaunchArgument('use_ekf', default_value='false'),
         DeclareLaunchArgument('use_joint_states', default_value='true'),
+        DeclareLaunchArgument('use_robotarm_safety', default_value='true'),
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('rviz', default_value='false'),
         DeclareLaunchArgument('product_name', default_value='LDLiDAR_LD06'),
@@ -307,6 +332,8 @@ def generate_launch_description():
         delayed_nav2_launch,
         teddy_detector,
         teddy_approach_node,
+        robotarm_safety_node,
+        teddy_grab_node,
         teddy_lidar_markers_node,
         teddy_nav_goal_node,
         rviz_node,

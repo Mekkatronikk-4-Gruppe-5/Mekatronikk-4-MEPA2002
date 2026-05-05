@@ -1,0 +1,182 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import rclpy
+from rclpy.executors import ExternalShutdownException
+from rclpy.node import Node
+from sensor_msgs.msg import JointState
+from std_msgs.msg import Float64
+
+
+PARAM_DEFAULTS = {
+    "x_request_topic": "/robotarm/request/x_position",
+    "z_request_topic": "/robotarm/request/z_position",
+    "left_gripper_request_topic": "/gripper/request/left_position",
+    "right_gripper_request_topic": "/gripper/request/right_position",
+    "x_command_topic": "/robotarm/x_position_cmd",
+    "z_command_topic": "/robotarm/z_position_cmd",
+    "left_gripper_command_topic": "/gripper/left_position_cmd",
+    "right_gripper_command_topic": "/gripper/right_position_cmd",
+    "joint_states_topic": "/joint_states",
+    "z_joint_name": "robotarm_z_joint",
+    "publish_period_s": 0.05,
+    "x_min": -0.2,
+    "x_max": 0.2,
+    "z_min": 0.112,
+    "z_max": 0.3,
+    "gripper_min": -0.785,
+    "gripper_max": 0.785,
+    "lidar_x_threshold": 0.04,
+    "lidar_z_clearance": 0.222,
+    "initial_x": 0.0,
+    "initial_z": 0.227,
+    "initial_left_gripper": 0.0,
+    "initial_right_gripper": 0.0,
+}
+
+
+def clamp(value: float, low: float, high: float) -> float:
+    return max(low, min(high, value))
+
+
+class RobotarmSafetyNode(Node):
+    def __init__(self) -> None:
+        super().__init__("robotarm_safety")
+
+        for name, default in PARAM_DEFAULTS.items():
+            self.declare_parameter(name, default)
+
+        self.x_min = float(self.param("x_min"))
+        self.x_max = float(self.param("x_max"))
+        self.z_min = float(self.param("z_min"))
+        self.z_max = float(self.param("z_max"))
+        self.gripper_min = float(self.param("gripper_min"))
+        self.gripper_max = float(self.param("gripper_max"))
+        self.lidar_x_threshold = float(self.param("lidar_x_threshold"))
+        self.lidar_z_clearance = float(self.param("lidar_z_clearance"))
+        self.z_joint_name = str(self.param("z_joint_name"))
+
+        self.requested_x = clamp(float(self.param("initial_x")), self.x_min, self.x_max)
+        self.requested_z = clamp(float(self.param("initial_z")), self.z_min, self.z_max)
+        self.requested_left_gripper = clamp(
+            float(self.param("initial_left_gripper")),
+            self.gripper_min,
+            self.gripper_max,
+        )
+        self.requested_right_gripper = clamp(
+            float(self.param("initial_right_gripper")),
+            self.gripper_min,
+            self.gripper_max,
+        )
+        self.current_z: float | None = None
+
+        self.x_pub = self.create_publisher(Float64, self.param("x_command_topic"), 10)
+        self.z_pub = self.create_publisher(Float64, self.param("z_command_topic"), 10)
+        self.left_gripper_pub = self.create_publisher(
+            Float64, self.param("left_gripper_command_topic"), 10
+        )
+        self.right_gripper_pub = self.create_publisher(
+            Float64, self.param("right_gripper_command_topic"), 10
+        )
+
+        self.create_subscription(
+            Float64,
+            self.param("x_request_topic"),
+            lambda msg: self.set_x(msg.data),
+            10,
+        )
+        self.create_subscription(
+            Float64,
+            self.param("z_request_topic"),
+            lambda msg: self.set_z(msg.data),
+            10,
+        )
+        self.create_subscription(
+            Float64,
+            self.param("left_gripper_request_topic"),
+            lambda msg: self.set_left_gripper(msg.data),
+            10,
+        )
+        self.create_subscription(
+            Float64,
+            self.param("right_gripper_request_topic"),
+            lambda msg: self.set_right_gripper(msg.data),
+            10,
+        )
+        self.create_subscription(
+            JointState,
+            self.param("joint_states_topic"),
+            self.on_joint_states,
+            10,
+        )
+        self.create_timer(float(self.param("publish_period_s")), self.on_timer)
+
+        self.get_logger().info(
+            "robotarm safety active: z_min=%.3f lidar_clearance=(x<%.3f => z>=%.3f)"
+            % (self.z_min, self.lidar_x_threshold, self.lidar_z_clearance)
+        )
+
+    def param(self, name: str):
+        return self.get_parameter(name).value
+
+    def set_x(self, value: float) -> None:
+        self.requested_x = clamp(float(value), self.x_min, self.x_max)
+
+    def set_z(self, value: float) -> None:
+        self.requested_z = clamp(float(value), self.z_min, self.z_max)
+
+    def set_left_gripper(self, value: float) -> None:
+        self.requested_left_gripper = clamp(float(value), self.gripper_min, self.gripper_max)
+
+    def set_right_gripper(self, value: float) -> None:
+        self.requested_right_gripper = clamp(float(value), self.gripper_min, self.gripper_max)
+
+    def on_joint_states(self, msg: JointState) -> None:
+        try:
+            index = msg.name.index(self.z_joint_name)
+        except ValueError:
+            return
+        if index < len(msg.position):
+            self.current_z = float(msg.position[index])
+
+    def on_timer(self) -> None:
+        x_position, z_position = self.commanded_xz()
+        self.publish(self.x_pub, x_position)
+        self.publish(self.z_pub, z_position)
+        self.publish(self.left_gripper_pub, self.requested_left_gripper)
+        self.publish(self.right_gripper_pub, self.requested_right_gripper)
+
+    def commanded_xz(self) -> tuple[float, float]:
+        x_position = self.requested_x
+        z_position = self.requested_z
+
+        if x_position < self.lidar_x_threshold and not self.z_has_lidar_clearance():
+            x_position = clamp(self.lidar_x_threshold, self.x_min, self.x_max)
+            z_position = clamp(max(z_position, self.lidar_z_clearance), self.z_min, self.z_max)
+
+        return x_position, z_position
+
+    def z_has_lidar_clearance(self) -> bool:
+        return self.current_z is not None and self.current_z >= self.lidar_z_clearance
+
+    def publish(self, publisher, value: float) -> None:
+        msg = Float64()
+        msg.data = float(value)
+        publisher.publish(msg)
+
+
+def main() -> None:
+    rclpy.init()
+    node = RobotarmSafetyNode()
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()

@@ -5,6 +5,7 @@ import re
 
 import rclpy
 from geometry_msgs.msg import Twist
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from sensor_msgs.msg import LaserScan
@@ -552,8 +553,11 @@ def main():
     node = TeddyGrabNode()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
+    except RuntimeError as exc:
+        if "Unable to convert call argument" not in str(exc):
+            raise
     finally:
         node.destroy_node()
         if rclpy.ok():

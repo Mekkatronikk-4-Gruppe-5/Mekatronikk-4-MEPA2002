@@ -7,6 +7,7 @@ import re
 import rclpy
 from builtin_interfaces.msg import Time
 from geometry_msgs.msg import Point
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from sensor_msgs.msg import LaserScan
@@ -191,7 +192,7 @@ def main(args=None):
     node = TeddyLidarMarkersNode()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
         node.destroy_node()

@@ -33,7 +33,7 @@ Kilde: [`config/camera_params.yaml`](../../config/camera_params.yaml)
 | `conf` | `0.3` | Detection threshold |
 | `imgsz` | `640` | YOLO input size |
 | `center_tol` | `0.10` | Centered threshold |
-| `stream_debug_video` | `false` | H264 debugvideo til PC når aktivert |
+| `stream_debug_video` | `true` | H264 debugvideo til PC |
 | `debug_stream_port` | `5602` | Annotert stream port |
 | `debug_stream_fps` | `auto` | Følger detector rate |
 | `debug_stream_bitrate_bps` | `1400000` | Debugstream bitrate |
@@ -59,7 +59,7 @@ Viktige fakta:
 - Bruker Ultralytics `YOLO(..., task="detect")`.
 - Detekterer COCO class id `77`, kommentert som `teddy bear`.
 - Publiserer status på `/teddy_detector/status`.
-- Sender annotert H264/UDP til PC når `stream_debug_video=true`; dette er av som standard for lavere CPU-load under autonom demo.
+- Sender annotert H264/UDP til PC når `stream_debug_video=true`.
 
 Statusformat:
 
@@ -105,4 +105,4 @@ ros2 topic list | grep camera
 ```
 
 Hvis PC-bildet mangler, sjekk UDP-port `5602`, GStreamer plugins på PC og at
-`stream_debug_video: true` er aktivert i config eller miljø.
+`stream_debug_video: true` i config.

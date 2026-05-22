@@ -93,7 +93,7 @@ ros2 topic echo --once /teddy_detector/status
 
 Hvis annotert bilde mangler:
 
-- Sjekk at `teddy_detector.stream_debug_video: true` er aktivert i [`camera_params.yaml`](../../config/camera_params.yaml) eller miljø.
+- Sjekk `teddy_detector.stream_debug_video: true` i [`camera_params.yaml`](../../config/camera_params.yaml).
 - Sjekk UDP-port `5602`.
 - Sjekk PC GStreamer plugins.
 

@@ -53,7 +53,7 @@ Hva Pi-bringup gjør relevant for RViz:
 2. Starter `robot_state_publisher`.
 3. Starter LiDAR-driver via `pi_robot.launch.py` sin default `use_lidar:=true`.
 4. Starter teddy-detektor hvis `WITH_TEDDY=1`.
-5. Sender annotert YOLO-video til PC hvis `stream_debug_video: true` er aktivert.
+5. Sender annotert YOLO-video til PC hvis `stream_debug_video: true`.
 
 ## 2. Start RViz På PC
 

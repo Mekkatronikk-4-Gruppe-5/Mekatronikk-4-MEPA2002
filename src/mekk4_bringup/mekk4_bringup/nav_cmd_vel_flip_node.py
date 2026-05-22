@@ -2,6 +2,7 @@
 
 import rclpy
 from geometry_msgs.msg import Twist
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 
 
@@ -38,7 +39,7 @@ def main(args=None) -> None:
     node = NavCmdVelFlipNode()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
         node.destroy_node()

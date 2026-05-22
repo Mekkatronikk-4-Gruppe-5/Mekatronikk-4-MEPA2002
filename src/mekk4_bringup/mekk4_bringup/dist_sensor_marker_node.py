@@ -11,6 +11,7 @@ from __future__ import annotations
 import rclpy
 from builtin_interfaces.msg import Time
 from geometry_msgs.msg import Point
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from std_msgs.msg import Int32
 from visualization_msgs.msg import Marker
@@ -90,7 +91,7 @@ def main() -> None:
     node = DistSensorMarkerNode()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
         node.destroy_node()

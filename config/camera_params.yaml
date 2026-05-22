@@ -112,7 +112,7 @@ teddy_detector:
   # This is a max rate, not a guaranteed rate.
   # Set it close to the detector's actual Hz, or use "auto" to let the
   # stream follow the actual YOLO/inference rate without extra throttling.
-  debug_stream_fps: 3
+  debug_stream_fps: auto
 
   # H264 bitrate for the annotated YOLO stream.
   debug_stream_bitrate_bps: 1400000

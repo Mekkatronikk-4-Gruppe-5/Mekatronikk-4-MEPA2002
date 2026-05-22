@@ -68,6 +68,7 @@ def generate_launch_description():
     use_ekf = LaunchConfiguration('use_ekf')
     use_joint_states = LaunchConfiguration('use_joint_states')
     use_robotarm_safety = LaunchConfiguration('use_robotarm_safety')
+    use_perf_monitor = LaunchConfiguration('use_perf_monitor')
     use_sim_time = LaunchConfiguration('use_sim_time')
     rviz_enabled = LaunchConfiguration('rviz')
     product_name = LaunchConfiguration('product_name')
@@ -352,6 +353,22 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}],
     )
 
+    performance_monitor_node = Node(
+        package='mekk4_bringup',
+        executable='performance_monitor_node',
+        name='performance_monitor',
+        output='screen',
+        condition=IfCondition(use_perf_monitor),
+        parameters=[
+            {'use_sim_time': use_sim_time},
+            {
+                'report_period_s': 5.0,
+                'window_s': 10.0,
+                'top_process_count': 8,
+            },
+        ],
+    )
+
     return LaunchDescription([
         DeclareLaunchArgument('use_nav2', default_value='true'),
         DeclareLaunchArgument('use_lidar', default_value='true'),
@@ -363,6 +380,7 @@ def generate_launch_description():
         DeclareLaunchArgument('use_ekf', default_value='false'),
         DeclareLaunchArgument('use_joint_states', default_value='true'),
         DeclareLaunchArgument('use_robotarm_safety', default_value='true'),
+        DeclareLaunchArgument('use_perf_monitor', default_value='false'),
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('rviz', default_value='false'),
         DeclareLaunchArgument('product_name', default_value='LDLiDAR_LD06'),
@@ -433,5 +451,6 @@ def generate_launch_description():
         teddy_lidar_markers_node,
         dist_sensor_marker_node,
         teddy_nav_goal_node,
+        performance_monitor_node,
         rviz_node,
     ])

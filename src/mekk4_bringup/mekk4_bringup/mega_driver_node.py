@@ -122,11 +122,14 @@ class MegaDriverNode(Node):
 
         self._serial: Any = None
         self._serial_module: Any = None
+        self._serial_error_types = (OSError,)
         self._serial_error_count = 0
         self._next_connect_attempt = 0.0
         self._last_motion_command = "STOP"
         self._last_motion_sent_at = 0.0
         self._last_stop_sent = False
+        self._last_left_pwm_published = None
+        self._last_right_pwm_published = None
         self._last_poll_at = 0.0
         self._last_arm_state_poll_at = 0.0
 
@@ -227,6 +230,7 @@ class MegaDriverNode(Node):
             ) from exc
 
         self._serial_module = serial
+        self._serial_error_types = (serial.SerialException, OSError)
 
     def _close_serial(self) -> None:
         if self._serial is None:
@@ -235,13 +239,13 @@ class MegaDriverNode(Node):
         try:
             self._serial.write(b"STOP\n")
             self._serial.flush()
-        except Exception:
-            pass
+        except self._serial_error_types as exc:
+            self.get_logger().debug(f"Failed to send STOP while closing Mega serial: {exc}")
 
         try:
             self._serial.close()
-        except Exception:
-            pass
+        except self._serial_error_types as exc:
+            self.get_logger().debug(f"Failed to close Mega serial: {exc}")
 
         self._serial = None
         self._last_motion_command = "STOP"
@@ -355,7 +359,7 @@ class MegaDriverNode(Node):
                     self.get_logger().info(f"Mega {reply}")
                 else:
                     self.get_logger().debug(f"Mega probe: {reply}")
-            except Exception:
+            except self._serial_error_types:
                 continue
         raise RuntimeError("timeout waiting for Mega startup ready")
 
@@ -778,6 +782,14 @@ class MegaDriverNode(Node):
         return f"BOTH {left_pwm} {right_pwm}"
 
     def _publish_pwm(self, left_pwm: int, right_pwm: int) -> None:
+        if (
+            left_pwm == self._last_left_pwm_published
+            and right_pwm == self._last_right_pwm_published
+        ):
+            return
+        self._last_left_pwm_published = left_pwm
+        self._last_right_pwm_published = right_pwm
+
         left_msg = Int32()
         left_msg.data = int(left_pwm)
         right_msg = Int32()
@@ -949,7 +961,7 @@ class MegaDriverNode(Node):
                 self._send_motion("STOP")
                 self._serial.reset_input_buffer()
                 self._serial.reset_output_buffer()
-            except Exception:
+            except self._serial_error_types:
                 self._close_serial()
                 return
             if self._serial_error_count >= self._max_driver_errors_before_reconnect:

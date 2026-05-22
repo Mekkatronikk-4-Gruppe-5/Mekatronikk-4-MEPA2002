@@ -8,8 +8,11 @@ from typing import Any
 import rclpy
 from geometry_msgs.msg import Twist
 from rclpy.node import Node
+from rclpy.qos import QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Empty, String
+
+from mekk4_bringup.scan_utils import front_window_indices, nearest_valid_range_in_window
 
 
 STATUS_RE = re.compile(r"(?P<key>[A-Za-z_]+)=(?P<value>[^ ]+)")
@@ -108,11 +111,16 @@ class TeddyApproachNode(Node):
         scan_topic = str(self.param("scan_topic"))
         mode_topic = str(self.param("mode_topic"))
         reset_topic = str(self.param("reset_topic"))
+        latest_qos = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=1,
+            reliability=QoSReliabilityPolicy.BEST_EFFORT,
+        )
 
         self.cmd_pub = self.create_publisher(Twist, cmd_vel_topic, 10)
         self.mode_pub = self.create_publisher(String, mode_topic, 10)
-        self.create_subscription(String, status_topic, self.on_status, 10)
-        self.create_subscription(LaserScan, scan_topic, self.on_scan, 10)
+        self.create_subscription(String, status_topic, self.on_status, latest_qos)
+        self.create_subscription(LaserScan, scan_topic, self.on_scan, latest_qos)
         self.create_subscription(Empty, reset_topic, self.on_reset, 10)
         self.create_timer(float(self.param("publish_period_s")), self.on_timer)
 
@@ -123,6 +131,8 @@ class TeddyApproachNode(Node):
         self.front_distance = math.inf
         self.front_points = 0
         self.last_scan_at = -1.0
+        self._scan_window_key = None
+        self._scan_window = (0, 0)
         self.last_mode = ""
         # Once we publish teddy_approach_settled, stop driving so teddy_grab owns
         # the base. Stays latched until the node is restarted.
@@ -180,19 +190,21 @@ class TeddyApproachNode(Node):
         self.last_seen_at = self.now_s()
 
     def on_scan(self, msg):
-        self.front_distance = math.inf
-        self.front_points = 0
+        key = (len(msg.ranges), msg.angle_min, msg.angle_increment, self.stop_lidar_front_angle_rad)
+        if key != self._scan_window_key:
+            self._scan_window = front_window_indices(*key)
+            self._scan_window_key = key
 
-        angle = msg.angle_min
-        for distance in msg.ranges:
-            in_front = abs(angle) <= self.stop_lidar_front_angle_rad
-            valid = math.isfinite(distance) and msg.range_min <= distance <= msg.range_max
-
-            if in_front and valid:
-                self.front_points += 1
-                self.front_distance = min(self.front_distance, float(distance))
-
-            angle += msg.angle_increment
+        start, stop = self._scan_window
+        self.front_distance, self.front_points, _ = nearest_valid_range_in_window(
+            msg.ranges,
+            start,
+            stop,
+            msg.range_min,
+            msg.range_max,
+            msg.angle_min,
+            msg.angle_increment,
+        )
 
         self.last_scan_at = self.now_s()
 

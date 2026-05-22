@@ -116,3 +116,6 @@ teddy_detector:
 
   # H264 bitrate for the annotated YOLO stream.
   debug_stream_bitrate_bps: 1400000
+
+  # GStreamer encoder for annotated YOLO stream: x264 or openh264.
+  debug_stream_encoder: x264

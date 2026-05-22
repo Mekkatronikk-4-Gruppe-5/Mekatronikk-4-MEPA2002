@@ -18,28 +18,37 @@ from ultralytics import YOLO
 TEDDY_CLASS_ID = 77  # COCO teddy bear
 
 
+def required_env(name):
+    value = os.environ.get(name)
+    if value is None or value.strip() == "":
+        raise RuntimeError(f"{name} is required; set it from config/camera_params.yaml")
+    return value.strip()
+
+
 class TeddyDetector(Node):
     def __init__(self):
         super().__init__("teddy_detector")
 
         # Runtime setup comes from pi_bringup.sh / camera_params.yaml.
-        self.model_path = os.environ.get("MEKK4_NCNN_MODEL", "/ws/models/yolo26n_ncnn_model")
-        self.gst_source = os.environ.get("MEKK4_CAM_SOURCE_GST", "").strip()
-        self.width = int(os.environ.get("MEKK4_CAM_WIDTH", "1296"))
-        self.height = int(os.environ.get("MEKK4_CAM_HEIGHT", "972"))
-        self.camera_fps = self._parse_positive_float(os.environ.get("MEKK4_CAM_FPS", "15"), default=15.0)
-        self.conf = float(os.environ.get("MEKK4_CONF", "0.25"))
-        self.imgsz = int(os.environ.get("MEKK4_IMGSZ", "640"))
-        self.show_gui = os.environ.get("MEKK4_SHOW", "0").strip() == "1"
-        self.center_tol = float(os.environ.get("MEKK4_CENTER_TOL", "0.1"))
-        self.status_log_period_sec = float(os.environ.get("MEKK4_STATUS_LOG_PERIOD_SEC", "10.0"))
-        self.stream_debug_video = os.environ.get("MEKK4_DEBUG_STREAM", "0").strip() == "1"
+        self.model_path = required_env("MEKK4_NCNN_MODEL")
+        self.gst_source = required_env("MEKK4_CAM_SOURCE_GST")
+        self.width = int(required_env("MEKK4_CAM_WIDTH"))
+        self.height = int(required_env("MEKK4_CAM_HEIGHT"))
+        self.camera_fps = float(required_env("MEKK4_CAM_FPS"))
+        if self.camera_fps <= 0.0:
+            raise ValueError("MEKK4_CAM_FPS must be positive")
+        self.conf = float(required_env("MEKK4_CONF"))
+        self.imgsz = int(required_env("MEKK4_IMGSZ"))
+        self.show_gui = required_env("MEKK4_SHOW") == "1"
+        self.center_tol = float(required_env("MEKK4_CENTER_TOL"))
+        self.status_log_period_sec = float(required_env("MEKK4_STATUS_LOG_PERIOD_SEC"))
+        self.stream_debug_video = required_env("MEKK4_DEBUG_STREAM") == "1"
         self.debug_stream_host = os.environ.get("MEKK4_DEBUG_STREAM_HOST", "").strip()
-        self.debug_stream_port = int(os.environ.get("MEKK4_DEBUG_STREAM_PORT", "5602"))
-        self.debug_stream_scale = float(os.environ.get("MEKK4_DEBUG_STREAM_SCALE", "1.0"))
-        self.debug_stream_fps = self._parse_stream_fps(os.environ.get("MEKK4_DEBUG_STREAM_FPS", "10.0"))
-        self.debug_stream_bitrate_bps = int(os.environ.get("MEKK4_DEBUG_STREAM_BITRATE", "800000"))
-        self.debug_stream_encoder = os.environ.get("MEKK4_DEBUG_STREAM_ENCODER", "x264").strip().lower()
+        self.debug_stream_port = int(required_env("MEKK4_DEBUG_STREAM_PORT"))
+        self.debug_stream_scale = float(required_env("MEKK4_DEBUG_STREAM_SCALE"))
+        self.debug_stream_fps = self._parse_stream_fps(required_env("MEKK4_DEBUG_STREAM_FPS"))
+        self.debug_stream_bitrate_bps = int(required_env("MEKK4_DEBUG_STREAM_BITRATE"))
+        self.debug_stream_encoder = required_env("MEKK4_DEBUG_STREAM_ENCODER").lower()
 
         status_qos = QoSProfile(
             history=QoSHistoryPolicy.KEEP_LAST,
@@ -53,6 +62,8 @@ class TeddyDetector(Node):
         self.proc = None
         self.debug_stream_proc = None
         self.frame_bytes = self.width * self.height * 3
+        self._half_width = self.width / 2.0
+        self._half_height = self.height / 2.0
         self._buf = bytearray()
         self._frame_cond = threading.Condition()
         self._latest_frame = None
@@ -98,23 +109,14 @@ class TeddyDetector(Node):
             self._last_warn = now
 
     @staticmethod
-    def _parse_positive_float(value, *, default):
-        try:
-            parsed = float(str(value).strip())
-        except Exception:
-            return default
-        return parsed if parsed > 0.0 else default
-
-    @staticmethod
     def _parse_stream_fps(value):
         text = str(value).strip().lower()
         if text in {"", "0", "auto", "detector", "yolo", "none", "off"}:
             return None
-        try:
-            parsed = float(text)
-        except Exception:
-            return 10.0
-        return parsed if parsed > 0.0 else None
+        parsed = float(text)
+        if parsed <= 0.0:
+            raise ValueError("MEKK4_DEBUG_STREAM_FPS must be positive, 0, auto, or off")
+        return parsed
 
     def _gst_loop(self):
         """Decode incoming H264/RTP to raw BGR frames and keep only the newest."""
@@ -220,8 +222,8 @@ class TeddyDetector(Node):
         x1, y1, x2, y2 = box
         cx = (x1 + x2) / 2.0
         cy = (y1 + y2) / 2.0
-        dx = (cx - (self.width / 2.0)) / (self.width / 2.0)
-        dy = (cy - (self.height / 2.0)) / (self.height / 2.0)
+        dx = (cx - self._half_width) / self._half_width
+        dy = (cy - self._half_height) / self._half_height
         return dx, dy, abs(dx) <= self.center_tol and abs(dy) <= self.center_tol
 
     def _publish_status(self, count, dx, dy, centered, fps_text, frame_age_s, infer_ms):
@@ -322,7 +324,7 @@ class TeddyDetector(Node):
         try:
             proc.stdin.write(frame.tobytes())
             proc.stdin.flush()
-        except Exception:
+        except OSError:
             self._stop_debug_stream()
 
     def _ensure_debug_stream_process(self, width, height):
@@ -365,7 +367,8 @@ class TeddyDetector(Node):
                 stderr=subprocess.DEVNULL,
                 bufsize=0,
             )
-        except Exception:
+        except OSError as exc:
+            self._warn_throttled(f"failed to start debug stream: {exc}", interval_sec=2.0)
             self.debug_stream_proc = None
             return None
         return self.debug_stream_proc
@@ -382,19 +385,20 @@ class TeddyDetector(Node):
     def _stop_debug_stream(self):
         if self.debug_stream_proc is None:
             return
-        with suppress(Exception):
+        with suppress(OSError):
             if self.debug_stream_proc.stdin is not None:
                 self.debug_stream_proc.stdin.close()
-        self.debug_stream_proc.terminate()
-        with suppress(Exception):
+            self.debug_stream_proc.terminate()
+        with suppress(subprocess.TimeoutExpired):
             self.debug_stream_proc.wait(timeout=1.0)
         self.debug_stream_proc = None
 
     def _stop_input_stream(self):
         if self.proc is None:
             return
-        self.proc.terminate()
-        with suppress(Exception):
+        with suppress(OSError):
+            self.proc.terminate()
+        with suppress(subprocess.TimeoutExpired):
             self.proc.wait(timeout=1.0)
         self.proc = None
 
@@ -425,7 +429,8 @@ class TeddyDetector(Node):
         cmd = ["gst-launch-1.0", "-q"] + shlex.split(pipeline)
         try:
             return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, bufsize=0)
-        except Exception:
+        except OSError as exc:
+            self._warn_throttled(f"failed to start gstreamer: {exc}", interval_sec=2.0)
             return None
 
 def main():

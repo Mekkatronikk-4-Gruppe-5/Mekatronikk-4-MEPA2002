@@ -5,7 +5,7 @@ import sys
 
 try:
     import yaml
-except Exception as exc:
+except ImportError as exc:
     print(
         f"echo '[robot-cal] Missing python yaml support: {exc}. Install python3-yaml.' >&2",
         file=sys.stdout,
@@ -31,6 +31,12 @@ def pick(env_name, default):
     return default
 
 
+def require(section, section_name, key):
+    if key not in section or section[key] is None:
+        raise SystemExit(f"missing required {section_name}.{key} in robot calibration config")
+    return section[key]
+
+
 def main():
     config_path = (
         sys.argv[1]
@@ -38,38 +44,64 @@ def main():
         else os.environ.get("ROBOT_CALIBRATION_FILE", DEFAULT_CONFIG)
     )
 
-    values = {"ROBOT_CALIBRATION_FILE": config_path}
+    if not os.path.exists(config_path):
+        print(f"echo '[robot-cal] Config file not found: {config_path}' >&2", file=sys.stdout)
+        print("exit 1", file=sys.stdout)
+        return
 
-    if os.path.exists(config_path):
-        with open(config_path, "r", encoding="utf-8") as handle:
-            data = yaml.safe_load(handle) or {}
+    with open(config_path, "r", encoding="utf-8") as handle:
+        data = yaml.safe_load(handle) or {}
 
-        mega = data.get("mega_driver", {})
-        values.update(
-            {
-                "SWAP_SIDES": pick("SWAP_SIDES", 1 if mega.get("swap_sides", False) else 0),
-                "LEFT_CMD_SIGN": pick("LEFT_CMD_SIGN", mega.get("left_cmd_sign", 1)),
-                "RIGHT_CMD_SIGN": pick("RIGHT_CMD_SIGN", mega.get("right_cmd_sign", 1)),
-                "ANGULAR_CMD_SIGN": pick("ANGULAR_CMD_SIGN", mega.get("angular_cmd_sign", 1)),
-                "MIN_NONZERO_PWM": pick("MIN_NONZERO_PWM", mega.get("min_nonzero_pwm", 55)),
-                "MIN_FORWARD_PWM": pick("MIN_FORWARD_PWM", mega.get("min_forward_pwm", 0)),
-                "MIN_REVERSE_PWM": pick("MIN_REVERSE_PWM", mega.get("min_reverse_pwm", 0)),
-                "MIN_TURN_PWM": pick("MIN_TURN_PWM", mega.get("min_turn_pwm", 0)),
-                "PURE_ROTATION_LINEAR_DEADBAND_MPS": pick(
-                    "PURE_ROTATION_LINEAR_DEADBAND_MPS",
-                    mega.get("pure_rotation_linear_deadband_mps", 0.03),
-                ),
-                "LEFT_CMD_SCALE": pick("LEFT_CMD_SCALE", mega.get("left_cmd_scale", 1.0)),
-                "RIGHT_CMD_SCALE": pick("RIGHT_CMD_SCALE", mega.get("right_cmd_scale", 1.0)),
-                "LEFT_TICK_SIGN": pick("LEFT_TICK_SIGN", mega.get("left_tick_sign", 1)),
-                "RIGHT_TICK_SIGN": pick("RIGHT_TICK_SIGN", mega.get("right_tick_sign", 1)),
-                "LEFT_M_PER_TICK": pick("LEFT_M_PER_TICK", mega.get("left_m_per_tick", 0.0)),
-                "RIGHT_M_PER_TICK": pick("RIGHT_M_PER_TICK", mega.get("right_m_per_tick", 0.0)),
-                "TRACK_WIDTH_EFF_M": pick(
-                    "TRACK_WIDTH_EFF_M", mega.get("track_width_eff_m", 0.35)
-                ),
-            }
-        )
+    mega = data.get("mega_driver", {})
+    values = {
+        "ROBOT_CALIBRATION_FILE": config_path,
+        "SWAP_SIDES": pick("SWAP_SIDES", 1 if require(mega, "mega_driver", "swap_sides") else 0),
+        "LEFT_CMD_SIGN": pick("LEFT_CMD_SIGN", require(mega, "mega_driver", "left_cmd_sign")),
+        "RIGHT_CMD_SIGN": pick("RIGHT_CMD_SIGN", require(mega, "mega_driver", "right_cmd_sign")),
+        "ANGULAR_CMD_SIGN": pick(
+            "ANGULAR_CMD_SIGN",
+            require(mega, "mega_driver", "angular_cmd_sign"),
+        ),
+        "MIN_NONZERO_PWM": pick(
+            "MIN_NONZERO_PWM",
+            require(mega, "mega_driver", "min_nonzero_pwm"),
+        ),
+        "MIN_FORWARD_PWM": pick(
+            "MIN_FORWARD_PWM",
+            require(mega, "mega_driver", "min_forward_pwm"),
+        ),
+        "MIN_REVERSE_PWM": pick(
+            "MIN_REVERSE_PWM",
+            require(mega, "mega_driver", "min_reverse_pwm"),
+        ),
+        "MIN_TURN_PWM": pick("MIN_TURN_PWM", require(mega, "mega_driver", "min_turn_pwm")),
+        "PURE_ROTATION_LINEAR_DEADBAND_MPS": pick(
+            "PURE_ROTATION_LINEAR_DEADBAND_MPS",
+            require(mega, "mega_driver", "pure_rotation_linear_deadband_mps"),
+        ),
+        "LEFT_CMD_SCALE": pick("LEFT_CMD_SCALE", require(mega, "mega_driver", "left_cmd_scale")),
+        "RIGHT_CMD_SCALE": pick(
+            "RIGHT_CMD_SCALE",
+            require(mega, "mega_driver", "right_cmd_scale"),
+        ),
+        "LEFT_TICK_SIGN": pick("LEFT_TICK_SIGN", require(mega, "mega_driver", "left_tick_sign")),
+        "RIGHT_TICK_SIGN": pick(
+            "RIGHT_TICK_SIGN",
+            require(mega, "mega_driver", "right_tick_sign"),
+        ),
+        "LEFT_M_PER_TICK": pick(
+            "LEFT_M_PER_TICK",
+            require(mega, "mega_driver", "left_m_per_tick"),
+        ),
+        "RIGHT_M_PER_TICK": pick(
+            "RIGHT_M_PER_TICK",
+            require(mega, "mega_driver", "right_m_per_tick"),
+        ),
+        "TRACK_WIDTH_EFF_M": pick(
+            "TRACK_WIDTH_EFF_M",
+            require(mega, "mega_driver", "track_width_eff_m"),
+        ),
+    }
 
     for key, value in values.items():
         print(f"export {key}={shlex.quote(to_shell(value))}")

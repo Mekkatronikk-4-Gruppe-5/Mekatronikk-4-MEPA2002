@@ -8,9 +8,12 @@ import rclpy
 from builtin_interfaces.msg import Time
 from geometry_msgs.msg import Point
 from rclpy.node import Node
+from rclpy.qos import QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import String
 from visualization_msgs.msg import Marker, MarkerArray
+
+from mekk4_bringup.scan_utils import front_window_indices, nearest_valid_range_in_window
 
 
 STATUS_RE = re.compile(r"(?P<key>[A-Za-z_]+)=(?P<value>[^ ]+)")
@@ -55,16 +58,23 @@ class TeddyLidarMarkersNode(Node):
         self.marker_use_latest_tf = bool(self.param("marker_use_latest_tf"))
         self.stop_distance = self.param("stop_lidar_distance_m")
         self.front_angle = self.param("stop_lidar_front_angle_rad")
+        latest_qos = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=1,
+            reliability=QoSReliabilityPolicy.BEST_EFFORT,
+        )
 
         self.marker_pub = self.create_publisher(MarkerArray, self.param("marker_topic"), 10)
-        self.create_subscription(String, self.param("status_topic"), self.on_status, 10)
-        self.create_subscription(LaserScan, self.param("scan_topic"), self.on_scan, 10)
+        self.create_subscription(String, self.param("status_topic"), self.on_status, latest_qos)
+        self.create_subscription(LaserScan, self.param("scan_topic"), self.on_scan, latest_qos)
 
         self.teddy_count = 0
         self.scan_frame = ""
         self.scan_stamp = Time()
         self.closest_distance = math.inf
         self.closest_angle = 0.0
+        self._scan_window_key = None
+        self._scan_window = (0, 0)
 
         self.get_logger().info("teddy lidar markers enabled=%s" % self.enabled)
 
@@ -84,16 +94,21 @@ class TeddyLidarMarkersNode(Node):
         self.closest_distance = math.inf
         self.closest_angle = 0.0
 
-        angle = msg.angle_min
-        for distance in msg.ranges:
-            in_front = abs(angle) <= self.front_angle
-            valid = math.isfinite(distance) and msg.range_min <= distance <= msg.range_max
+        key = (len(msg.ranges), msg.angle_min, msg.angle_increment, self.front_angle)
+        if key != self._scan_window_key:
+            self._scan_window = front_window_indices(*key)
+            self._scan_window_key = key
 
-            if in_front and valid and distance < self.closest_distance:
-                self.closest_distance = float(distance)
-                self.closest_angle = angle
-
-            angle += msg.angle_increment
+        start, stop = self._scan_window
+        self.closest_distance, _, self.closest_angle = nearest_valid_range_in_window(
+            msg.ranges,
+            start,
+            stop,
+            msg.range_min,
+            msg.range_max,
+            msg.angle_min,
+            msg.angle_increment,
+        )
 
         self.publish_markers()
 

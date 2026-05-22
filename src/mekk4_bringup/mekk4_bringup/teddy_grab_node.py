@@ -6,8 +6,11 @@ import re
 import rclpy
 from geometry_msgs.msg import Twist
 from rclpy.node import Node
+from rclpy.qos import QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Bool, Empty, Float64, Int32, String
+
+from mekk4_bringup.scan_utils import front_window_indices, nearest_valid_range_in_window
 
 
 class TeddyGrabNode(Node):
@@ -30,6 +33,17 @@ class TeddyGrabNode(Node):
         self.lidar_m = math.inf
         self.lidar_points = 0
         self.scan_t = -math.inf
+        self.scan_front_angle_rad = float(self.p("scan_front_angle_rad"))
+        self.scan_min_points = int(self.p("scan_min_points"))
+        self.scan_timeout_s = float(self.p("scan_timeout_s"))
+        self.detector_status_timeout_s = float(self.p("detector_status_timeout_s"))
+        self.distance_timeout_s = float(self.p("distance_timeout_s"))
+        self.contact_distance_mm = int(self.p("contact_distance_mm"))
+        self.position_tolerance_m = float(self.p("position_tolerance_m"))
+        self.require_distance_feedback = bool(self.p("require_distance_feedback"))
+        self.require_state_feedback = bool(self.p("require_state_feedback"))
+        self.stop_base_while_active = bool(self.p("stop_base_while_active"))
+        self.status_log_period_s = float(self.p("status_log_period_s"))
 
         self.grab_z = float(self.p("lower_z"))
         self.grab_z_calc = "not computed"
@@ -44,6 +58,8 @@ class TeddyGrabNode(Node):
         self.last_log_t = -math.inf
         self.waiting_for_new_approach = False
         self.approach_ran_after_reset = False
+        self._scan_window_key = None
+        self._scan_window = (0, 0)
 
         self.cmd_pub = self.create_publisher(Twist, self.p("cmd_vel_topic"), 10)
         self.reset_pub = self.create_publisher(Empty, self.p("approach_reset_topic"), 10)
@@ -53,12 +69,17 @@ class TeddyGrabNode(Node):
         self.left_pub = self.create_publisher(Float64, "/gripper/request/left_position", 10)
         self.right_pub = self.create_publisher(Float64, "/gripper/request/right_position", 10)
 
-        self.create_subscription(String, self.p("mode_topic"), self.on_mode, 10)
+        latest_qos = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=1,
+            reliability=QoSReliabilityPolicy.BEST_EFFORT,
+        )
+        self.create_subscription(String, self.p("mode_topic"), self.on_mode, latest_qos)
         self.create_subscription(Float64, self.p("x_state_topic"), self.on_x_state, 10)
         self.create_subscription(Float64, self.p("z_state_topic"), self.on_z_state, 10)
         self.create_subscription(Int32, self.p("distance_topic"), self.on_distance, 10)
-        self.create_subscription(String, self.p("teddy_status_topic"), self.on_teddy_status, 10)
-        self.create_subscription(LaserScan, self.p("scan_topic"), self.on_scan, 10)
+        self.create_subscription(String, self.p("teddy_status_topic"), self.on_teddy_status, latest_qos)
+        self.create_subscription(LaserScan, self.p("scan_topic"), self.on_scan, latest_qos)
         self.create_timer(float(self.p("publish_period_s")), self.on_timer)
 
         self.get_logger().info("teddy grab enabled=%s trigger=%s" % (self.enabled, self.trigger_mode))
@@ -117,23 +138,28 @@ class TeddyGrabNode(Node):
 
     # Store nearest front LiDAR reading.
     def on_scan(self, msg):
-        self.lidar_m = math.inf
-        self.lidar_points = 0
-        angle = msg.angle_min
-        max_angle = float(self.p("scan_front_angle_rad"))
-        for distance in msg.ranges:
-            valid = math.isfinite(distance) and msg.range_min <= distance <= msg.range_max
-            if valid and abs(angle) <= max_angle:
-                self.lidar_points += 1
-                self.lidar_m = min(self.lidar_m, float(distance))
-            angle += msg.angle_increment
+        key = (len(msg.ranges), msg.angle_min, msg.angle_increment, self.scan_front_angle_rad)
+        if key != self._scan_window_key:
+            self._scan_window = front_window_indices(*key)
+            self._scan_window_key = key
+
+        start, stop = self._scan_window
+        self.lidar_m, self.lidar_points, _ = nearest_valid_range_in_window(
+            msg.ranges,
+            start,
+            stop,
+            msg.range_min,
+            msg.range_max,
+            msg.angle_min,
+            msg.angle_increment,
+        )
         self.scan_t = self.now_s()
 
     # Run the active sequence step.
     def on_timer(self):
         if not self.enabled or self.state in ("idle", "done"):
             return
-        if bool(self.p("stop_base_while_active")):
+        if self.stop_base_while_active:
             self.cmd_pub.publish(Twist())
         if 0 <= self.step_i < len(self.sequence):
             self.run_step(self.sequence[self.step_i])
@@ -306,7 +332,7 @@ class TeddyGrabNode(Node):
         self.command_gripper(step["gripper"])
         self.command_x(self.reach_x)
         self.target_x = self.reach_x
-        if bool(self.p("require_distance_feedback")) and not self.distance_fresh():
+        if self.require_distance_feedback and not self.distance_fresh():
             return
         if not self.axis_reached("x", self.reach_x, 0.0):
             self.contact_t = None
@@ -334,7 +360,7 @@ class TeddyGrabNode(Node):
             return
         if self.distance_under_threshold():
             return
-        if bool(self.p("require_distance_feedback")) and not self.distance_fresh():
+        if self.require_distance_feedback and not self.distance_fresh():
             return
         if self.elapsed_s() < step["hold_s"]:
             return
@@ -358,7 +384,7 @@ class TeddyGrabNode(Node):
             return
         if self.distance_under_threshold():
             return
-        if bool(self.p("require_distance_feedback")) and not self.distance_fresh():
+        if self.require_distance_feedback and not self.distance_fresh():
             return
         if self.elapsed_s() >= step["hold_s"]:
             self.get_logger().warning("final contact check failed; restarting approach")
@@ -386,10 +412,10 @@ class TeddyGrabNode(Node):
             return False
         value = self.x if axis == "x" else self.z
         if value is None:
-            return not bool(self.p("require_state_feedback"))
+            return not self.require_state_feedback
         if axis == "x" and target == float(self.p("safe_x")):
             return value >= target
-        return abs(value - target) <= float(self.p("position_tolerance_m"))
+        return abs(value - target) <= self.position_tolerance_m
 
     # Compute one locked Z target before the camera is blocked.
     def compute_grab_z(self):
@@ -399,7 +425,7 @@ class TeddyGrabNode(Node):
         if not bool(self.p("use_detector_dy_for_grab_z")):
             self.grab_z_calc = "configured lower_z=%.3f" % fallback
             return fallback
-        if self.dy is None or self.now_s() - self.dy_t > float(self.p("detector_status_timeout_s")):
+        if self.dy is None or self.now_s() - self.dy_t > self.detector_status_timeout_s:
             self.grab_z_calc = "fallback lower_z=%.3f because dy missing/stale" % fallback
             return fallback
         z = self.clamp_z(fallback + self.dy * float(self.p("dy_to_z_gain_m")))
@@ -409,13 +435,13 @@ class TeddyGrabNode(Node):
     # Estimate teddy height from detector dy and LiDAR distance.
     def compute_lidar_grab_z(self, fallback):
         now = self.now_s()
-        if self.dy is None or now - self.dy_t > float(self.p("detector_status_timeout_s")):
+        if self.dy is None or now - self.dy_t > self.detector_status_timeout_s:
             self.grab_z_calc = "fallback lower_z=%.3f because dy missing/stale" % fallback
             return fallback
-        if now - self.scan_t > float(self.p("scan_timeout_s")):
+        if now - self.scan_t > self.scan_timeout_s:
             self.grab_z_calc = "fallback lower_z=%.3f because LiDAR stale" % fallback
             return fallback
-        if self.lidar_points < int(self.p("scan_min_points")) or not math.isfinite(self.lidar_m):
+        if self.lidar_points < self.scan_min_points or not math.isfinite(self.lidar_m):
             self.grab_z_calc = "fallback lower_z=%.3f because LiDAR invalid" % fallback
             return fallback
 
@@ -446,7 +472,7 @@ class TeddyGrabNode(Node):
         return (
             self.distance_fresh()
             and self.distance_mm is not None
-            and self.distance_mm <= int(self.p("contact_distance_mm"))
+            and self.distance_mm <= self.contact_distance_mm
         )
 
     # Grip when distance has stayed under threshold for contact_hold_s.
@@ -465,7 +491,7 @@ class TeddyGrabNode(Node):
 
     # Check distance reading age.
     def distance_fresh(self):
-        return self.now_s() - self.distance_t <= float(self.p("distance_timeout_s"))
+        return self.now_s() - self.distance_t <= self.distance_timeout_s
 
     # Time since current step started.
     def elapsed_s(self):
@@ -480,7 +506,7 @@ class TeddyGrabNode(Node):
     # Periodic terminal status.
     def log_status(self):
         now = self.now_s()
-        if now - self.last_log_t < float(self.p("status_log_period_s")):
+        if now - self.last_log_t < self.status_log_period_s:
             return
         self.last_log_t = now
         self.get_logger().info(

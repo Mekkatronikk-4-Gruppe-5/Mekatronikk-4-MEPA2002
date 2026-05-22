@@ -5,7 +5,7 @@ import sys
 
 try:
     import yaml
-except Exception as exc:
+except ImportError as exc:
     print(
         f"echo '[camera-config] Missing python yaml support: {exc}. Install python3-yaml.' >&2",
         file=sys.stdout,
@@ -31,6 +31,12 @@ def pick(env_name, default):
     return default
 
 
+def require(section, section_name, key):
+    if key not in section or section[key] is None:
+        raise SystemExit(f"missing required {section_name}.{key} in camera config")
+    return section[key]
+
+
 def normalize_choice(value, *, false_value=None, true_value=None):
     if isinstance(value, bool):
         if value and true_value is not None:
@@ -44,7 +50,7 @@ def scaled_size(size_value, scale_value):
     try:
         size = int(size_value)
         scale = float(scale_value)
-    except Exception:
+    except (TypeError, ValueError):
         return size_value
     return max(1, int(round(size * scale)))
 
@@ -62,47 +68,72 @@ def main():
     stream = data.get("camera_stream", {})
     detector = data.get("teddy_detector", {})
 
-    denoise = normalize_choice(stream.get("denoise", "auto"), false_value="off", true_value="auto")
-    debug_stream_scale = detector.get("debug_stream_scale", 1.0)
+    denoise = normalize_choice(require(stream, "camera_stream", "denoise"), false_value="off", true_value="auto")
+    debug_stream_scale = require(detector, "teddy_detector", "debug_stream_scale")
 
     values = {
         "CAMERA_CONFIG_FILE": config_path,
-        "WIDTH": pick("WIDTH", stream.get("width", 1296)),
-        "HEIGHT": pick("HEIGHT", stream.get("height", 972)),
-        "FPS": pick("FPS", stream.get("fps", 15)),
-        "BITRATE": pick("BITRATE", stream.get("bitrate_bps", "")),
-        "INTRA": pick("INTRA", stream.get("intra", "")),
-        "LOW_LATENCY": pick("LOW_LATENCY", to_shell(stream.get("low_latency", False))),
-        "FLUSH_OUTPUT": pick("FLUSH_OUTPUT", to_shell(stream.get("flush_output", True))),
-        "PC_JITTER_MS": pick("PC_JITTER_MS", stream.get("pc_jitter_ms", 40)),
-        "CAM_PORT": pick("CAM_PORT", stream.get("local_udp_port", 5600)),
-        "PORT": pick("PORT", detector.get("debug_stream_port", 5602)),
-        "AWB": pick("AWB", stream.get("awb", "auto")),
-        "AWB_GAINS": pick("AWB_GAINS", stream.get("awb_gains", "")),
-        "BRIGHTNESS": pick("BRIGHTNESS", stream.get("brightness", 0.0)),
-        "CONTRAST": pick("CONTRAST", stream.get("contrast", 1.0)),
-        "SATURATION": pick("SATURATION", stream.get("saturation", 1.0)),
-        "SHARPNESS": pick("SHARPNESS", stream.get("sharpness", 1.0)),
-        "EV": pick("EV", stream.get("ev", 0.0)),
+        "WIDTH": pick("WIDTH", require(stream, "camera_stream", "width")),
+        "HEIGHT": pick("HEIGHT", require(stream, "camera_stream", "height")),
+        "FPS": pick("FPS", require(stream, "camera_stream", "fps")),
+        "BITRATE": pick("BITRATE", require(stream, "camera_stream", "bitrate_bps")),
+        "INTRA": pick("INTRA", require(stream, "camera_stream", "intra")),
+        "LOW_LATENCY": pick("LOW_LATENCY", to_shell(require(stream, "camera_stream", "low_latency"))),
+        "FLUSH_OUTPUT": pick("FLUSH_OUTPUT", to_shell(require(stream, "camera_stream", "flush_output"))),
+        "PC_JITTER_MS": pick("PC_JITTER_MS", require(stream, "camera_stream", "pc_jitter_ms")),
+        "CAM_PORT": pick("CAM_PORT", require(stream, "camera_stream", "local_udp_port")),
+        "PORT": pick("PORT", require(detector, "teddy_detector", "debug_stream_port")),
+        "AWB": pick("AWB", require(stream, "camera_stream", "awb")),
+        "AWB_GAINS": pick("AWB_GAINS", require(stream, "camera_stream", "awb_gains")),
+        "BRIGHTNESS": pick("BRIGHTNESS", require(stream, "camera_stream", "brightness")),
+        "CONTRAST": pick("CONTRAST", require(stream, "camera_stream", "contrast")),
+        "SATURATION": pick("SATURATION", require(stream, "camera_stream", "saturation")),
+        "SHARPNESS": pick("SHARPNESS", require(stream, "camera_stream", "sharpness")),
+        "EV": pick("EV", require(stream, "camera_stream", "ev")),
         "DENOISE": pick("DENOISE", denoise),
-        "METERING": pick("METERING", stream.get("metering", "centre")),
-        "TUNING_FILE": pick("TUNING_FILE", stream.get("tuning_file", "")),
-        "MEKK4_CAM_WIDTH": pick("MEKK4_CAM_WIDTH", stream.get("width", 1296)),
-        "MEKK4_CAM_HEIGHT": pick("MEKK4_CAM_HEIGHT", stream.get("height", 972)),
-        "MEKK4_CAM_FPS": pick("MEKK4_CAM_FPS", stream.get("fps", 15)),
-        "MEKK4_NCNN_MODEL": pick("MEKK4_NCNN_MODEL", detector.get("model_path", "/ws/models/yolo26n_ncnn_model")),
-        "MEKK4_CONF": pick("MEKK4_CONF", detector.get("conf", 0.25)),
-        "MEKK4_IMGSZ": pick("MEKK4_IMGSZ", detector.get("imgsz", 640)),
-        "MEKK4_CENTER_TOL": pick("MEKK4_CENTER_TOL", detector.get("center_tol", 0.10)),
-        "MEKK4_STATUS_LOG_PERIOD_SEC": pick("MEKK4_STATUS_LOG_PERIOD_SEC", detector.get("status_log_period_sec", 10.0)),
-        "MEKK4_SHOW": pick("MEKK4_SHOW", to_shell(detector.get("show_gui", False))),
-        "MEKK4_DEBUG_STREAM": pick("MEKK4_DEBUG_STREAM", to_shell(detector.get("stream_debug_video", True))),
-        "MEKK4_DEBUG_STREAM_PORT": pick("MEKK4_DEBUG_STREAM_PORT", detector.get("debug_stream_port", 5602)),
+        "METERING": pick("METERING", require(stream, "camera_stream", "metering")),
+        "TUNING_FILE": pick("TUNING_FILE", require(stream, "camera_stream", "tuning_file")),
+        "MEKK4_CAM_WIDTH": pick("MEKK4_CAM_WIDTH", require(stream, "camera_stream", "width")),
+        "MEKK4_CAM_HEIGHT": pick("MEKK4_CAM_HEIGHT", require(stream, "camera_stream", "height")),
+        "MEKK4_CAM_FPS": pick("MEKK4_CAM_FPS", require(stream, "camera_stream", "fps")),
+        "MEKK4_NCNN_MODEL": pick("MEKK4_NCNN_MODEL", require(detector, "teddy_detector", "model_path")),
+        "MEKK4_CONF": pick("MEKK4_CONF", require(detector, "teddy_detector", "conf")),
+        "MEKK4_IMGSZ": pick("MEKK4_IMGSZ", require(detector, "teddy_detector", "imgsz")),
+        "MEKK4_CENTER_TOL": pick("MEKK4_CENTER_TOL", require(detector, "teddy_detector", "center_tol")),
+        "MEKK4_STATUS_LOG_PERIOD_SEC": pick(
+            "MEKK4_STATUS_LOG_PERIOD_SEC",
+            require(detector, "teddy_detector", "status_log_period_sec"),
+        ),
+        "MEKK4_SHOW": pick("MEKK4_SHOW", to_shell(require(detector, "teddy_detector", "show_gui"))),
+        "MEKK4_DEBUG_STREAM": pick(
+            "MEKK4_DEBUG_STREAM",
+            to_shell(require(detector, "teddy_detector", "stream_debug_video")),
+        ),
+        "MEKK4_DEBUG_STREAM_PORT": pick(
+            "MEKK4_DEBUG_STREAM_PORT",
+            require(detector, "teddy_detector", "debug_stream_port"),
+        ),
         "MEKK4_DEBUG_STREAM_SCALE": pick("MEKK4_DEBUG_STREAM_SCALE", debug_stream_scale),
-        "MEKK4_DEBUG_STREAM_FPS": pick("MEKK4_DEBUG_STREAM_FPS", detector.get("debug_stream_fps", stream.get("fps", 15))),
-        "MEKK4_DEBUG_STREAM_BITRATE": pick("MEKK4_DEBUG_STREAM_BITRATE", detector.get("debug_stream_bitrate_bps", 800000)),
-        "MEKK4_DEBUG_STREAM_WIDTH": pick("MEKK4_DEBUG_STREAM_WIDTH", scaled_size(stream.get("width", 1296), debug_stream_scale)),
-        "MEKK4_DEBUG_STREAM_HEIGHT": pick("MEKK4_DEBUG_STREAM_HEIGHT", scaled_size(stream.get("height", 972), debug_stream_scale)),
+        "MEKK4_DEBUG_STREAM_FPS": pick(
+            "MEKK4_DEBUG_STREAM_FPS",
+            require(detector, "teddy_detector", "debug_stream_fps"),
+        ),
+        "MEKK4_DEBUG_STREAM_BITRATE": pick(
+            "MEKK4_DEBUG_STREAM_BITRATE",
+            require(detector, "teddy_detector", "debug_stream_bitrate_bps"),
+        ),
+        "MEKK4_DEBUG_STREAM_ENCODER": pick(
+            "MEKK4_DEBUG_STREAM_ENCODER",
+            require(detector, "teddy_detector", "debug_stream_encoder"),
+        ),
+        "MEKK4_DEBUG_STREAM_WIDTH": pick(
+            "MEKK4_DEBUG_STREAM_WIDTH",
+            scaled_size(require(stream, "camera_stream", "width"), debug_stream_scale),
+        ),
+        "MEKK4_DEBUG_STREAM_HEIGHT": pick(
+            "MEKK4_DEBUG_STREAM_HEIGHT",
+            scaled_size(require(stream, "camera_stream", "height"), debug_stream_scale),
+        ),
     }
 
     for key, value in values.items():

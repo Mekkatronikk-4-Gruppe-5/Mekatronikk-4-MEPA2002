@@ -4,6 +4,7 @@ import subprocess
 import threading
 import time
 from collections import deque
+from contextlib import suppress
 
 import numpy as np
 import rclpy
@@ -11,6 +12,7 @@ from cv_bridge import CvBridge
 from rclpy.executors import ExternalShutdownException
 from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from sensor_msgs.msg import Image
 
 
@@ -31,7 +33,12 @@ class UdpCameraBridge(Node):
         self.frame_id = self.get_parameter("frame_id").get_parameter_value().string_value
 
         self.bridge = CvBridge()
-        self.publisher = self.create_publisher(Image, self.topic_name, 10)
+        camera_qos = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=1,
+            reliability=QoSReliabilityPolicy.BEST_EFFORT,
+        )
+        self.publisher = self.create_publisher(Image, self.topic_name, camera_qos)
         self.proc = None
         self.frame_bytes = self.width * self.height * 3
         self._buf = bytearray()
@@ -91,6 +98,8 @@ class UdpCameraBridge(Node):
     def _publish_frame(self, frame):
         if self._stop or not rclpy.ok():
             return
+        if self.publisher.get_subscription_count() == 0:
+            return
         msg = self.bridge.cv2_to_imgmsg(frame, encoding="bgr8")
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.header.frame_id = self.frame_id
@@ -125,10 +134,8 @@ class UdpCameraBridge(Node):
         self._stop = True
         if self.proc is not None:
             self.proc.terminate()
-            try:
+            with suppress(subprocess.TimeoutExpired):
                 self.proc.wait(timeout=1.0)
-            except Exception:
-                pass
             self.proc = None
         worker = getattr(self, "worker", None)
         if worker is not None and worker.is_alive():
@@ -152,7 +159,8 @@ class UdpCameraBridge(Node):
                 stderr=subprocess.PIPE,
                 bufsize=0,
             )
-        except Exception:
+        except OSError as exc:
+            self._warn_throttled(f"failed to start gstreamer: {exc}", interval_sec=2.0)
             return None
 
 

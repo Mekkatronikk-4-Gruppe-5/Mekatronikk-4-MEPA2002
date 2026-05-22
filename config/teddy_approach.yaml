@@ -16,8 +16,8 @@ teddy_approach:
     # angular_kd=0.0 gives a plain P regulator; raise it only if heading overshoots.
     angular_kp: 0.2
     angular_kd: 0.2
-    max_angular_speed: 1.5
-    min_angular_speed: 0.9
+    max_angular_speed: 1.1
+    min_angular_speed: 0.5
     center_tolerance: 0.10
     center_settle_s: 2.0
 

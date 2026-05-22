@@ -69,6 +69,8 @@ class TeddyGrabNode(Node):
         self.z_pub = self.create_publisher(Float64, "/robotarm/request/z_position", 10)
         self.left_pub = self.create_publisher(Float64, "/gripper/request/left_position", 10)
         self.right_pub = self.create_publisher(Float64, "/gripper/request/right_position", 10)
+        self.done_pub = self.create_publisher(Empty, "/teddy_grab/done", 10)
+        self.done_published = False
 
         latest_qos = QoSProfile(
             history=QoSHistoryPolicy.KEEP_LAST,
@@ -110,6 +112,7 @@ class TeddyGrabNode(Node):
         self.reach_x = float(self.p("safe_x"))
         self.retry_count = 0
         self.contact_t = None
+        self.done_published = False
         self.last_gripper_us = None
         self.sequence = self.make_sequence()
         self.step_i = 0
@@ -291,9 +294,7 @@ class TeddyGrabNode(Node):
     def next_step(self):
         self.step_i += 1
         if self.step_i >= len(self.sequence):
-            self.state = "done"
-            self.freeze_odom_pub.publish(Bool(data=False))
-            self.get_logger().info("done")
+            self.finish_success("done")
             return
         self.enter_step()
 
@@ -379,9 +380,7 @@ class TeddyGrabNode(Node):
     def verify_final(self, step):
         self.command_gripper(step["gripper"])
         if self.distance_under_threshold_for(step["hold_s"]):
-            self.state = "done"
-            self.freeze_odom_pub.publish(Bool(data=False))
-            self.get_logger().info("teddy grab successful")
+            self.finish_success("teddy grab successful")
             return
         if self.distance_under_threshold():
             return
@@ -396,6 +395,15 @@ class TeddyGrabNode(Node):
         self.sequence = self.make_restart_sequence()
         self.step_i = 0
         self.enter_step()
+
+    # Mark a successful grab and notify go_home_node.
+    def finish_success(self, message):
+        self.state = "done"
+        self.freeze_odom_pub.publish(Bool(data=False))
+        if not self.done_published:
+            self.done_pub.publish(Empty())
+            self.done_published = True
+        self.get_logger().info(message)
 
     # True when teddy_approach has left stale handoff and is actively evaluating again.
     def approach_is_active(self, mode):

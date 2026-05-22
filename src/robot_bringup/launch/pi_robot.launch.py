@@ -203,6 +203,25 @@ def generate_launch_description():
         ],
     )
 
+    go_home_node = Node(
+        package='mekk4_bringup',
+        executable='go_home_node',
+        name='go_home',
+        output='screen',
+        condition=IfCondition(use_teddy_grab),
+        parameters=[
+            {'use_sim_time': use_sim_time},
+            {
+                'global_frame': 'odom',
+                'base_frame': base_frame,
+                'trigger_topic': '/teddy_grab/done',
+                'goal_topic': '/goal_pose',
+                'home_pose_topic': '/home_pose',
+                'save_delay_s': 3.0,
+            },
+        ],
+    )
+
     robotarm_safety_node = Node(
         package='mekk4_bringup',
         executable='robotarm_safety_node',
@@ -410,6 +429,7 @@ def generate_launch_description():
         teddy_approach_node,
         robotarm_safety_node,
         teddy_grab_node,
+        go_home_node,
         teddy_lidar_markers_node,
         dist_sensor_marker_node,
         teddy_nav_goal_node,

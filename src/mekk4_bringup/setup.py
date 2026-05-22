@@ -25,6 +25,7 @@ setup(
             'bno085_node = mekk4_bringup.bno085_node:main',
             'cmd_vel_mux_node = mekk4_bringup.cmd_vel_mux_node:main',
             'dist_sensor_marker_node = mekk4_bringup.dist_sensor_marker_node:main',
+            'go_home_node = mekk4_bringup.go_home_node:main',
             'mega_driver_node = mekk4_bringup.mega_driver_node:main',
             'nav_cmd_vel_flip_node = mekk4_bringup.nav_cmd_vel_flip_node:main',
             'robotarm_safety_node = mekk4_bringup.robotarm_safety_node:main',

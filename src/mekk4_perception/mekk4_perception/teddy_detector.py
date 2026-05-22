@@ -11,6 +11,7 @@ import rclpy
 from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
+from rclpy.qos import QoSHistoryPolicy, QoSProfile
 from std_msgs.msg import String
 from ultralytics import YOLO
 
@@ -40,8 +41,12 @@ class TeddyDetector(Node):
         self.debug_stream_bitrate_bps = int(os.environ.get("MEKK4_DEBUG_STREAM_BITRATE", "800000"))
         self.debug_stream_encoder = os.environ.get("MEKK4_DEBUG_STREAM_ENCODER", "x264").strip().lower()
 
+        status_qos = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=1,
+        )
         self.model = YOLO(self.model_path, task="detect")
-        self.pub = self.create_publisher(String, "/teddy_detector/status", 10)
+        self.pub = self.create_publisher(String, "/teddy_detector/status", status_qos)
 
         # One-slot frame buffer: the camera reader overwrites old frames, YOLO uses newest.
         self.proc = None
@@ -50,6 +55,7 @@ class TeddyDetector(Node):
         self._buf = bytearray()
         self._frame_cond = threading.Condition()
         self._latest_frame = None
+        self._latest_frame_at = 0.0
         self._latest_seq = 0
         self._last_warn = 0.0
         self._last_debug_stream = 0.0
@@ -138,6 +144,7 @@ class TeddyDetector(Node):
                 frame = np.frombuffer(data, dtype=np.uint8).reshape((self.height, self.width, 3))
                 with self._frame_cond:
                     self._latest_frame = frame
+                    self._latest_frame_at = time.monotonic()
                     self._latest_seq += 1
                     self._frame_cond.notify()
 
@@ -152,20 +159,24 @@ class TeddyDetector(Node):
                 if self._latest_seq == seen_seq:
                     continue
                 frame = self._latest_frame
+                frame_at = self._latest_frame_at
                 seen_seq = self._latest_seq
 
             if frame is not None:
-                self._infer_frame(frame)
+                self._infer_frame(frame, frame_at)
 
-    def _infer_frame(self, frame):
+    def _infer_frame(self, frame, frame_at):
         if self._stop or not rclpy.ok():
             return
 
+        infer_start = time.monotonic()
         count, debug_boxes, best_box = self._detect_teddy(frame)
         dx, dy, centered = self._box_center_state(best_box)
         infer_end = time.monotonic()
         fps_text = self._update_inference_fps(infer_end)
-        if not self._publish_status(count, dx, dy, centered, fps_text):
+        frame_age_s = max(0.0, infer_end - frame_at) if frame_at > 0.0 else 0.0
+        infer_ms = max(0.0, (infer_end - infer_start) * 1000.0)
+        if not self._publish_status(count, dx, dy, centered, fps_text, frame_age_s, infer_ms):
             return
 
         if self.show_gui or self.stream_debug_video:
@@ -212,7 +223,7 @@ class TeddyDetector(Node):
         dy = (cy - (self.height / 2.0)) / (self.height / 2.0)
         return dx, dy, abs(dx) <= self.center_tol and abs(dy) <= self.center_tol
 
-    def _publish_status(self, count, dx, dy, centered, fps_text):
+    def _publish_status(self, count, dx, dy, centered, fps_text, frame_age_s, infer_ms):
         if dx is None or dy is None:
             status = f"teddy_count={count} centered=false"
         else:
@@ -220,7 +231,7 @@ class TeddyDetector(Node):
             status = f"teddy_count={count} dx={dx:.3f} dy={dy:.3f} centered={state}"
 
         msg = String()
-        msg.data = f"{status} fps={fps_text}"
+        msg.data = f"{status} fps={fps_text} age={frame_age_s:.3f} infer_ms={infer_ms:.0f}"
         try:
             self.pub.publish(msg)
         except _rclpy.RCLError:

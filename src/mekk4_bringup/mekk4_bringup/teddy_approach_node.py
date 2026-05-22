@@ -8,6 +8,7 @@ from typing import Any
 import rclpy
 from geometry_msgs.msg import Twist
 from rclpy.node import Node
+from rclpy.qos import QoSHistoryPolicy, QoSProfile
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Empty, String
 
@@ -85,6 +86,7 @@ class TeddyApproachNode(Node):
         self.enabled = bool(self.param("enabled"))
         self.lost_timeout_s = float(self.param("lost_timeout_s"))
         self.detection_act_timeout_s = float(self.param("detection_act_timeout_s"))
+        self.max_detection_source_age_s = float(self.param("max_detection_source_age_s"))
         self.linear_speed = float(self.param("linear_speed"))
         self.drive_when_not_centered = bool(self.param("drive_when_not_centered"))
         self.center_tolerance = float(self.param("center_tolerance"))
@@ -109,15 +111,22 @@ class TeddyApproachNode(Node):
         mode_topic = str(self.param("mode_topic"))
         reset_topic = str(self.param("reset_topic"))
 
-        self.cmd_pub = self.create_publisher(Twist, cmd_vel_topic, 10)
-        self.mode_pub = self.create_publisher(String, mode_topic, 10)
-        self.create_subscription(String, status_topic, self.on_status, 10)
+        control_qos = QoSProfile(history=QoSHistoryPolicy.KEEP_LAST, depth=1)
+        status_qos = QoSProfile(
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=1,
+        )
+
+        self.cmd_pub = self.create_publisher(Twist, cmd_vel_topic, control_qos)
+        self.mode_pub = self.create_publisher(String, mode_topic, control_qos)
+        self.create_subscription(String, status_topic, self.on_status, status_qos)
         self.create_subscription(LaserScan, scan_topic, self.on_scan, 10)
-        self.create_subscription(Empty, reset_topic, self.on_reset, 10)
+        self.create_subscription(Empty, reset_topic, self.on_reset, control_qos)
         self.create_timer(float(self.param("publish_period_s")), self.on_timer)
 
         self.last_seen_at = -1.0
         self.last_dx = 0.0
+        self.last_detection_source_age_s = 0.0
         self.last_dx_sign = 0
         self.centered_since = -1.0
         self.front_distance = math.inf
@@ -162,6 +171,8 @@ class TeddyApproachNode(Node):
             raise ValueError("stop_lidar_timeout_s must be zero or greater")
         if self.center_settle_s < 0.0:
             raise ValueError("center_settle_s must be zero or greater")
+        if self.max_detection_source_age_s < 0.0:
+            raise ValueError("max_detection_source_age_s must be zero or greater")
 
     def on_status(self, msg):
         fields = parse_status(msg.data)
@@ -177,6 +188,7 @@ class TeddyApproachNode(Node):
             self.turn_pid.reset()
         self.last_dx_sign = new_sign
         self.last_dx = new_dx
+        self.last_detection_source_age_s = self.parse_float(fields.get("age"), default=0.0)
         self.last_seen_at = self.now_s()
 
     def on_scan(self, msg):
@@ -222,9 +234,21 @@ class TeddyApproachNode(Node):
             self.log_mode("waiting_for_teddy")
             return
 
+        detection_age_s = self.detection_age_s(now)
+        dx_fresh = detection_age_s <= self.detection_act_timeout_s
+        source_fresh = (
+            self.max_detection_source_age_s <= 0.0
+            or self.last_detection_source_age_s <= self.max_detection_source_age_s
+        )
+        if not dx_fresh or not source_fresh:
+            self.turn_pid.reset()
+            self.centered_since = -1.0
+            self.publish_stop()
+            self.log_mode("waiting_fresh_detection")
+            return
+
         cmd = Twist()
-        dx_fresh = (now - self.last_seen_at) <= self.detection_act_timeout_s
-        centered = not dx_fresh or abs(self.last_dx) <= self.center_tolerance
+        centered = abs(self.last_dx) <= self.center_tolerance
         if centered:
             if self.centered_since < 0.0:
                 self.centered_since = now
@@ -262,6 +286,20 @@ class TeddyApproachNode(Node):
 
     def teddy_recent(self, now):
         return self.last_seen_at >= 0.0 and (now - self.last_seen_at) <= self.lost_timeout_s
+
+    def detection_age_s(self, now):
+        if self.last_seen_at < 0.0:
+            return math.inf
+        return max(0.0, now - self.last_seen_at) + max(0.0, self.last_detection_source_age_s)
+
+    @staticmethod
+    def parse_float(value, default):
+        if value is None:
+            return default
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return default
 
     def lidar_stop_active(self, now):
         lidar_fresh = self.last_scan_at >= 0.0 and (now - self.last_scan_at) <= self.stop_lidar_timeout_s

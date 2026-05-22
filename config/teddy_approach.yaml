@@ -10,17 +10,14 @@ teddy_approach:
     # Max age of a detection before turn commands are suppressed (but teddy not
     # considered lost). Keeps the node from acting on stale frames when the
     # camera lags. Must be <= lost_timeout_s.
-    detection_act_timeout_s: 0.40
-    # Detector-reported frame age limit. If YOLO is working on old camera
-    # frames, stop instead of steering from stale dx.
-    max_detection_source_age_s: 0.35
+    detection_act_timeout_s: 0.25
 
     # Image centering regulator. dx > 0 means teddy is right of image center.
     # angular_kd=0.0 gives a plain P regulator; raise it only if heading overshoots.
-    angular_kp: 0.45
-    angular_kd: 0.08
-    max_angular_speed: 0.7
-    min_angular_speed: 0.0
+    angular_kp: 0.2
+    angular_kd: 0.2
+    max_angular_speed: 1.5
+    min_angular_speed: 0.9
     center_tolerance: 0.10
     center_settle_s: 2.0
 

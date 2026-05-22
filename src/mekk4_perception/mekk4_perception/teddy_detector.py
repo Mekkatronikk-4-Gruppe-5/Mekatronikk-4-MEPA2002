@@ -11,7 +11,7 @@ import rclpy
 from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
-from rclpy.qos import QoSHistoryPolicy, QoSProfile
+from rclpy.qos import QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from std_msgs.msg import String
 from ultralytics import YOLO
 
@@ -44,6 +44,7 @@ class TeddyDetector(Node):
         status_qos = QoSProfile(
             history=QoSHistoryPolicy.KEEP_LAST,
             depth=1,
+            reliability=QoSReliabilityPolicy.BEST_EFFORT,
         )
         self.model = YOLO(self.model_path, task="detect")
         self.pub = self.create_publisher(String, "/teddy_detector/status", status_qos)

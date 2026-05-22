@@ -10,9 +10,8 @@ camera_stream:
   height: 600
 
   # Capture framerate.
-  # Keep this near the detector's actual throughput. Too low looks choppy; too
-  # high can waste CPU/bandwidth if YOLO cannot keep up.
-  fps: 10
+  # Lower FPS usually reduces delay and makes the stream easier to keep stable.
+  fps: 6
 
   # Optional H.264 bitrate in bits/sec.
   # Leave empty to use the rpicam default.
@@ -68,7 +67,7 @@ camera_stream:
   # Denoise mode.
   # Quote values like "off" or "on" so YAML does not treat them as booleans.
   # Valid practical values here: "auto", "off", "cdn_off", "cdn_fast", "cdn_hq", "on".
-  denoise: "cdn_fast"
+  denoise: "cdn_hq"
 
   # Exposure metering mode. "centre" is a safe default for robot driving indoors.
   metering: centre
@@ -87,7 +86,7 @@ teddy_detector:
   conf: 0.3
 
   # YOLO inference size. Higher can improve detection quality, but costs latency/CPU.
-  imgsz: 480
+  imgsz: 640
 
   # Allowed center error before reporting centered=true.
   center_tol: 0.10
@@ -107,7 +106,7 @@ teddy_detector:
 
   # Scale factor before H264 encoding the annotated stream.
   # 1.0 keeps full input size, 0.5 halves width and height.
-  debug_stream_scale: 0.5
+  debug_stream_scale: 1.0
 
   # Output FPS for the annotated YOLO stream.
   # This is a max rate, not a guaranteed rate.

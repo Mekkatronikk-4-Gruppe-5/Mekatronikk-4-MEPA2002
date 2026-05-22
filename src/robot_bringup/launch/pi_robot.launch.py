@@ -358,6 +358,8 @@ def generate_launch_description():
         executable='performance_monitor_node',
         name='performance_monitor',
         output='screen',
+        emulate_tty=True,
+        arguments=['--ros-args', '--log-level', 'WARN'],
         condition=IfCondition(use_perf_monitor),
         parameters=[
             {'use_sim_time': use_sim_time},

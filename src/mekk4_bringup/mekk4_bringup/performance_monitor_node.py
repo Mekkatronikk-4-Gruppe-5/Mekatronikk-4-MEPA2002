@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import rclpy
+import rclpy.logging
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from rclpy.executors import ExternalShutdownException
@@ -93,9 +94,11 @@ class PerformanceMonitorNode(Node):
 
         self._summary_pub = self.create_publisher(String, "/performance/summary", 10)
         self.create_timer(self._report_period_s, self._report)
-        self.get_logger().info(
-            "performance monitor active: report_period_s=%.1f window_s=%.1f"
-            % (self._report_period_s, self._window_s)
+        self.get_logger().set_level(rclpy.logging.LoggingSeverity.WARN)
+        print(
+            "[perf] active: report_period_s=%.1f window_s=%.1f"
+            % (self._report_period_s, self._window_s),
+            flush=True,
         )
 
     def _param_float(self, name: str, default: float) -> float:
@@ -165,7 +168,7 @@ class PerformanceMonitorNode(Node):
         msg = String()
         msg.data = summary
         self._summary_pub.publish(msg)
-        self.get_logger().info(summary)
+        print(summary, flush=True)
 
     @staticmethod
     def _fmt(value: float | None, unit: str) -> str:

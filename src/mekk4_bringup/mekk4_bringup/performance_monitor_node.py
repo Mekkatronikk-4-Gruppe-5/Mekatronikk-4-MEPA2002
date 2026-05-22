@@ -58,7 +58,7 @@ class PerformanceMonitorNode(Node):
         self._window_s = self._param_float("window_s", 10.0)
         self._top_process_count = self._param_int("top_process_count", 8)
 
-        log_dir = Path.home() / "perf_logs"
+        log_dir = Path(\"/ws/perf_logs\")
         log_dir.mkdir(exist_ok=True)
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self._log_file = open(log_dir / f"perf_{timestamp}.log", "a", encoding="utf-8")

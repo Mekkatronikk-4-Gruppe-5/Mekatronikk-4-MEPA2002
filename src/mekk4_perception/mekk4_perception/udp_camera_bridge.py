@@ -15,6 +15,8 @@ from rclpy.node import Node
 from rclpy.qos import QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from sensor_msgs.msg import Image
 
+RAW_READ_SIZE_BYTES = 64 * 1024
+
 
 class UdpCameraBridge(Node):
     def __init__(self):
@@ -74,7 +76,7 @@ class UdpCameraBridge(Node):
                 self._buf.clear()
                 self._stderr_lines.clear()
 
-            chunk = self.proc.stdout.read(4096) if self.proc.stdout else b""
+            chunk = self.proc.stdout.read(RAW_READ_SIZE_BYTES) if self.proc.stdout else b""
             if not chunk:
                 if self._stop:
                     break
@@ -90,7 +92,7 @@ class UdpCameraBridge(Node):
 
             self._buf.extend(chunk)
             while len(self._buf) >= self.frame_bytes:
-                data = bytes(self._buf[: self.frame_bytes])
+                data = bytes(memoryview(self._buf)[: self.frame_bytes])
                 del self._buf[: self.frame_bytes]
                 frame = np.frombuffer(data, dtype=np.uint8).reshape((self.height, self.width, 3))
                 self._publish_frame(frame)
@@ -146,6 +148,7 @@ class UdpCameraBridge(Node):
         pipeline = self.gst_source.replace(", ", ",")
         sink = (
             f"video/x-raw,format=BGR,width={self.width},height={self.height} "
+            "! queue leaky=downstream max-size-buffers=1 "
             "! fdsink fd=1"
         )
         if "appsink" in pipeline:

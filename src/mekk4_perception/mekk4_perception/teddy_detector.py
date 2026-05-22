@@ -16,6 +16,7 @@ from std_msgs.msg import String
 from ultralytics import YOLO
 
 TEDDY_CLASS_ID = 77  # COCO teddy bear
+RAW_READ_SIZE_BYTES = 64 * 1024
 
 
 def required_env(name):
@@ -130,7 +131,7 @@ class TeddyDetector(Node):
 
                 self._buf.clear()
 
-            chunk = self.proc.stdout.read(4096) if self.proc.stdout else b""
+            chunk = self.proc.stdout.read(RAW_READ_SIZE_BYTES) if self.proc.stdout else b""
             if not chunk:
                 if self._stop or not rclpy.ok():
                     break
@@ -142,7 +143,7 @@ class TeddyDetector(Node):
 
             self._buf.extend(chunk)
             while len(self._buf) >= self.frame_bytes:
-                data = bytes(self._buf[: self.frame_bytes])
+                data = bytes(memoryview(self._buf)[: self.frame_bytes])
                 del self._buf[: self.frame_bytes]
                 frame = np.frombuffer(data, dtype=np.uint8).reshape((self.height, self.width, 3))
                 with self._frame_cond:
@@ -173,7 +174,8 @@ class TeddyDetector(Node):
             return
 
         infer_start = time.monotonic()
-        count, debug_boxes, best_box = self._detect_teddy(frame)
+        need_debug_view = self.show_gui or self.stream_debug_video
+        count, debug_boxes, best_box = self._detect_teddy(frame, need_debug_view)
         dx, dy, centered = self._box_center_state(best_box)
         infer_end = time.monotonic()
         fps_text = self._update_inference_fps(infer_end)
@@ -182,7 +184,7 @@ class TeddyDetector(Node):
         if not self._publish_status(count, dx, dy, centered, fps_text, frame_age_s, infer_ms):
             return
 
-        if self.show_gui or self.stream_debug_video:
+        if need_debug_view:
             annotated = self._render_debug_view(frame, debug_boxes, best_box, centered, fps_text)
             if self.stream_debug_video:
                 self._stream_debug_video(annotated)
@@ -190,7 +192,7 @@ class TeddyDetector(Node):
                 cv2.imshow("teddy_detector", annotated)
                 cv2.waitKey(1)
 
-    def _detect_teddy(self, frame):
+    def _detect_teddy(self, frame, need_debug_view):
         results = self.model.predict(
             source=frame,
             imgsz=self.imgsz,
@@ -199,21 +201,26 @@ class TeddyDetector(Node):
             verbose=False,
         )
         boxes = [] if not results or results[0].boxes is None else results[0].boxes
-        debug_boxes = []
+        debug_boxes = [] if need_debug_view else None
         best_box = None
         best_area = -1.0
 
         # Largest detection is used for centering; all detections are drawn.
         for box in boxes:
-            x1, y1, x2, y2 = box.xyxy[0].tolist()
-            conf = float(box.conf[0]) if box.conf is not None else 0.0
-            debug_boxes.append((int(x1), int(y1), int(x2), int(y2), conf))
+            coords = box.xyxy[0]
+            x1 = float(coords[0])
+            y1 = float(coords[1])
+            x2 = float(coords[2])
+            y2 = float(coords[3])
+            if need_debug_view:
+                conf = float(box.conf[0]) if box.conf is not None else 0.0
+                debug_boxes.append((int(x1), int(y1), int(x2), int(y2), conf))
             area = (x2 - x1) * (y2 - y1)
             if area > best_area:
                 best_area = area
                 best_box = (int(x1), int(y1), int(x2), int(y2))
 
-        return len(boxes), debug_boxes, best_box
+        return len(boxes), debug_boxes or [], best_box
 
     def _box_center_state(self, box):
         if box is None:

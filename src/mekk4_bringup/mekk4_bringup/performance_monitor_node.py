@@ -12,6 +12,7 @@ from pathlib import Path
 
 import rclpy
 import rclpy.logging
+from datetime import datetime
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from rclpy.executors import ExternalShutdownException
@@ -56,6 +57,12 @@ class PerformanceMonitorNode(Node):
         self._report_period_s = self._param_float("report_period_s", 5.0)
         self._window_s = self._param_float("window_s", 10.0)
         self._top_process_count = self._param_int("top_process_count", 8)
+
+        log_dir = Path.home() / "perf_logs"
+        log_dir.mkdir(exist_ok=True)
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        self._log_file = open(log_dir / f"perf_{timestamp}.log", "a", encoding="utf-8")
+        print(f"[perf] logging to {self._log_file.name}", flush=True)
         self._process_keywords = self._param_list(
             "process_keywords",
             [
@@ -168,7 +175,10 @@ class PerformanceMonitorNode(Node):
         msg = String()
         msg.data = summary
         self._summary_pub.publish(msg)
-        print(summary, flush=True)
+        line = f"{datetime.now().strftime('%H:%M:%S')} {summary}"
+        print(line, flush=True)
+        self._log_file.write(line + "\n")
+        self._log_file.flush()
 
     @staticmethod
     def _fmt(value: float | None, unit: str) -> str:

@@ -63,6 +63,7 @@ MEKK4_CMD_VEL_MUX="${REPO_ROOT}/src/mekk4_bringup/mekk4_bringup/cmd_vel_mux_node
 MEKK4_ZERO_JOINT_STATE_PUBLISHER="${REPO_ROOT}/src/mekk4_bringup/mekk4_bringup/zero_joint_state_publisher.py"
 MEKK4_TEDDY_APPROACH="${REPO_ROOT}/src/mekk4_bringup/mekk4_bringup/teddy_approach_node.py"
 MEKK4_TEDDY_GRAB="${REPO_ROOT}/src/mekk4_bringup/mekk4_bringup/teddy_grab_node.py"
+MEKK4_TEDDY_LIDAR_MARKERS="${REPO_ROOT}/src/mekk4_bringup/mekk4_bringup/teddy_lidar_markers_node.py"
 MEKK4_ROBOTARM_SAFETY="${REPO_ROOT}/src/mekk4_bringup/mekk4_bringup/robotarm_safety_node.py"
 MEKK4_PERFORMANCE_MONITOR="${REPO_ROOT}/src/mekk4_bringup/mekk4_bringup/performance_monitor_node.py"
 INSTALLED_MEGA_DRIVER="${REPO_ROOT}/install/mekk4_bringup/lib/mekk4_bringup/mega_driver_node"
@@ -70,6 +71,7 @@ INSTALLED_CMD_VEL_MUX="${REPO_ROOT}/install/mekk4_bringup/lib/mekk4_bringup/cmd_
 INSTALLED_ZERO_JOINT_STATE_PUBLISHER="${REPO_ROOT}/install/mekk4_bringup/lib/mekk4_bringup/zero_joint_state_publisher"
 INSTALLED_TEDDY_APPROACH="${REPO_ROOT}/install/mekk4_bringup/lib/mekk4_bringup/teddy_approach_node"
 INSTALLED_TEDDY_GRAB="${REPO_ROOT}/install/mekk4_bringup/lib/mekk4_bringup/teddy_grab_node"
+INSTALLED_TEDDY_LIDAR_MARKERS="${REPO_ROOT}/install/mekk4_bringup/lib/mekk4_bringup/teddy_lidar_markers_node"
 INSTALLED_ROBOTARM_SAFETY="${REPO_ROOT}/install/mekk4_bringup/lib/mekk4_bringup/robotarm_safety_node"
 INSTALLED_PERFORMANCE_MONITOR="${REPO_ROOT}/install/mekk4_bringup/lib/mekk4_bringup/performance_monitor_node"
 
@@ -111,6 +113,8 @@ elif [[ ! -f "${INSTALLED_ZERO_JOINT_STATE_PUBLISHER}" ]]; then
   needs_ws_build=1
 elif [[ ! -f "${INSTALLED_TEDDY_APPROACH}" ]]; then
   needs_ws_build=1
+elif [[ ! -f "${INSTALLED_TEDDY_LIDAR_MARKERS}" ]]; then
+  needs_ws_build=1
 elif [[ ! -f "${INSTALLED_ROBOTARM_SAFETY}" ]]; then
   needs_ws_build=1
 elif [[ ! -f "${INSTALLED_PERFORMANCE_MONITOR}" ]]; then
@@ -146,6 +150,8 @@ elif [[ "${MEKK4_ZERO_JOINT_STATE_PUBLISHER}" -nt "${INSTALLED_ZERO_JOINT_STATE_
 elif [[ "${MEKK4_TEDDY_APPROACH}" -nt "${INSTALLED_TEDDY_APPROACH}" ]]; then
   needs_ws_build=1
 elif [[ "${MEKK4_TEDDY_GRAB}" -nt "${INSTALLED_TEDDY_GRAB}" ]]; then
+  needs_ws_build=1
+elif [[ "${MEKK4_TEDDY_LIDAR_MARKERS}" -nt "${INSTALLED_TEDDY_LIDAR_MARKERS}" ]]; then
   needs_ws_build=1
 elif [[ "${MEKK4_ROBOTARM_SAFETY}" -nt "${INSTALLED_ROBOTARM_SAFETY}" ]]; then
   needs_ws_build=1

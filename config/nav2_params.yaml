@@ -3,7 +3,7 @@ bt_navigator:
     global_frame: odom
     robot_base_frame: base_link
     odom_topic: /odom
-    bt_loop_duration: 10
+    bt_loop_duration: 50
     default_server_timeout: 20
     wait_for_service_timeout: 1000
     action_server_result_timeout: 900.0
@@ -18,7 +18,7 @@ bt_navigator:
 
 controller_server:
   ros__parameters:
-    controller_frequency: 20.0
+    controller_frequency: 10.0
     costmap_update_timeout: 0.35
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.0
@@ -79,7 +79,7 @@ local_costmap:
   local_costmap:
     ros__parameters:
       update_frequency: 10.0
-      publish_frequency: 5.0
+      publish_frequency: 2.0
       global_frame: odom
       robot_base_frame: base_link
       rolling_window: true
@@ -109,13 +109,13 @@ local_costmap:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
         inflation_radius: 0.70
-      always_send_full_costmap: true
+      always_send_full_costmap: false
 
 global_costmap:
   global_costmap:
     ros__parameters:
-      update_frequency: 5.0
-      publish_frequency: 2.0
+      update_frequency: 2.0
+      publish_frequency: 1.0
       global_frame: odom
       robot_base_frame: base_link
       rolling_window: true
@@ -146,7 +146,7 @@ global_costmap:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
         inflation_radius: 0.70
-      always_send_full_costmap: true
+      always_send_full_costmap: false
 
 planner_server:
   ros__parameters:
@@ -166,12 +166,12 @@ planner_server:
       use_final_approach_orientation: false
       smooth_path: true
       smoother:
-        max_iterations: 1000
+        max_iterations: 100
         w_smooth: 0.3
         w_data: 0.2
-        tolerance: 1.0e-10
-        do_refinement: true
-        refinement_num: 2
+        tolerance: 1.0e-6
+        do_refinement: false
+        refinement_num: 0
 
 behavior_server:
   ros__parameters:
@@ -179,7 +179,7 @@ behavior_server:
     global_costmap_topic: global_costmap/costmap_raw
     local_footprint_topic: local_costmap/published_footprint
     global_footprint_topic: global_costmap/published_footprint
-    cycle_frequency: 10.0
+    cycle_frequency: 5.0
     behavior_plugins: ["spin", "backup", "drive_on_heading", "wait"]
     spin:
       plugin: "nav2_behaviors::Spin"
@@ -200,7 +200,7 @@ behavior_server:
 
 velocity_smoother:
   ros__parameters:
-    smoothing_frequency: 20.0
+    smoothing_frequency: 10.0
     scale_velocities: false
     feedback: "OPEN_LOOP"
     max_velocity: [0.5, 0.0, 3.7]

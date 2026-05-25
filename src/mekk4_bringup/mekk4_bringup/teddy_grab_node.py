@@ -525,17 +525,17 @@ class TeddyGrabNode(Node):
             return
         self._last_logged_state = current_state
         self.get_logger().info(
-            "%s: %s | target x=%s z=%s gripper=%s | current x=%s z=%s | dist=%s | grab_z_calc=%s"
+            "[%s/%s] age=%.1fs x=%s→%s z=%s→%s grip=%s dist=%s"
             % (
                 self.phase(),
                 self.state,
+                self.elapsed_s(),
+                self.fmt(self.x, "m"),
                 self.fmt(self.target_x, "m"),
+                self.fmt(self.z, "m"),
                 self.fmt(self.target_z, "m"),
                 self.fmt(self.target_gripper, "us"),
-                self.fmt(self.x, "m"),
-                self.fmt(self.z, "m"),
                 self.distance_text(),
-                self.grab_z_calc,
             )
         )
 

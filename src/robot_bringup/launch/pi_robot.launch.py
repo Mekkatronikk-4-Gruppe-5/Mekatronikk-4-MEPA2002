@@ -343,8 +343,26 @@ def generate_launch_description():
         parameters=[
             {'use_sim_time': use_sim_time},
             ekf_params_file,
+            {'publish_tf': False},
         ],
-        remappings=[('odometry/filtered', 'odom')],
+        remappings=[('odometry/filtered', 'odom_raw')],
+    )
+
+    odom_freeze_node = Node(
+        package='mekk4_bringup',
+        executable='odom_freeze_node',
+        name='odom_freeze',
+        output='screen',
+        condition=IfCondition(use_ekf),
+        parameters=[
+            {'use_sim_time': use_sim_time},
+            {
+                'input_odom_topic': 'odom_raw',
+                'output_odom_topic': 'odom',
+                'freeze_topic': '/mega/freeze_odom',
+                'publish_tf': True,
+            },
+        ],
     )
 
     rviz_node = Node(
@@ -447,6 +465,7 @@ def generate_launch_description():
         imu_node,
         mega_driver_node,
         ekf_node,
+        odom_freeze_node,
         lidar_launch,
         delayed_nav2_launch,
         teddy_detector,

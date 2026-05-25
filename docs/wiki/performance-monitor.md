@@ -25,12 +25,6 @@ Kort alias:
 make pi-perf
 ```
 
-For host-side kamera/prosessmåling i en ekstra terminal på Pi:
-
-```bash
-make pi-perf-watch
-```
-
 Uten monitor:
 
 ```bash
@@ -86,7 +80,6 @@ Sammenlign disse:
 - `age`
 - `infer_ms`
 - CPU-prosent for `teddy_detector`, `gst-launch`, `mega_driver`, Nav2-noder
-- host-side CPU for `rpicam`, camera stream og Docker med `make pi-perf-watch`
 - `temp=...`
 - `throttled=0x0` eller ikke
 

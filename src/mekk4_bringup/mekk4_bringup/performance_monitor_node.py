@@ -4,6 +4,7 @@ from __future__ import annotations
 import math
 import os
 import re
+import signal
 import subprocess
 import time
 from collections import deque
@@ -50,6 +51,23 @@ class TopicStats:
         return now - self.stamps[-1]
 
 
+@dataclass(slots=True)
+class ProcessAggregate:
+    cpu_sum: float = 0.0
+    cpu_max: float = 0.0
+    rss_max_kb: int = 0
+    samples: int = 0
+
+    def add(self, cpu_pct: float, rss_kb: int) -> None:
+        self.cpu_sum += cpu_pct
+        self.cpu_max = max(self.cpu_max, cpu_pct)
+        self.rss_max_kb = max(self.rss_max_kb, rss_kb)
+        self.samples += 1
+
+    def cpu_avg(self) -> float:
+        return self.cpu_sum / self.samples if self.samples > 0 else 0.0
+
+
 class PerformanceMonitorNode(Node):
     def __init__(self) -> None:
         super().__init__("performance_monitor")
@@ -90,6 +108,10 @@ class PerformanceMonitorNode(Node):
         self._topics: dict[str, TopicStats] = {}
         self._last_total_jiffies: int | None = None
         self._last_proc_jiffies: dict[int, int] = {}
+        self._process_aggregates: dict[str, ProcessAggregate] = {}
+        self._started_monotonic = time.monotonic()
+        self._started_wall = datetime.now()
+        self._summary_written = False
         self._cpu_count = os.cpu_count() or 1
 
         qos = QoSProfile(
@@ -194,6 +216,59 @@ class PerformanceMonitorNode(Node):
         self._log_file.write(line + "\n")
         self._log_file.flush()
 
+    def write_final_summary(self) -> None:
+        if self._summary_written:
+            return
+        self._summary_written = True
+
+        duration_s = time.monotonic() - self._started_monotonic
+        lines = [
+            "",
+            "========== RUN SUMMARY ==========",
+            "started=%s ended=%s duration_s=%.1f"
+            % (
+                self._started_wall.strftime("%Y-%m-%d %H:%M:%S"),
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                duration_s,
+            ),
+            "",
+            "Topic summary:",
+        ]
+
+        now = time.monotonic()
+        for topic, stats in self._topics.items():
+            lines.append(
+                "%s avg_hz=%.2f last_gap_s=%.2f samples=%d"
+                % (topic, stats.hz(), stats.gap_s(now), len(stats.stamps))
+            )
+
+        lines.extend(["", "Process CPU summary:"])
+        ranked = sorted(
+            self._process_aggregates.items(),
+            key=lambda item: item[1].cpu_avg(),
+            reverse=True,
+        )
+        if not ranked:
+            lines.append("no process samples")
+        for label, aggregate in ranked:
+            lines.append(
+                "avg_cpu=%.1f%% max_cpu=%.1f%% max_rss=%.1fMB samples=%d %s"
+                % (
+                    aggregate.cpu_avg(),
+                    aggregate.cpu_max,
+                    aggregate.rss_max_kb / 1024.0,
+                    aggregate.samples,
+                    label[:100],
+                )
+            )
+
+        lines.append("=================================")
+
+        for line in lines:
+            print(line, flush=True)
+            self._log_file.write(line + "\n")
+        self._log_file.flush()
+
     @staticmethod
     def _fmt(value: float | None, unit: str) -> str:
         if value is None:
@@ -238,6 +313,7 @@ class PerformanceMonitorNode(Node):
             previous = self._last_proc_jiffies.get(pid, jiffies)
             next_proc_jiffies[pid] = jiffies
             cpu_pct = ((jiffies - previous) / total_delta) * 100.0 * self._cpu_count
+            self._process_aggregates.setdefault(label, ProcessAggregate()).add(cpu_pct, rss_kb)
             ranked.append((cpu_pct, rss_kb, pid, label))
 
         self._last_proc_jiffies = next_proc_jiffies
@@ -320,14 +396,20 @@ class PerformanceMonitorNode(Node):
 def main() -> None:
     rclpy.init()
     node = PerformanceMonitorNode()
+    signal.signal(signal.SIGTERM, _raise_keyboard_interrupt)
     try:
         rclpy.spin(node)
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
+        node.write_final_summary()
         node.destroy_node()
         if rclpy.ok():
             rclpy.shutdown()
+
+
+def _raise_keyboard_interrupt(_signum, _frame) -> None:
+    raise KeyboardInterrupt
 
 
 if __name__ == "__main__":

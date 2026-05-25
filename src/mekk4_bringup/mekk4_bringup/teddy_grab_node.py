@@ -61,6 +61,8 @@ class TeddyGrabNode(Node):
         self.approach_ran_after_reset = False
         self._scan_window_key = None
         self._scan_window = (0, 0)
+        self._zero_twist = Twist()
+        self._last_request = {}
 
         self.cmd_pub = self.create_publisher(Twist, self.p("cmd_vel_topic"), 10)
         self.reset_pub = self.create_publisher(Empty, self.p("approach_reset_topic"), 10)
@@ -114,6 +116,7 @@ class TeddyGrabNode(Node):
         self.contact_t = None
         self.done_published = False
         self.last_gripper_us = None
+        self._last_request.clear()
         self.sequence = self.make_sequence()
         self.step_i = 0
         self.get_logger().info("Phase 2: grab_z=%.3f m (%s)" % (self.grab_z, self.grab_z_calc))
@@ -164,7 +167,7 @@ class TeddyGrabNode(Node):
         if not self.enabled or self.state in ("idle", "done"):
             return
         if self.stop_base_while_active:
-            self.cmd_pub.publish(Twist())
+            self.cmd_pub.publish(self._zero_twist)
         if 0 <= self.step_i < len(self.sequence):
             self.run_step(self.sequence[self.step_i])
 
@@ -288,6 +291,7 @@ class TeddyGrabNode(Node):
         self.step_t0 = self.now_s()
         self.contact_t = None
         self.last_log_t = -math.inf
+        self._last_request.clear()
         self.get_logger().info("%s: %s" % (self.phase(), self.state))
 
     # Move to next sequence step.
@@ -315,11 +319,11 @@ class TeddyGrabNode(Node):
 
     # Command only X.
     def command_x(self, x):
-        self.publish(self.x_pub, x)
+        self.publish_if_changed("x", self.x_pub, x)
 
     # Command only Z.
     def command_z(self, z):
-        self.publish(self.z_pub, z)
+        self.publish_if_changed("z", self.z_pub, z)
 
     # Command gripper servos.
     def command_gripper(self, us):
@@ -554,6 +558,13 @@ class TeddyGrabNode(Node):
         msg = Float64()
         msg.data = float(value)
         publisher.publish(msg)
+
+    def publish_if_changed(self, key, publisher, value):
+        value = float(value)
+        if self._last_request.get(key) == value:
+            return
+        self._last_request[key] = value
+        self.publish(publisher, value)
 
 
 def main():

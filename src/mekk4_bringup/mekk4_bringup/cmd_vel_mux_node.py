@@ -75,6 +75,7 @@ class CmdVelMuxNode(Node):
         self._last_manual_cmd = zero_twist()
         self._last_manual_at = -1.0
         self._last_source = ""
+        self._idle_cmd = zero_twist()
 
         self.get_logger().info(
             "Muxing manual=%s assist=%s nav=%s -> %s"
@@ -115,17 +116,16 @@ class CmdVelMuxNode(Node):
         if nav_active:
             return "nav", self._last_nav_cmd
 
-        return "idle", zero_twist()
+        return "idle", self._idle_cmd
 
     def _on_timer(self) -> None:
         source, cmd = self._select_command()
         self._cmd_pub.publish(cmd)
 
-        source_msg = String()
-        source_msg.data = source
-        self._source_pub.publish(source_msg)
-
         if source != self._last_source:
+            source_msg = String()
+            source_msg.data = source
+            self._source_pub.publish(source_msg)
             self.get_logger().info(f"Active cmd_vel source: {source}")
             self._last_source = source
 

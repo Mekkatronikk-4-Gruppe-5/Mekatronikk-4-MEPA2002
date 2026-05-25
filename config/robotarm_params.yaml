@@ -88,7 +88,7 @@ robotarm_safety:
     x_joint_name: robotarm_x_joint
     z_joint_name: robotarm_z_joint
 
-    publish_period_s: 0.05
+    publish_period_s: 0.1
 
     # Allowed commanded workspace in meters. Matches minimal_all.launch.py.
     x_min: -0.07

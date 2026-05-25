@@ -107,6 +107,7 @@ class RobotarmSafetyNode(Node):
         self._startup_t0 = None
         self.spawn_x = float(self.param("spawn_x"))
         self.spawn_z = float(self.param("spawn_z"))
+        self._last_published: dict[str, float] = {}
 
         self.x_pub = self.create_publisher(Float64, self.param("x_command_topic"), 10)
         self.z_pub = self.create_publisher(Float64, self.param("z_command_topic"), 10)
@@ -208,20 +209,20 @@ class RobotarmSafetyNode(Node):
         if elapsed < self.startup_lock_s:
             # Move Z to home before retracting X behind the chassis front edge.
             startup_x = self.current_x if self.current_x is not None else self.startup_z_first_x
-            self.publish(self.x_pub, startup_x)
-            self.publish(self.z_pub, self.spawn_z)
+            self.publish("x", self.x_pub, startup_x)
+            self.publish("z", self.z_pub, self.spawn_z)
             self.commanded_x = startup_x
             self.commanded_z = self.spawn_z
-            self.publish(self.left_gripper_pub, self.requested_left_gripper)
-            self.publish(self.right_gripper_pub, self.requested_right_gripper)
+            self.publish("left_gripper", self.left_gripper_pub, self.requested_left_gripper)
+            self.publish("right_gripper", self.right_gripper_pub, self.requested_right_gripper)
             return
         x_position, z_position = self.commanded_xz()
         self.commanded_x = x_position
         self.commanded_z = z_position
-        self.publish(self.x_pub, x_position)
-        self.publish(self.z_pub, z_position)
-        self.publish(self.left_gripper_pub, self.requested_left_gripper)
-        self.publish(self.right_gripper_pub, self.requested_right_gripper)
+        self.publish("x", self.x_pub, x_position)
+        self.publish("z", self.z_pub, z_position)
+        self.publish("left_gripper", self.left_gripper_pub, self.requested_left_gripper)
+        self.publish("right_gripper", self.right_gripper_pub, self.requested_right_gripper)
 
     def commanded_xz(self) -> tuple[float, float]:
         target_x, target_z = self.safe_requested_xz()
@@ -295,9 +296,13 @@ class RobotarmSafetyNode(Node):
             and z_position < self.chassis_z_threshold
         )
 
-    def publish(self, publisher, value: float) -> None:
+    def publish(self, key: str, publisher, value: float) -> None:
+        value = float(value)
+        if self._last_published.get(key) == value:
+            return
+        self._last_published[key] = value
         msg = Float64()
-        msg.data = float(value)
+        msg.data = value
         publisher.publish(msg)
 
 

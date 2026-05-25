@@ -928,7 +928,6 @@ class MegaDriverNode(Node):
         self._odom_pub.publish(odom)
 
     def _on_timer(self) -> None:
-        self._publish_arm_state()
         if not self._try_connect():
             return
 

@@ -57,6 +57,7 @@ class TeddyGrabNode(Node):
         self.target_gripper = None
         self.last_gripper_us = None
         self.last_log_t = -math.inf
+        self._last_logged_state = None
         self.waiting_for_new_approach = False
         self.approach_ran_after_reset = False
         self._scan_window_key = None
@@ -291,6 +292,7 @@ class TeddyGrabNode(Node):
         self.step_t0 = self.now_s()
         self.contact_t = None
         self.last_log_t = -math.inf
+        self._last_logged_state = None
         self._last_request.clear()
         self.get_logger().info("%s: %s" % (self.phase(), self.state))
 
@@ -516,12 +518,12 @@ class TeddyGrabNode(Node):
             return self.sequence[self.step_i]["phase"]
         return self.state
 
-    # Periodic terminal status.
+    # Log status only when state changes.
     def log_status(self):
-        now = self.now_s()
-        if now - self.last_log_t < self.status_log_period_s:
+        current_state = (self.phase(), self.state)
+        if current_state == self._last_logged_state:
             return
-        self.last_log_t = now
+        self._last_logged_state = current_state
         self.get_logger().info(
             "%s: %s | target x=%s z=%s gripper=%s | current x=%s z=%s | dist=%s | grab_z_calc=%s"
             % (

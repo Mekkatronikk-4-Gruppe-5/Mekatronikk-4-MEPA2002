@@ -56,6 +56,7 @@ def generate_launch_description():
         'config',
         'robotarm_params.yaml',
     )
+    default_imu_params_path = os.path.join(robot_bringup_share, 'config', 'bno085.yaml')
     default_rviz_config_path = os.path.join(robot_bringup_share, 'rviz', 'rviz.rviz')
 
     use_nav2 = LaunchConfiguration('use_nav2')
@@ -108,6 +109,7 @@ def generate_launch_description():
     teddy_approach_params_file = LaunchConfiguration('teddy_approach_params_file')
     teddy_grab_params_file = LaunchConfiguration('teddy_grab_params_file')
     robotarm_params_file = LaunchConfiguration('robotarm_params_file')
+    imu_params_file = LaunchConfiguration('imu_params_file')
     nav2_start_delay_s = LaunchConfiguration('nav2_start_delay_s')
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
@@ -279,6 +281,7 @@ def generate_launch_description():
         condition=IfCondition(use_imu),
         parameters=[
             {'use_sim_time': use_sim_time},
+            imu_params_file,
             {'frame_id': imu_frame},
         ],
     )
@@ -432,6 +435,7 @@ def generate_launch_description():
             'robotarm_params_file',
             default_value=default_robotarm_params_path,
         ),
+        DeclareLaunchArgument('imu_params_file', default_value=default_imu_params_path),
         DeclareLaunchArgument('rviz_config', default_value=default_rviz_config_path),
         DeclareLaunchArgument('use_respawn', default_value='false'),
         DeclareLaunchArgument('log_level', default_value='info'),

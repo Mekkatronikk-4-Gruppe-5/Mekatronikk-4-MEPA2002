@@ -46,6 +46,7 @@ PARAMS_FILE="${PARAMS_FILE:-/ws/config/nav2_params.yaml}"
 TEDDY_APPROACH_PARAMS_FILE="${TEDDY_APPROACH_PARAMS_FILE:-/ws/config/teddy_approach.yaml}"
 TEDDY_GRAB_PARAMS_FILE="${TEDDY_GRAB_PARAMS_FILE:-/ws/config/teddy_grab.yaml}"
 ROBOTARM_PARAMS_FILE="${ROBOTARM_PARAMS_FILE:-/ws/config/robotarm_params.yaml}"
+IMU_PARAMS_FILE="${IMU_PARAMS_FILE:-/ws/config/bno085.yaml}"
 WIDTH="${WIDTH:?camera_params.yaml did not set WIDTH}"
 HEIGHT="${HEIGHT:?camera_params.yaml did not set HEIGHT}"
 FPS="${FPS:?camera_params.yaml did not set FPS}"
@@ -65,6 +66,8 @@ SOURCE_TEDDY_GRAB_PARAMS="${REPO_ROOT}/config/teddy_grab.yaml"
 INSTALLED_TEDDY_GRAB_PARAMS="${REPO_ROOT}/install/robot_bringup/share/robot_bringup/config/teddy_grab.yaml"
 SOURCE_ROBOTARM_PARAMS="${REPO_ROOT}/config/robotarm_params.yaml"
 INSTALLED_ROBOTARM_PARAMS="${REPO_ROOT}/install/robot_bringup/share/robot_bringup/config/robotarm_params.yaml"
+SOURCE_IMU_PARAMS="${REPO_ROOT}/config/bno085.yaml"
+INSTALLED_IMU_PARAMS="${REPO_ROOT}/install/robot_bringup/share/robot_bringup/config/bno085.yaml"
 SOURCE_ROBOT_URDF="${REPO_ROOT}/src/robot_description/urdf/tracked_robot.urdf"
 INSTALLED_ROBOT_URDF="${REPO_ROOT}/install/robot_description/share/robot_description/urdf/tracked_robot.urdf"
 SOURCE_PKG_XML="${REPO_ROOT}/src/robot_bringup/package.xml"
@@ -117,6 +120,8 @@ elif [[ ! -f "${INSTALLED_TEDDY_GRAB_PARAMS}" ]]; then
   needs_ws_build=1
 elif [[ ! -f "${INSTALLED_ROBOTARM_PARAMS}" ]]; then
   needs_ws_build=1
+elif [[ ! -f "${INSTALLED_IMU_PARAMS}" ]]; then
+  needs_ws_build=1
 elif [[ ! -f "${INSTALLED_ROBOT_URDF}" ]]; then
   needs_ws_build=1
 elif [[ ! -f "${INSTALLED_CMD_VEL_MUX}" ]]; then
@@ -138,6 +143,8 @@ elif [[ "${SOURCE_TEDDY_APPROACH_PARAMS}" -nt "${INSTALLED_TEDDY_APPROACH_PARAMS
 elif [[ "${SOURCE_TEDDY_GRAB_PARAMS}" -nt "${INSTALLED_TEDDY_GRAB_PARAMS}" ]]; then
   needs_ws_build=1
 elif [[ "${SOURCE_ROBOTARM_PARAMS}" -nt "${INSTALLED_ROBOTARM_PARAMS}" ]]; then
+  needs_ws_build=1
+elif [[ "${SOURCE_IMU_PARAMS}" -nt "${INSTALLED_IMU_PARAMS}" ]]; then
   needs_ws_build=1
 elif [[ "${SOURCE_ROBOT_URDF}" -nt "${INSTALLED_ROBOT_URDF}" ]]; then
   needs_ws_build=1
@@ -235,4 +242,4 @@ docker "${docker_run_args[@]}" \
   -e MEKK4_DEBUG_STREAM_BITRATE="${MEKK4_DEBUG_STREAM_BITRATE}" \
   -e MEKK4_DEBUG_STREAM_ENCODER="${MEKK4_DEBUG_STREAM_ENCODER}" \
   -e YOLO_CONFIG_DIR="/tmp" \
-  ros bash -lc "source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && ros2 launch robot_bringup pi_robot.launch.py use_nav2:=${WITH_NAV2} use_teddy:=${WITH_TEDDY} use_teddy_approach:=${WITH_TEDDY_APPROACH} use_teddy_grab:=${WITH_TEDDY_GRAB} use_imu:=${WITH_IMU} use_mega_driver:=${WITH_MEGA_DRIVER} use_robotarm_safety:=${WITH_ROBOTARM_SAFETY} use_perf_monitor:=${WITH_PERF_MONITOR} use_ekf:=${WITH_EKF} product_name:=${PRODUCT_NAME} port_name:=${PORT_NAME} port_baudrate:=${PORT_BAUDRATE} frame_id:=${LIDAR_FRAME} base_frame:=${BASE_FRAME} imu_frame:=${IMU_FRAME} mega_port:=${MEGA_PORT} mega_baudrate:=${MEGA_BAUDRATE} mega_odom_topic:=${MEGA_ODOM_TOPIC} mega_publish_tf:=${MEGA_PUBLISH_TF} swap_sides:=${SWAP_SIDES} left_cmd_sign:=${LEFT_CMD_SIGN} right_cmd_sign:=${RIGHT_CMD_SIGN} angular_cmd_sign:=${ANGULAR_CMD_SIGN} min_nonzero_pwm:=${MIN_NONZERO_PWM} min_forward_pwm:=${MIN_FORWARD_PWM} min_reverse_pwm:=${MIN_REVERSE_PWM} min_turn_pwm:=${MIN_TURN_PWM} pure_rotation_linear_deadband_mps:=${PURE_ROTATION_LINEAR_DEADBAND_MPS} left_cmd_scale:=${LEFT_CMD_SCALE} right_cmd_scale:=${RIGHT_CMD_SCALE} left_tick_sign:=${LEFT_TICK_SIGN} right_tick_sign:=${RIGHT_TICK_SIGN} left_m_per_tick:=${LEFT_M_PER_TICK} right_m_per_tick:=${RIGHT_M_PER_TICK} track_width_eff_m:=${TRACK_WIDTH_EFF_M} ekf_params_file:=${EKF_PARAMS_FILE} params_file:=${PARAMS_FILE} teddy_approach_params_file:=${TEDDY_APPROACH_PARAMS_FILE} teddy_grab_params_file:=${TEDDY_GRAB_PARAMS_FILE} robotarm_params_file:=${ROBOTARM_PARAMS_FILE}"
+  ros bash -lc "source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && ros2 launch robot_bringup pi_robot.launch.py use_nav2:=${WITH_NAV2} use_teddy:=${WITH_TEDDY} use_teddy_approach:=${WITH_TEDDY_APPROACH} use_teddy_grab:=${WITH_TEDDY_GRAB} use_imu:=${WITH_IMU} use_mega_driver:=${WITH_MEGA_DRIVER} use_robotarm_safety:=${WITH_ROBOTARM_SAFETY} use_perf_monitor:=${WITH_PERF_MONITOR} use_ekf:=${WITH_EKF} product_name:=${PRODUCT_NAME} port_name:=${PORT_NAME} port_baudrate:=${PORT_BAUDRATE} frame_id:=${LIDAR_FRAME} base_frame:=${BASE_FRAME} imu_frame:=${IMU_FRAME} mega_port:=${MEGA_PORT} mega_baudrate:=${MEGA_BAUDRATE} mega_odom_topic:=${MEGA_ODOM_TOPIC} mega_publish_tf:=${MEGA_PUBLISH_TF} swap_sides:=${SWAP_SIDES} left_cmd_sign:=${LEFT_CMD_SIGN} right_cmd_sign:=${RIGHT_CMD_SIGN} angular_cmd_sign:=${ANGULAR_CMD_SIGN} min_nonzero_pwm:=${MIN_NONZERO_PWM} min_forward_pwm:=${MIN_FORWARD_PWM} min_reverse_pwm:=${MIN_REVERSE_PWM} min_turn_pwm:=${MIN_TURN_PWM} pure_rotation_linear_deadband_mps:=${PURE_ROTATION_LINEAR_DEADBAND_MPS} left_cmd_scale:=${LEFT_CMD_SCALE} right_cmd_scale:=${RIGHT_CMD_SCALE} left_tick_sign:=${LEFT_TICK_SIGN} right_tick_sign:=${RIGHT_TICK_SIGN} left_m_per_tick:=${LEFT_M_PER_TICK} right_m_per_tick:=${RIGHT_M_PER_TICK} track_width_eff_m:=${TRACK_WIDTH_EFF_M} ekf_params_file:=${EKF_PARAMS_FILE} params_file:=${PARAMS_FILE} teddy_approach_params_file:=${TEDDY_APPROACH_PARAMS_FILE} teddy_grab_params_file:=${TEDDY_GRAB_PARAMS_FILE} robotarm_params_file:=${ROBOTARM_PARAMS_FILE} imu_params_file:=${IMU_PARAMS_FILE}"

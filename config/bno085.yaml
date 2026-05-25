@@ -1,0 +1,10 @@
+bno085:
+  ros__parameters:
+    frame_id: imu_link
+    i2c_bus: 1
+    publish_rate_hz: 50.0
+    report_interval_us: 20000
+    use_game_rotation_vector: true
+    orientation_covariance_diagonal: [0.05, 0.05, 0.08]
+    angular_velocity_covariance_diagonal: [0.02, 0.02, 0.04]
+    linear_acceleration_covariance_diagonal: [0.2, 0.2, 0.3]

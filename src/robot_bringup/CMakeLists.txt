@@ -29,6 +29,7 @@ install(DIRECTORY launch rviz
 
 install(FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/../../config/ekf.yaml
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../config/bno085.yaml
   ${CMAKE_CURRENT_SOURCE_DIR}/../../config/nav2_params.yaml
   ${CMAKE_CURRENT_SOURCE_DIR}/../../config/robotarm_params.yaml
   ${CMAKE_CURRENT_SOURCE_DIR}/../../config/teddy_approach.yaml

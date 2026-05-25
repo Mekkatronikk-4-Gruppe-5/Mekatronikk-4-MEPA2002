@@ -102,6 +102,9 @@ pi-bringup:
 pi-perf:
 	WITH_PERF_MONITOR=1 bash ./scripts/pi_bringup.sh
 
+pi-perf-watch:
+	bash ./scripts/pi_perf_watch.sh
+
 pc-teddy-rviz:
 	bash ./scripts/pc_teddy_rviz.sh "$(if $(PI_HOST),$(PI_HOST),gruppe5pi5)"
 

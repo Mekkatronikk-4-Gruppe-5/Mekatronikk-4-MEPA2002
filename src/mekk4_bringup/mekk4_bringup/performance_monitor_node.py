@@ -57,26 +57,31 @@ class PerformanceMonitorNode(Node):
         self._report_period_s = self._param_float("report_period_s", 5.0)
         self._window_s = self._param_float("window_s", 10.0)
         self._top_process_count = self._param_int("top_process_count", 8)
+        self._log_dir = Path(str(self._param_str("log_dir", "/ws/perf_logs")))
 
-        log_dir = Path(\"/ws/perf_logs\")
-        log_dir.mkdir(exist_ok=True)
+        self._log_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        self._log_file = open(log_dir / f"perf_{timestamp}.log", "a", encoding="utf-8")
+        self._log_file = open(self._log_dir / f"perf_{timestamp}.log", "a", encoding="utf-8")
         print(f"[perf] logging to {self._log_file.name}", flush=True)
         self._process_keywords = self._param_list(
             "process_keywords",
             [
+                "bno085_node",
+                "bt_navigator",
+                "cmd_vel_mux_node",
+                "collision_monitor",
+                "controller_server",
+                "ekf_node",
+                "ldlidar",
+                "lifecycle_manager",
+                "mega_driver_node",
+                "planner_server",
+                "robot_state_publisher",
+                "robotarm_safety_node",
                 "teddy_detector",
                 "teddy_approach",
                 "teddy_grab",
-                "mega_driver",
-                "bno085",
-                "ldlidar",
-                "controller_server",
-                "planner_server",
-                "bt_navigator",
-                "collision_monitor",
-                "python",
+                "velocity_smoother",
                 "gst-launch",
                 "x264enc",
             ],
@@ -96,8 +101,13 @@ class PerformanceMonitorNode(Node):
         self._subscribe("/lidar", LaserScan, self._on_topic("/lidar"), qos)
         self._subscribe("/imu/data", Imu, self._on_topic("/imu/data"), qos)
         self._subscribe("/odom", Odometry, self._on_topic("/odom"), qos)
+        self._subscribe("/wheel/odom", Odometry, self._on_topic("/wheel/odom"), qos)
         self._subscribe("/cmd_vel", Twist, self._on_topic("/cmd_vel"), qos)
+        self._subscribe("/cmd_vel_nav_auto", Twist, self._on_topic("/cmd_vel_nav_auto"), qos)
+        self._subscribe("/cmd_vel_nav", Twist, self._on_topic("/cmd_vel_nav"), qos)
+        self._subscribe("/cmd_vel_collision", Twist, self._on_topic("/cmd_vel_collision"), qos)
         self._subscribe("/cmd_vel_teddy", Twist, self._on_topic("/cmd_vel_teddy"), qos)
+        self._subscribe("/cmd_vel_mux_active", String, self._on_topic("/cmd_vel_mux_active"), qos)
 
         self._summary_pub = self.create_publisher(String, "/performance/summary", 10)
         self.create_timer(self._report_period_s, self._report)
@@ -115,6 +125,10 @@ class PerformanceMonitorNode(Node):
     def _param_int(self, name: str, default: int) -> int:
         self.declare_parameter(name, default)
         return int(self.get_parameter(name).value)
+
+    def _param_str(self, name: str, default: str) -> str:
+        self.declare_parameter(name, default)
+        return str(self.get_parameter(name).value)
 
     def _param_list(self, name: str, default: list[str]) -> list[str]:
         self.declare_parameter(name, default)

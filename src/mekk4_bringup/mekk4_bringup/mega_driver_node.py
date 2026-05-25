@@ -445,18 +445,9 @@ class MegaDriverNode(Node):
 
     def _on_arm_x_cmd(self, msg: Float64) -> None:
         x_m = float(msg.data)
-        if self._last_arm_x_cmd_m is None:
-            self._last_arm_x_cmd_m = x_m
-            self._desired_arm_x = x_m
-            self._pending_arm_x_delta_steps = 0
-            return
-
-        delta_m = x_m - self._last_arm_x_cmd_m
         self._last_arm_x_cmd_m = x_m
         self._desired_arm_x = x_m
-        delta_steps = self._meters_to_x_steps(delta_m)
-        if delta_steps != 0:
-            self._pending_arm_x_delta_steps += delta_steps
+        self._pending_arm_x_delta_steps = self._meters_to_x_steps(x_m - self._actual_arm_x)
 
     def _on_arm_z_cmd(self, msg: Float64) -> None:
         z_m = float(msg.data)
@@ -509,6 +500,10 @@ class MegaDriverNode(Node):
         self._active_arm_axis = None
         self._last_arm_state_poll_at = 0.0
         self._sync_arm_state_from_mega()
+        if not self._arm_x_at_target():
+            self._pending_arm_x_delta_steps = self._meters_to_x_steps(
+                self._desired_arm_x - self._actual_arm_x
+            )
         self._reset_odom_encoder_baseline_after_arm_motion()
 
     def _maybe_send_arm_z(self) -> None:

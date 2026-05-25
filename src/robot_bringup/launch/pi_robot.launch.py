@@ -80,22 +80,6 @@ def generate_launch_description():
     imu_frame = LaunchConfiguration('imu_frame')
     mega_port = LaunchConfiguration('mega_port')
     mega_baudrate = LaunchConfiguration('mega_baudrate')
-    swap_sides = LaunchConfiguration('swap_sides')
-    left_cmd_sign = LaunchConfiguration('left_cmd_sign')
-    right_cmd_sign = LaunchConfiguration('right_cmd_sign')
-    angular_cmd_sign = LaunchConfiguration('angular_cmd_sign')
-    min_nonzero_pwm = LaunchConfiguration('min_nonzero_pwm')
-    min_forward_pwm = LaunchConfiguration('min_forward_pwm')
-    min_reverse_pwm = LaunchConfiguration('min_reverse_pwm')
-    min_turn_pwm = LaunchConfiguration('min_turn_pwm')
-    pure_rotation_linear_deadband_mps = LaunchConfiguration('pure_rotation_linear_deadband_mps')
-    left_cmd_scale = LaunchConfiguration('left_cmd_scale')
-    right_cmd_scale = LaunchConfiguration('right_cmd_scale')
-    left_tick_sign = LaunchConfiguration('left_tick_sign')
-    right_tick_sign = LaunchConfiguration('right_tick_sign')
-    left_m_per_tick = LaunchConfiguration('left_m_per_tick')
-    right_m_per_tick = LaunchConfiguration('right_m_per_tick')
-    track_width_eff_m = LaunchConfiguration('track_width_eff_m')
     ekf_params_file = LaunchConfiguration('ekf_params_file')
     tf_x = LaunchConfiguration('tf_x')
     tf_y = LaunchConfiguration('tf_y')
@@ -299,24 +283,6 @@ def generate_launch_description():
                     'port': ParameterValue(mega_port, value_type=str),
                     'baudrate': ParameterValue(mega_baudrate, value_type=int),
                     'base_frame_id': ParameterValue(base_frame, value_type=str),
-                    'swap_sides': ParameterValue(swap_sides, value_type=bool),
-                    'left_cmd_sign': ParameterValue(left_cmd_sign, value_type=int),
-                    'right_cmd_sign': ParameterValue(right_cmd_sign, value_type=int),
-                    'angular_cmd_sign': ParameterValue(angular_cmd_sign, value_type=int),
-                    'min_nonzero_pwm': ParameterValue(min_nonzero_pwm, value_type=int),
-                    'min_forward_pwm': ParameterValue(min_forward_pwm, value_type=int),
-                    'min_reverse_pwm': ParameterValue(min_reverse_pwm, value_type=int),
-                    'min_turn_pwm': ParameterValue(min_turn_pwm, value_type=int),
-                    'pure_rotation_linear_deadband_mps': ParameterValue(
-                        pure_rotation_linear_deadband_mps, value_type=float
-                    ),
-                    'left_cmd_scale': ParameterValue(left_cmd_scale, value_type=float),
-                    'right_cmd_scale': ParameterValue(right_cmd_scale, value_type=float),
-                    'left_tick_sign': ParameterValue(left_tick_sign, value_type=int),
-                    'right_tick_sign': ParameterValue(right_tick_sign, value_type=int),
-                    'left_m_per_tick': ParameterValue(left_m_per_tick, value_type=float),
-                    'right_m_per_tick': ParameterValue(right_m_per_tick, value_type=float),
-                    'track_width_eff_m': ParameterValue(track_width_eff_m, value_type=float),
                 }
             ],
         )]
@@ -406,22 +372,6 @@ def generate_launch_description():
         DeclareLaunchArgument('imu_frame', default_value='imu_link'),
         DeclareLaunchArgument('mega_port', default_value='/dev/ttyACM0'),
         DeclareLaunchArgument('mega_baudrate', default_value='115200'),
-        DeclareLaunchArgument('swap_sides', default_value='false'),
-        DeclareLaunchArgument('left_cmd_sign', default_value='1'),
-        DeclareLaunchArgument('right_cmd_sign', default_value='1'),
-        DeclareLaunchArgument('angular_cmd_sign', default_value='1'),
-        DeclareLaunchArgument('min_nonzero_pwm', default_value='55'),
-        DeclareLaunchArgument('min_forward_pwm', default_value='0'),
-        DeclareLaunchArgument('min_reverse_pwm', default_value='0'),
-        DeclareLaunchArgument('min_turn_pwm', default_value='0'),
-        DeclareLaunchArgument('pure_rotation_linear_deadband_mps', default_value='0.03'),
-        DeclareLaunchArgument('left_cmd_scale', default_value='1.0'),
-        DeclareLaunchArgument('right_cmd_scale', default_value='1.0'),
-        DeclareLaunchArgument('left_tick_sign', default_value='1'),
-        DeclareLaunchArgument('right_tick_sign', default_value='1'),
-        DeclareLaunchArgument('left_m_per_tick', default_value='0.0'),
-        DeclareLaunchArgument('right_m_per_tick', default_value='0.0'),
-        DeclareLaunchArgument('track_width_eff_m', default_value='0.35'),
         DeclareLaunchArgument('ekf_params_file', default_value=default_ekf_params_path),
         DeclareLaunchArgument('tf_x', default_value='0.0'),
         DeclareLaunchArgument('tf_y', default_value='0.0'),

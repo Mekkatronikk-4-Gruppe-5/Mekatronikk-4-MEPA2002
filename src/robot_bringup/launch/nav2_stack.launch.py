@@ -100,20 +100,6 @@ def generate_launch_description():
             ],
         ),
         Node(
-            package='mekk4_bringup',
-            executable='nav_cmd_vel_flip_node',
-            name='nav_cmd_vel_flip',
-            output='screen',
-            parameters=[
-                {'use_sim_time': use_sim_time},
-                {
-                    'input_topic': 'cmd_vel_nav',
-                    'output_topic': 'cmd_vel_nav_flipped',
-                    'flip_angular_z': False,
-                }
-            ],
-        ),
-        Node(
             package='nav2_collision_monitor',
             executable='collision_monitor',
             name='collision_monitor',

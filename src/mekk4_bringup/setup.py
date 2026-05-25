@@ -27,8 +27,6 @@ setup(
             'dist_sensor_marker_node = mekk4_bringup.dist_sensor_marker_node:main',
             'go_home_node = mekk4_bringup.go_home_node:main',
             'mega_driver_node = mekk4_bringup.mega_driver_node:main',
-            'nav_cmd_vel_flip_node = mekk4_bringup.nav_cmd_vel_flip_node:main',
-            'odom_freeze_node = mekk4_bringup.odom_freeze_node:main',
             'performance_monitor_node = mekk4_bringup.performance_monitor_node:main',
             'robotarm_safety_node = mekk4_bringup.robotarm_safety_node:main',
             'ros_keyboard_teleop = mekk4_bringup.ros_keyboard_teleop:main',

@@ -83,23 +83,9 @@ MEGA_PORT=/dev/ttyACM1 make pi-bringup
 
 ## EKF-Modus
 
-Når `WITH_EKF=1`:
-
-| Mega-driver setting | Verdi |
-|---|---|
-| `mega_odom_topic` | `wheel/odom` |
-| `mega_publish_tf` | `false` |
-
-EKF publiserer da `/odom` og TF.
-
-Når `WITH_EKF=0`:
-
-| Mega-driver setting | Verdi |
-|---|---|
-| `mega_odom_topic` | `odom` |
-| `mega_publish_tf` | `true` |
-
-Mega-driver publiserer da rå `/odom`.
+Mega-driver publiserer alltid hjulodometri fra hallsensorene på `/wheel/odom`.
+EKF bruker `/wheel/odom` og `/imu/data` som input og eier `/odom` og
+`odom -> base_link` TF.
 
 ## ROS Discovery
 

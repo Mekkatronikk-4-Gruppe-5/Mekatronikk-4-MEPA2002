@@ -43,7 +43,6 @@ make sim-nav2
 | `bt_navigator` | NavigateToPose / NavigateThroughPoses |
 | `cmd_vel_mux` | Manual override over Nav2 |
 | `velocity_smoother` | Accel/decel limiting |
-| `nav_cmd_vel_flip` | Valgfri angular flip |
 | `collision_monitor` | Stop/slowdown fra LiDAR |
 | `lifecycle_manager_navigation` | Lifecycle bringup |
 
@@ -70,7 +69,7 @@ Viktige valg:
 Input:
 
 ```text
-cmd_vel_nav_flipped
+cmd_vel_nav
 ```
 
 Output:

@@ -80,8 +80,6 @@ def generate_launch_description():
     imu_frame = LaunchConfiguration('imu_frame')
     mega_port = LaunchConfiguration('mega_port')
     mega_baudrate = LaunchConfiguration('mega_baudrate')
-    mega_odom_topic = LaunchConfiguration('mega_odom_topic')
-    mega_publish_tf = LaunchConfiguration('mega_publish_tf')
     swap_sides = LaunchConfiguration('swap_sides')
     left_cmd_sign = LaunchConfiguration('left_cmd_sign')
     right_cmd_sign = LaunchConfiguration('right_cmd_sign')
@@ -289,13 +287,6 @@ def generate_launch_description():
     def _build_mega_driver_node(context, *args, **kwargs):
         if not _str_to_bool(LaunchConfiguration('use_mega_driver').perform(context)):
             return []
-        ekf_on = _str_to_bool(LaunchConfiguration('use_ekf').perform(context))
-        publish_tf_bool = (
-            False
-            if ekf_on
-            else _str_to_bool(LaunchConfiguration('mega_publish_tf').perform(context))
-        )
-        print(f"[pi_robot.launch] mega_driver publish_tf -> {publish_tf_bool} (use_ekf={ekf_on})")
         return [Node(
             package='mekk4_bringup',
             executable='mega_driver_node',
@@ -308,7 +299,6 @@ def generate_launch_description():
                     'port': ParameterValue(mega_port, value_type=str),
                     'baudrate': ParameterValue(mega_baudrate, value_type=int),
                     'base_frame_id': ParameterValue(base_frame, value_type=str),
-                    'publish_tf': publish_tf_bool,
                     'swap_sides': ParameterValue(swap_sides, value_type=bool),
                     'left_cmd_sign': ParameterValue(left_cmd_sign, value_type=int),
                     'right_cmd_sign': ParameterValue(right_cmd_sign, value_type=int),
@@ -329,7 +319,6 @@ def generate_launch_description():
                     'track_width_eff_m': ParameterValue(track_width_eff_m, value_type=float),
                 }
             ],
-            remappings=[('odom', mega_odom_topic)],
         )]
 
     mega_driver_node = OpaqueFunction(function=_build_mega_driver_node)
@@ -343,26 +332,8 @@ def generate_launch_description():
         parameters=[
             {'use_sim_time': use_sim_time},
             ekf_params_file,
-            {'publish_tf': False},
         ],
-        remappings=[('odometry/filtered', 'odom_raw')],
-    )
-
-    odom_freeze_node = Node(
-        package='mekk4_bringup',
-        executable='odom_freeze_node',
-        name='odom_freeze',
-        output='screen',
-        condition=IfCondition(use_ekf),
-        parameters=[
-            {'use_sim_time': use_sim_time},
-            {
-                'input_odom_topic': 'odom_raw',
-                'output_odom_topic': 'odom',
-                'freeze_topic': '/mega/freeze_odom',
-                'publish_tf': True,
-            },
-        ],
+        remappings=[('odometry/filtered', 'odom')],
     )
 
     rviz_node = Node(
@@ -414,8 +385,6 @@ def generate_launch_description():
         DeclareLaunchArgument('imu_frame', default_value='imu_link'),
         DeclareLaunchArgument('mega_port', default_value='/dev/ttyACM0'),
         DeclareLaunchArgument('mega_baudrate', default_value='115200'),
-        DeclareLaunchArgument('mega_odom_topic', default_value='odom'),
-        DeclareLaunchArgument('mega_publish_tf', default_value='true'),
         DeclareLaunchArgument('swap_sides', default_value='false'),
         DeclareLaunchArgument('left_cmd_sign', default_value='1'),
         DeclareLaunchArgument('right_cmd_sign', default_value='1'),
@@ -465,7 +434,6 @@ def generate_launch_description():
         imu_node,
         mega_driver_node,
         ekf_node,
-        odom_freeze_node,
         lidar_launch,
         delayed_nav2_launch,
         teddy_detector,

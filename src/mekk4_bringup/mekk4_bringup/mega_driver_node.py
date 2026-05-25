@@ -6,14 +6,13 @@ import time
 from typing import Any
 
 import rclpy
-from geometry_msgs.msg import TransformStamped, Twist
+from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Bool, Float64, Int32
 from std_srvs.srv import Trigger
-from tf2_ros import TransformBroadcaster
 
 
 IGNORED_SERIAL_PREFIXES = (
@@ -50,7 +49,7 @@ class MegaDriverNode(Node):
         self._max_driver_errors_before_reconnect = self._param_int("max_driver_errors_before_reconnect")
         self._base_frame_id = self._param_str("base_frame_id")
         self._odom_frame_id = self._param_str("odom_frame_id")
-        self._publish_tf = self._param_bool("publish_tf")
+        self._wheel_odom_topic = self._param_str("wheel_odom_topic")
         self._swap_sides = self._param_bool("swap_sides")
         self._max_track_speed_mps = self._param_float("max_track_speed_mps")
         self._max_pwm = self._param_int("max_pwm")
@@ -187,7 +186,7 @@ class MegaDriverNode(Node):
         self._right_gripper_sub = self.create_subscription(
             Float64, "/gripper/right_position_cmd", self._on_right_gripper_cmd, 10
         )
-        self._odom_pub = self.create_publisher(Odometry, "odom", 10)
+        self._odom_pub = self.create_publisher(Odometry, self._wheel_odom_topic, 10)
         self._left_pwm_pub = self.create_publisher(Int32, "mega_driver/left_pwm", 10)
         self._right_pwm_pub = self.create_publisher(Int32, "mega_driver/right_pwm", 10)
         self._arm_x_state_pub = self.create_publisher(Float64, "/robotarm/x_position_state", 10)
@@ -196,7 +195,6 @@ class MegaDriverNode(Node):
         self._distance_pub = self.create_publisher(Int32, "/mega/distance_mm", 10)
         self._home_arm_srv = self.create_service(Trigger, "/mega/home_arm", self._on_home_arm)
         self.create_subscription(Bool, "/mega/freeze_odom", self._on_freeze_odom, 10)
-        self._tf_broadcaster = TransformBroadcaster(self) if self._publish_tf else None
         self._timer = self.create_timer(0.02, self._on_timer)
 
     def _param(self, name: str) -> Any:
@@ -928,19 +926,6 @@ class MegaDriverNode(Node):
         odom.twist.covariance[35] = 0.12
 
         self._odom_pub.publish(odom)
-
-        if self._tf_broadcaster is None:
-            return
-
-        transform = TransformStamped()
-        transform.header.stamp = stamp
-        transform.header.frame_id = self._odom_frame_id
-        transform.child_frame_id = self._base_frame_id
-        transform.transform.translation.x = self._x
-        transform.transform.translation.y = self._y
-        transform.transform.rotation.z = qz
-        transform.transform.rotation.w = qw
-        self._tf_broadcaster.sendTransform(transform)
 
     def _on_timer(self) -> None:
         self._publish_arm_state()

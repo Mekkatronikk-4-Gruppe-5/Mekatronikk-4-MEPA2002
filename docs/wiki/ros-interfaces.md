@@ -42,10 +42,9 @@ ros2 run tf2_ros tf2_echo base_link base_laser
 | `/cmd_vel_teddy` | `geometry_msgs/msg/Twist` | `teddy_approach` og `teddy_grab` | Assist-input til cmd_vel-mux |
 | `/cmd_vel_nav` | `geometry_msgs/msg/Twist` | `cmd_vel_mux_node` | Valgt nav/manual input til smoother |
 | `/cmd_vel_smoothed` | `geometry_msgs/msg/Twist` | `velocity_smoother` | Smoothed cmd_vel |
-| `/cmd_vel_nav_flipped` | `geometry_msgs/msg/Twist` | `nav_cmd_vel_flip_node` | Input til collision monitor |
 | `/cmd_vel_mux_active` | `std_msgs/msg/String` | `cmd_vel_mux_node` | `manual`, `nav` eller `idle` |
-| `/odom` | `nav_msgs/msg/Odometry` | Mega-driver eller EKF | Nav2 og RViz |
-| `/wheel/odom` | `nav_msgs/msg/Odometry` | Mega-driver når EKF er på | EKF input |
+| `/odom` | `nav_msgs/msg/Odometry` | EKF | Nav2 og RViz |
+| `/wheel/odom` | `nav_msgs/msg/Odometry` | Mega-driver | EKF input fra hallsensorer |
 | `/imu/data` | `sensor_msgs/msg/Imu` | BNO085 eller Gazebo bridge | EKF input |
 | `/lidar` | `sensor_msgs/msg/LaserScan` | LDLiDAR eller Gazebo bridge | Nav2 costmaps og RViz |
 | `/lidar/points` | `sensor_msgs/msg/PointCloud2` | Gazebo bridge | Sim debug |
@@ -70,7 +69,6 @@ ros2 run tf2_ros tf2_echo base_link base_laser
 | `teddy_grab` | `mekk4_bringup` | Stopper basen, bruker arm/gripper og Mega-avstand for grep |
 | `udp_camera_bridge` | `mekk4_perception` | UDP H264 til ROS image |
 | `cmd_vel_mux` | `mekk4_bringup` | Manual override over Nav2 |
-| `nav_cmd_vel_flip` | `mekk4_bringup` | Valgfri angular flip |
 | `tracked_cmd_vel_adapter` | `robot_sim_control` | Sim cmd_vel til tracked plugin |
 
 ## Nav2 Command Chain
@@ -84,8 +82,6 @@ controller_server / behavior_server
   -> cmd_vel_nav
   -> velocity_smoother
   -> cmd_vel_smoothed
-  -> nav_cmd_vel_flip_node
-  -> cmd_vel_nav_flipped
   -> collision_monitor
   -> cmd_vel
 ```

@@ -26,7 +26,6 @@ patterns=(
   "teddy_detector"
   "teddy_approach_node"
   "cmd_vel_mux_node"
-  "nav_cmd_vel_flip_node"
   "ros_keyboard_teleop"
   "lidar_static_tf_sim"
   "rviz2.*rviz.rviz"

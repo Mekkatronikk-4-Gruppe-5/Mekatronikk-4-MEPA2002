@@ -27,7 +27,7 @@ class CmdVelMuxNode(Node):
     def __init__(self) -> None:
         super().__init__("cmd_vel_mux")
 
-        self.declare_parameter("nav_input_topic", "cmd_vel_nav_flipped")
+        self.declare_parameter("nav_input_topic", "cmd_vel_nav_auto")
         self.declare_parameter("assist_input_topic", "cmd_vel_assist")
         self.declare_parameter("manual_input_topic", "cmd_vel_manual")
         self.declare_parameter("output_topic", "cmd_vel_muxed")

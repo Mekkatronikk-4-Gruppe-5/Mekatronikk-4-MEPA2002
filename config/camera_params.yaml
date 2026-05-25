@@ -6,12 +6,12 @@
 camera_stream:
   # Output resolution from the Pi camera.
   # Higher values improve detail, but increase CPU load, bandwidth, and delay.
-  width: 640
-  height: 480
+  width: 800
+  height: 600
 
   # Capture framerate.
   # Lower FPS usually reduces delay and makes the stream easier to keep stable.
-  fps: 10
+  fps: 8
 
   # Optional H.264 bitrate in bits/sec.
   # Leave empty to use the rpicam default.
@@ -22,7 +22,7 @@ camera_stream:
   # Lower values recover faster from UDP packet loss, but use more bitrate.
   # A good starting point is around the same as FPS, e.g. 10 at 10 FPS.
   # Leave empty for the encoder default if the stream becomes choppy.
-  intra: 6
+  intra: 4
 
   # Try to reduce encoder delay on newer Pi camera stacks.
   # If your rpicam build is too old, the script will ignore this and warn once.

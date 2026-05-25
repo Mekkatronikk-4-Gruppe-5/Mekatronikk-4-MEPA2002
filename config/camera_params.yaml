@@ -86,7 +86,7 @@ teddy_detector:
   conf: 0.3
 
   # YOLO inference size. Higher can improve detection quality, but costs latency/CPU.
-  imgsz: 512
+  imgsz: 640
 
   # Allowed center error before reporting centered=true.
   center_tol: 0.10

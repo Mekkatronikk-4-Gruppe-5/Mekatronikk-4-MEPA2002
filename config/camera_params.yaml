@@ -16,13 +16,13 @@ camera_stream:
   # Optional H.264 bitrate in bits/sec.
   # Leave empty to use the rpicam default.
   # Lower bitrate reduces bandwidth, but can increase compression artifacts.
-  bitrate_bps: 2800000
+  bitrate_bps: 2000000
 
   # Optional I-frame interval in frames.
   # Lower values recover faster from UDP packet loss, but use more bitrate.
   # A good starting point is around the same as FPS, e.g. 10 at 10 FPS.
   # Leave empty for the encoder default if the stream becomes choppy.
-  intra: 4
+  intra: 8
 
   # Try to reduce encoder delay on newer Pi camera stacks.
   # If your rpicam build is too old, the script will ignore this and warn once.
@@ -31,12 +31,12 @@ camera_stream:
 
   # Flush encoded output as frames are written.
   # This is useful when piping H.264 through a FIFO to GStreamer.
-  flush_output: false
+  flush_output: true
 
   # Small RTP jitter buffer on the PC side, in milliseconds.
   # Higher smooths Wi-Fi jitter and reduces artifacts, but adds delay.
   # Lower reduces delay, but can increase choppiness.
-  pc_jitter_ms: 10
+  pc_jitter_ms: 5
 
   # Local UDP port used by teddy_detector on the Pi.
   local_udp_port: 5600
@@ -106,7 +106,7 @@ teddy_detector:
 
   # Scale factor before H264 encoding the annotated stream.
   # 1.0 keeps full input size, 0.5 halves width and height.
-  debug_stream_scale: 0.5
+  debug_stream_scale: 0.4
 
   # Output FPS for the annotated YOLO stream.
   # This is a max rate, not a guaranteed rate.

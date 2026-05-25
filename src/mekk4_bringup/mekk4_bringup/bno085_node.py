@@ -21,6 +21,12 @@ def _diagonal_covariance(values: Iterable[float]) -> list[float]:
     return covariance
 
 
+def _disabled_covariance() -> list[float]:
+    covariance = [0.0] * 9
+    covariance[0] = -1.0
+    return covariance
+
+
 class BNO085Node(Node):
     def __init__(self) -> None:
         super().__init__("bno085")
@@ -30,6 +36,8 @@ class BNO085Node(Node):
         self.declare_parameter("publish_rate_hz", 50.0)
         self.declare_parameter("report_interval_us", 20_000)
         self.declare_parameter("use_game_rotation_vector", True)
+        self.declare_parameter("enable_gyroscope", False)
+        self.declare_parameter("enable_linear_acceleration", False)
         self.declare_parameter("orientation_covariance_diagonal", [0.05, 0.05, 0.08])
         self.declare_parameter("angular_velocity_covariance_diagonal", [0.02, 0.02, 0.04])
         self.declare_parameter("linear_acceleration_covariance_diagonal", [0.2, 0.2, 0.3])
@@ -41,15 +49,27 @@ class BNO085Node(Node):
         self._use_game_rotation_vector = (
             self.get_parameter("use_game_rotation_vector").get_parameter_value().bool_value
         )
+        self._enable_gyroscope = (
+            self.get_parameter("enable_gyroscope").get_parameter_value().bool_value
+        )
+        self._enable_linear_acceleration = (
+            self.get_parameter("enable_linear_acceleration").get_parameter_value().bool_value
+        )
 
         self._orientation_covariance = _diagonal_covariance(
             self.get_parameter("orientation_covariance_diagonal").value
         )
-        self._angular_velocity_covariance = _diagonal_covariance(
-            self.get_parameter("angular_velocity_covariance_diagonal").value
+        self._angular_velocity_covariance = (
+            _diagonal_covariance(self.get_parameter("angular_velocity_covariance_diagonal").value)
+            if self._enable_gyroscope
+            else _disabled_covariance()
         )
-        self._linear_acceleration_covariance = _diagonal_covariance(
-            self.get_parameter("linear_acceleration_covariance_diagonal").value
+        self._linear_acceleration_covariance = (
+            _diagonal_covariance(
+                self.get_parameter("linear_acceleration_covariance_diagonal").value
+            )
+            if self._enable_linear_acceleration
+            else _disabled_covariance()
         )
 
         if publish_rate_hz <= 0.0:
@@ -73,12 +93,14 @@ class BNO085Node(Node):
         self._timer = self.create_timer(self._publish_period_s, self._on_timer)
 
         self.get_logger().info(
-            "BNO085 node started on /imu/data with frame_id=%s i2c_bus=%d report_interval_us=%d orientation=%s"
+            "BNO085 node started on /imu/data with frame_id=%s i2c_bus=%d report_interval_us=%d orientation=%s gyro=%s linear_accel=%s"
             % (
                 self._frame_id,
                 self._i2c_bus,
                 self._report_interval_us,
                 "game_rotation_vector" if self._use_game_rotation_vector else "rotation_vector",
+                "enabled" if self._enable_gyroscope else "disabled",
+                "enabled" if self._enable_linear_acceleration else "disabled",
             )
         )
 
@@ -108,8 +130,10 @@ class BNO085Node(Node):
         )
 
         self._bno.enable_feature(orientation_report, self._report_interval_us)
-        self._bno.enable_feature(BNO_REPORT_GYROSCOPE, self._report_interval_us)
-        self._bno.enable_feature(BNO_REPORT_LINEAR_ACCELERATION, self._report_interval_us)
+        if self._enable_gyroscope:
+            self._bno.enable_feature(BNO_REPORT_GYROSCOPE, self._report_interval_us)
+        if self._enable_linear_acceleration:
+            self._bno.enable_feature(BNO_REPORT_LINEAR_ACCELERATION, self._report_interval_us)
 
         if self._use_game_rotation_vector and not hasattr(self._bno, "game_quaternion"):
             self._quat_attr = "quaternion"
@@ -117,7 +141,7 @@ class BNO085Node(Node):
                 "BNO08x library does not expose game_quaternion, falling back to quaternion."
             )
 
-        if not hasattr(self._bno, self._linear_accel_attr):
+        if self._enable_linear_acceleration and not hasattr(self._bno, self._linear_accel_attr):
             self._linear_accel_attr = "acceleration"
             self.get_logger().warning(
                 "BNO08x library does not expose linear_acceleration, falling back to acceleration."
@@ -126,8 +150,14 @@ class BNO085Node(Node):
     def _on_timer(self) -> None:
         try:
             quaternion = getattr(self._bno, self._quat_attr)
-            angular_velocity = getattr(self._bno, self._gyro_attr)
-            linear_acceleration = getattr(self._bno, self._linear_accel_attr)
+            angular_velocity = (
+                getattr(self._bno, self._gyro_attr) if self._enable_gyroscope else None
+            )
+            linear_acceleration = (
+                getattr(self._bno, self._linear_accel_attr)
+                if self._enable_linear_acceleration
+                else None
+            )
         except Exception as exc:  # pragma: no cover - hardware/runtime dependent
             self._consecutive_failures += 1
             if self._consecutive_failures in (1, 10) or self._consecutive_failures % 50 == 0:
@@ -145,14 +175,16 @@ class BNO085Node(Node):
         msg.orientation.w = float(quaternion[3])
         msg.orientation_covariance = self._orientation_covariance
 
-        msg.angular_velocity.x = float(angular_velocity[0])
-        msg.angular_velocity.y = float(angular_velocity[1])
-        msg.angular_velocity.z = float(angular_velocity[2])
+        if angular_velocity is not None:
+            msg.angular_velocity.x = float(angular_velocity[0])
+            msg.angular_velocity.y = float(angular_velocity[1])
+            msg.angular_velocity.z = float(angular_velocity[2])
         msg.angular_velocity_covariance = self._angular_velocity_covariance
 
-        msg.linear_acceleration.x = float(linear_acceleration[0])
-        msg.linear_acceleration.y = float(linear_acceleration[1])
-        msg.linear_acceleration.z = float(linear_acceleration[2])
+        if linear_acceleration is not None:
+            msg.linear_acceleration.x = float(linear_acceleration[0])
+            msg.linear_acceleration.y = float(linear_acceleration[1])
+            msg.linear_acceleration.z = float(linear_acceleration[2])
         msg.linear_acceleration_covariance = self._linear_acceleration_covariance
 
         self._pub.publish(msg)

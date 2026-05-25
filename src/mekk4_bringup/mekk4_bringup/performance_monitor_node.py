@@ -75,6 +75,7 @@ class PerformanceMonitorNode(Node):
         self._report_period_s = self._param_float("report_period_s", 5.0)
         self._window_s = self._param_float("window_s", 10.0)
         self._top_process_count = self._param_int("top_process_count", 8)
+        self._print_samples = self._param_bool("print_samples", False)
         self._log_dir = Path(str(self._param_str("log_dir", "/ws/perf_logs")))
 
         self._log_dir.mkdir(parents=True, exist_ok=True)
@@ -148,6 +149,10 @@ class PerformanceMonitorNode(Node):
         self.declare_parameter(name, default)
         return int(self.get_parameter(name).value)
 
+    def _param_bool(self, name: str, default: bool) -> bool:
+        self.declare_parameter(name, default)
+        return bool(self.get_parameter(name).value)
+
     def _param_str(self, name: str, default: str) -> str:
         self.declare_parameter(name, default)
         return str(self.get_parameter(name).value)
@@ -212,7 +217,8 @@ class PerformanceMonitorNode(Node):
         msg.data = summary
         self._summary_pub.publish(msg)
         line = f"{datetime.now().strftime('%H:%M:%S')} {summary}"
-        print(line, flush=True)
+        if self._print_samples:
+            print(line, flush=True)
         self._log_file.write(line + "\n")
         self._log_file.flush()
 

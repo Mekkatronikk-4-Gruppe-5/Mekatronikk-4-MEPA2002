@@ -325,6 +325,7 @@ def generate_launch_description():
                 'report_period_s': 2.0,
                 'window_s': 10.0,
                 'top_process_count': 15,
+                'print_samples': False,
                 'log_dir': '/ws/perf_logs',
                 'process_keywords': [
                     'bno085_node',

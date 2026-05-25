@@ -6,12 +6,12 @@
 camera_stream:
   # Output resolution from the Pi camera.
   # Higher values improve detail, but increase CPU load, bandwidth, and delay.
-  width: 800
-  height: 600
+  width: 640
+  height: 480
 
   # Capture framerate.
   # Lower FPS usually reduces delay and makes the stream easier to keep stable.
-  fps: 6
+  fps: 8
 
   # Optional H.264 bitrate in bits/sec.
   # Leave empty to use the rpicam default.
@@ -67,7 +67,7 @@ camera_stream:
   # Denoise mode.
   # Quote values like "off" or "on" so YAML does not treat them as booleans.
   # Valid practical values here: "auto", "off", "cdn_off", "cdn_fast", "cdn_hq", "on".
-  denoise: "cdn_hq"
+  denoise: "cdn_fast"
 
   # Exposure metering mode. "centre" is a safe default for robot driving indoors.
   metering: centre
@@ -106,7 +106,7 @@ teddy_detector:
 
   # Scale factor before H264 encoding the annotated stream.
   # 1.0 keeps full input size, 0.5 halves width and height.
-  debug_stream_scale: 1.0
+  debug_stream_scale: 0.5
 
   # Output FPS for the annotated YOLO stream.
   # This is a max rate, not a guaranteed rate.

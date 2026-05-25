@@ -107,7 +107,7 @@ robotarm_safety:
 
     # Chassis keepout in internal joint coordinates. GUI z=0 maps to joint z=0.13,
     # so if display Z is below 0, x must not retract behind 0.
-    chassis_x_min_when_low_z: 0.0
+    chassis_x_min_when_low_z: 0.005
     chassis_z_threshold: 0.13
 
     # Gripper pulse clamp in microseconds.

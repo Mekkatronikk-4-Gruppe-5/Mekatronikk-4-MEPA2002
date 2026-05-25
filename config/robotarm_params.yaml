@@ -19,6 +19,7 @@ mega_driver:
     publish_tf: false
     odom_poll_period_s: 0.05
     odom_tf_hold_timeout_s: 1.75
+    odom_freeze_twist_covariance: 0.000001
     reset_odom_after_arm_motion: true
     left_m_per_tick:  0.000054145
     right_m_per_tick: 0.000053178
@@ -35,7 +36,7 @@ mega_driver:
     min_nonzero_pwm: 50
     min_forward_pwm: 50
     min_reverse_pwm: 60
-    min_turn_pwm: 80
+    min_turn_pwm: 85
     pure_rotation_linear_deadband_mps: 0.03
     left_cmd_sign: 1
     right_cmd_sign: 1

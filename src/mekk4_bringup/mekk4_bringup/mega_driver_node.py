@@ -39,6 +39,7 @@ class MegaDriverNode(Node):
         self._send_period_s = self._param_float("send_period_s")
         self._odom_poll_period_s = self._param_float("odom_poll_period_s")
         self._odom_tf_hold_timeout_s = self._param_float("odom_tf_hold_timeout_s")
+        self._odom_freeze_twist_covariance = self._param_float("odom_freeze_twist_covariance")
         self._reset_odom_after_arm_motion = self._param_bool("reset_odom_after_arm_motion")
         self._arm_state_poll_period_s = self._param_float("arm_state_poll_period_s")
         self._arm_motion_timeout_s = self._param_float("arm_motion_timeout_s")
@@ -112,6 +113,8 @@ class MegaDriverNode(Node):
             raise ValueError("Timer periods must be positive, and odom_tf_hold_timeout_s must be zero or greater.")
         if self._arm_motion_timeout_s <= 0.0:
             raise ValueError("arm_motion_timeout_s must be greater than zero.")
+        if self._odom_freeze_twist_covariance <= 0.0:
+            raise ValueError("odom_freeze_twist_covariance must be greater than zero.")
         if self._max_driver_errors_before_reconnect < 1:
             raise ValueError("max_driver_errors_before_reconnect must be at least 1.")
         if self._arm_x_steps_per_mm <= 0.0:
@@ -431,7 +434,7 @@ class MegaDriverNode(Node):
         self._last_encoder_stamp = now
         self._last_odom_data_at = now
         self._last_poll_at = now
-        self._publish_odometry(0.0, 0.0)
+        self._publish_odometry(0.0, 0.0, frozen=self._odom_frozen)
 
     @staticmethod
     def _parse_encoder(reply: str, label: str) -> int:
@@ -846,7 +849,7 @@ class MegaDriverNode(Node):
             now = time.monotonic()
             if now - self._last_odom_publish_at >= self._odom_poll_period_s:
                 self._last_odom_data_at = now
-                self._publish_odometry(0.0, 0.0)
+                self._publish_odometry(0.0, 0.0, frozen=True)
             return
 
         now = time.monotonic()
@@ -903,7 +906,12 @@ class MegaDriverNode(Node):
             return
         self._publish_odometry(0.0, 0.0)
 
-    def _publish_odometry(self, linear_velocity: float, angular_velocity: float) -> None:
+    def _publish_odometry(
+        self,
+        linear_velocity: float,
+        angular_velocity: float,
+        frozen: bool = False,
+    ) -> None:
         self._last_odom_publish_at = time.monotonic()
         stamp = self.get_clock().now().to_msg()
         qz = math.sin(self._yaw / 2.0)
@@ -923,9 +931,9 @@ class MegaDriverNode(Node):
         odom.pose.covariance[0] = 0.03
         odom.pose.covariance[7] = 0.03
         odom.pose.covariance[35] = 0.08
-        odom.twist.covariance[0] = 0.05
+        odom.twist.covariance[0] = self._odom_freeze_twist_covariance if frozen else 0.05
         odom.twist.covariance[7] = 0.05
-        odom.twist.covariance[35] = 0.12
+        odom.twist.covariance[35] = self._odom_freeze_twist_covariance if frozen else 0.12
 
         self._odom_pub.publish(odom)
 

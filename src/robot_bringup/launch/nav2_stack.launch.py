@@ -26,7 +26,6 @@ def generate_launch_description():
         'planner_server',
         'behavior_server',
         'velocity_smoother',
-        'collision_monitor',
         'bt_navigator',
     ]
 
@@ -100,17 +99,6 @@ def generate_launch_description():
             ],
         ),
         Node(
-            package='nav2_collision_monitor',
-            executable='collision_monitor',
-            name='collision_monitor',
-            output='screen',
-            respawn=use_respawn,
-            respawn_delay=2.0,
-            parameters=[params_file],
-            arguments=['--ros-args', '--log-level', log_level],
-            remappings=remappings,
-        ),
-        Node(
             package='nav2_velocity_smoother',
             executable='velocity_smoother',
             name='velocity_smoother',
@@ -120,7 +108,7 @@ def generate_launch_description():
             parameters=[params_file],
             arguments=['--ros-args', '--log-level', log_level],
             remappings=remappings
-            + [('cmd_vel', 'cmd_vel_collision'), ('cmd_vel_smoothed', 'cmd_vel')],
+            + [('cmd_vel', 'cmd_vel_nav'), ('cmd_vel_smoothed', 'cmd_vel')],
         ),
         Node(
             package='nav2_lifecycle_manager',

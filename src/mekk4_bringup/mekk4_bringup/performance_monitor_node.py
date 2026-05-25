@@ -88,7 +88,6 @@ class PerformanceMonitorNode(Node):
                 "bno085_node",
                 "bt_navigator",
                 "cmd_vel_mux_node",
-                "collision_monitor",
                 "controller_server",
                 "ekf_node",
                 "ldlidar",
@@ -128,7 +127,6 @@ class PerformanceMonitorNode(Node):
         self._subscribe("/cmd_vel", Twist, self._on_topic("/cmd_vel"), qos)
         self._subscribe("/cmd_vel_nav_auto", Twist, self._on_topic("/cmd_vel_nav_auto"), qos)
         self._subscribe("/cmd_vel_nav", Twist, self._on_topic("/cmd_vel_nav"), qos)
-        self._subscribe("/cmd_vel_collision", Twist, self._on_topic("/cmd_vel_collision"), qos)
         self._subscribe("/cmd_vel_teddy", Twist, self._on_topic("/cmd_vel_teddy"), qos)
         self._subscribe("/cmd_vel_mux_active", String, self._on_topic("/cmd_vel_mux_active"), qos)
 

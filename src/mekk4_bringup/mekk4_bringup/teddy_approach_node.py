@@ -135,6 +135,7 @@ class TeddyApproachNode(Node):
         self._scan_window_key = None
         self._scan_window = (0, 0)
         self.last_mode = ""
+        self.zero_twist = Twist()
         # Once we publish teddy_approach_settled, stop driving so teddy_grab owns
         # the base. Stays latched until the node is restarted.
         self.handed_off = False
@@ -225,7 +226,7 @@ class TeddyApproachNode(Node):
         if self.handed_off:
             # Don't keep publishing zero twist after handoff: the cmd_vel mux
             # would treat assist as continuously active and block Nav2.
-            self.publish_mode("teddy_approach_settled", log_on_change=False)
+            self.publish_mode("teddy_approach_settled")
             return
 
         now = self.now_s()
@@ -271,7 +272,7 @@ class TeddyApproachNode(Node):
         self.log_mode("approaching" if centered else "centering")
 
     def publish_stop(self):
-        self.cmd_pub.publish(Twist())
+        self.cmd_pub.publish(self.zero_twist)
 
     def teddy_recent(self, now):
         return self.last_seen_at >= 0.0 and (now - self.last_seen_at) <= self.lost_timeout_s

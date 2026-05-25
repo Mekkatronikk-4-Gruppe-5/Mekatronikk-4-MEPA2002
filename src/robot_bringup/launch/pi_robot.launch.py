@@ -242,19 +242,6 @@ def generate_launch_description():
         ],
     )
 
-    teddy_nav_goal_node = Node(
-        package='mekk4_bringup',
-        executable='teddy_nav_goal_node',
-        name='teddy_nav_goal',
-        output='screen',
-        condition=IfCondition(use_teddy_approach),
-        parameters=[
-            {'use_sim_time': use_sim_time},
-            teddy_approach_params_file,
-            {'enabled': ParameterValue(use_teddy_approach, value_type=bool)},
-        ],
-    )
-
     imu_node = Node(
         package='mekk4_bringup',
         executable='bno085_node',
@@ -331,7 +318,6 @@ def generate_launch_description():
                     'bno085_node',
                     'bt_navigator',
                     'cmd_vel_mux_node',
-                    'collision_monitor',
                     'controller_server',
                     'ekf_node',
                     'ldlidar',
@@ -415,7 +401,6 @@ def generate_launch_description():
         go_home_node,
         teddy_lidar_markers_node,
         dist_sensor_marker_node,
-        teddy_nav_goal_node,
         performance_monitor_node,
         rviz_node,
     ])

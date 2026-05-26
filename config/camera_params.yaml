@@ -7,8 +7,8 @@ camera_stream:
   # Output resolution from the Pi camera.
   # Higher values improve detail, but increase CPU load, bandwidth, and delay.
   # 800x600 is a good balance for detail, but 640x480 is more stable on marginal Wi-Fi links.
-  width: 640
-  height: 480
+  width: 800
+  height: 600
 
   # Capture framerate.
   # Lower FPS usually reduces delay and makes the stream easier to keep stable.
